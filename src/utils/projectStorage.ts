@@ -60,8 +60,6 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
-// --- 自動保存(単一スロット、再訪問時に自動復元) ---
-
 export async function saveProject(snapshot: ProjectSnapshot): Promise<void> {
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
@@ -84,8 +82,6 @@ export async function loadProject(): Promise<ProjectSnapshot | null> {
   db.close()
   return result
 }
-
-// --- 名前付き保存(複数プロジェクトを明示的に保存・一覧・読み込み) ---
 
 export async function saveNamedProject(
   name: string,

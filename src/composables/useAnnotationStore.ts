@@ -83,11 +83,11 @@ interface ImageSnapshot {
   ocrLines: OcrLineHit[]
 }
 
-/** 直前のクロップ前の状態(1段のみ)。元に戻す操作で復元する */
+/** Single-level undo snapshot for crop. */
 const cropHistory = ref<ImageSnapshot | null>(null)
 
 const screenParser = useScreenParser()
-// アップロード前からモデルのロードを始めておき、検出開始時の待ち時間を減らす
+// Prefetch so the first detection does not wait on model load.
 void screenParser.loadModel()
 
 function reindexOrders(): void {
@@ -98,7 +98,6 @@ function reindexOrders(): void {
 }
 
 function refreshDocumentAndLayouts(): void {
-  // 表示モードはプロジェクト全体で統一(コールアウト or 画像内番号)
   const calloutAnnotations = state.defaultAnnotationMode === 'callout' ? state.annotations : []
   state.document = createDefaultDocumentLayout(
     state.imageWidth,
@@ -146,7 +145,6 @@ function loadImageElement(url: string): Promise<HTMLImageElement> {
   })
 }
 
-/** セクション矩形と50%以上重なるOCRテキストを連結して返す */
 function ocrTextForSection(section: Section): string {
   return ocrLines.value
     .filter((line) => containmentRatio(line.rect, section.rect) >= 0.5)
@@ -228,7 +226,7 @@ interface RestorableFields {
   showSections: boolean
 }
 
-/** 画像Blobとフィールド一式から状態を丸ごと復元する(再検出・OCRは行わない) */
+/** Restore state from a saved image + fields without re-running detection/OCR. */
 async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields): Promise<void> {
   if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
 
@@ -260,7 +258,6 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   refreshDocumentAndLayouts()
 }
 
-/** ブラウザストレージ(IndexedDB)への自動保存・復元。プロジェクトは1件のみ保持する */
 let restored = false
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -346,7 +343,6 @@ export function useAnnotationStore() {
   const sortedAnnotations = computed(() => sortByOrder(state.annotations))
   const canUndoCrop = computed(() => cropHistory.value !== null)
 
-  /** 画像全体をScreenParser(YOLO11)でスキャンし、セクション候補にする */
   async function runSectionDetection(): Promise<void> {
     if (!imageElement.value) return
     isDetecting.value = true
@@ -382,7 +378,6 @@ export function useAnnotationStore() {
     ocrLines.value = []
     await cacheImageData(image)
 
-    // 全体スキャン(ScreenParser)とOCRは独立しているので並列実行する
     const [, ocrResult] = await Promise.all([
       runSectionDetection(),
       recognizeTextFromImage(image),
@@ -399,7 +394,6 @@ export function useAnnotationStore() {
     await applyImageSource(file)
   }
 
-  /** 表示中の画像を矩形で切り抜き、新しい画像として読み込み直す(元に戻す操作のため直前の状態を保持) */
   async function cropImage(rect: Rect): Promise<void> {
     if (!imageElement.value || !state.imageUrl) return
     const normalized = normalizeRect(rect)
@@ -418,7 +412,6 @@ export function useAnnotationStore() {
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
     if (!blob) return
 
-    // 直前のクロップ分の保存を解放してから、今の状態をUndo用に保存する
     if (cropHistory.value) URL.revokeObjectURL(cropHistory.value.imageUrl)
     cropHistory.value = {
       imageUrl: state.imageUrl,
@@ -433,7 +426,6 @@ export function useAnnotationStore() {
     await applyImageSource(blob, { revokePrevious: false })
   }
 
-  /** 直前のクロップを取り消し、クロップ前の画像・セクション・注釈を復元する */
   async function undoCrop(): Promise<void> {
     const snapshot = cropHistory.value
     if (!snapshot) return
@@ -671,7 +663,6 @@ export function useAnnotationStore() {
     }
   }
 
-  /** 画像・セクション・注釈・各種設定を1つのファイルにまとめてローカルにダウンロードする(エクスポート) */
   async function saveProjectToFile(): Promise<void> {
     const snapshot = await buildCurrentSnapshot()
     if (!snapshot) return
@@ -680,19 +671,16 @@ export function useAnnotationStore() {
     downloadBlob(fileBlob, suggestProjectFileName())
   }
 
-  /** ブラウザ内ストレージ(IndexedDB)に名前を付けて明示的に保存する */
   async function saveProjectAs(name: string, overwriteId?: string): Promise<string | null> {
     const snapshot = await buildCurrentSnapshot()
     if (!snapshot) return null
     return saveNamedProject(name, snapshot, overwriteId)
   }
 
-  /** ブラウザ内ストレージに保存済みのプロジェクト一覧を取得する */
   async function fetchSavedProjects(): Promise<SavedProjectMeta[]> {
     return listSavedProjects()
   }
 
-  /** ブラウザ内ストレージから名前付きプロジェクトを読み込み、状態を丸ごと復元する */
   async function loadSavedProject(id: string): Promise<void> {
     const snapshot = await loadNamedProject(id)
     if (!snapshot) throw new Error('保存済みのプロジェクトが見つかりませんでした')
@@ -703,12 +691,10 @@ export function useAnnotationStore() {
     await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
   }
 
-  /** ブラウザ内ストレージから名前付きプロジェクトを削除する */
   async function removeSavedProject(id: string): Promise<void> {
     await deleteNamedProject(id)
   }
 
-  /** ダウンロードしたプロジェクトファイルを読み込み、状態を丸ごと復元する(再検出・OCRはしない) */
   async function loadProjectFromFile(file: File): Promise<void> {
     const data = await parseProjectFile(file)
     const imageBlob = await fetch(data.imageDataUrl).then((res) => res.blob())

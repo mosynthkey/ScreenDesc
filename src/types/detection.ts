@@ -2,7 +2,7 @@ export interface Detection {
   classId: number
   className: string
   score: number
-  // 元画像のピクセル座標系でのバウンディングボックス
+  /** Bounding box in source-image pixel coordinates. */
   x: number
   y: number
   width: number

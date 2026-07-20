@@ -25,18 +25,18 @@ export type CalloutSide = 'left' | 'right' | 'auto'
 
 export type ToolMode = 'select' | 'add-section' | 'annotate' | 'crop'
 
-/** 太さ・線種のみを表す(色はlineColorで別途指定する) */
+/** Stroke weight / dash only; color is `lineColor`. */
 export type LineStyleId = 'thin' | 'thick' | 'dashed' | 'invert'
 
 export interface Section {
   id: string
   rect: Rect
   kind: SectionKind
-  /** ScreenParser(YOLO11)のクラス名。手動追加したセクションではundefined */
+  /** ScreenParser class name; unset for manually drawn sections. */
   label?: string
 }
 
-/** Only distinguish text lumps vs generic regions — no button/menu/panel taxonomy */
+/** Text lumps vs generic regions — no button/menu/panel taxonomy. */
 export type SectionKind = 'region' | 'text'
 
 export interface Annotation {
@@ -44,13 +44,13 @@ export interface Annotation {
   sectionId: string | null
   order: number
   description: string
-  /** Marker center in image coordinates */
+  /** Marker center in image coordinates. */
   markerPosition: Point
   calloutSide: CalloutSide
-  /** Manual override for callout label position (document coords including margin) */
+  /** Manual override for callout label position (document coords including margin). */
   calloutPosition: Point | null
   textStyle: TextStylePreset
-  /** Resolved style after auto detection */
+  /** Resolved style after auto detection. */
   resolvedStyle: Exclude<TextStylePreset, 'auto'>
 }
 
@@ -62,7 +62,7 @@ export interface CalloutLayoutItem {
   elbowPoint: Point
   labelWidth: number
   labelHeight: number
-  /** 折り返し済みの表示行(1行目は丸数字プレフィックス付き) */
+  /** Wrapped display lines (first line includes circled number prefix). */
   lines: string[]
 }
 
@@ -86,21 +86,15 @@ export interface ProjectState {
   toolMode: ToolMode
   defaultAnnotationMode: AnnotationMode
   defaultTextStyle: TextStylePreset
-  /** Google Font family(プロジェクト全体で統一) */
   defaultFontFamily: string
-  /** コールアウトの引き出し線の太さ・線種(プロジェクト全体で統一) */
   lineStyle: LineStyleId
-  /** 引き出し線の色(invert時は無視される) */
+  /** Ignored when `lineStyle` is `invert`. */
   lineColor: string
-  /** 引き出し線の始点・終点の丸の色 */
   dotColor: string
-  /** 引き出し線の始点・終点の丸の半径 */
   dotRadius: number
-  /** 引き出し線に白いハロー(縁取り)を付けるか */
   lineHalo: boolean
-  /** コールアウトの文字サイズ(プロジェクト全体で統一) */
   calloutFontSize: number
-  /** コールアウト枠(ラベルボックス)の線の太さ。0は枠なし(プロジェクト全体で統一) */
+  /** Label box stroke width; 0 = no border. */
   calloutBorderWidth: number
   showSections: boolean
   calloutLayouts: CalloutLayoutItem[]

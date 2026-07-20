@@ -564,7 +564,6 @@ function layoutFor(annotationId: string): CalloutLayoutItem | undefined {
   return props.calloutLayouts.find((item) => item.annotationId === annotationId)
 }
 
-/** 折り返した各行の中央揃えY座標(labelHeight内で行ブロック全体を上下中央に配置) */
 function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
   const lineHeight = Math.round(props.calloutFontSize * 1.375)
   const blockHeight = layout.lines.length * lineHeight
@@ -573,16 +572,13 @@ function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
 }
 
 const activeLineStyle = computed(() => getLineStyleSpec(props.lineStyle))
-/** invert時は色指定を無視して白+差分合成で背景を反転させる */
 const effectiveLineColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.lineColor))
 const effectiveDotColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.dotColor))
 
-/** 引き出し線がラベル側で接続するX座標 */
 function leaderEndX(layout: CalloutLayoutItem): number {
   return layout.side === 'left' ? layout.labelPosition.x + layout.labelWidth : layout.labelPosition.x
 }
 
-/** アンカーからラベル端まで滑らかにつなぐ曲線パス */
 function leaderPathFor(layout: CalloutLayoutItem): string {
   return buildLeaderPath(layout.anchorPoint, leaderEndX(layout), layout.elbowPoint.y)
 }

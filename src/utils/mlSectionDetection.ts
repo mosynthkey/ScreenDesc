@@ -6,7 +6,6 @@ import { normalizeRect } from './geometry'
 
 type ScreenParser = ReturnType<typeof useScreenParser>
 
-/** ScreenParserの55クラスのうち、テキスト系として扱うクラス */
 const TEXT_CLASSES = new Set(['Text', 'Heading', 'Code snippet', 'Tooltip', 'Notification'])
 
 function classifyKind(className: string): SectionKind {
@@ -27,10 +26,6 @@ function detectionToSection(detection: Detection, offsetX: number, offsetY: numb
   }
 }
 
-/**
- * 画像(または画像内の矩形領域)をcanvasで切り出してImageBitmap化する。
- * region未指定時は画像全体。
- */
 async function cropToBitmap(
   image: HTMLImageElement,
   region?: Rect,
@@ -56,10 +51,7 @@ export interface DetectSectionsMLOptions {
   iouThreshold?: number
 }
 
-/**
- * ScreenParser(YOLO11, ブラウザ内ONNX推論)でUIセクションを検出する。
- * regionを指定すると、その矩形内だけを切り出して推論し、結果を元画像座標に戻す。
- */
+/** Detect UI sections; optional `region` crops first, then maps boxes back to image coords. */
 export async function detectSectionsML(
   image: HTMLImageElement,
   screenParser: ScreenParser,
@@ -76,7 +68,6 @@ export async function detectSectionsML(
   return detections.map((detection) => detectionToSection(detection, offsetX, offsetY))
 }
 
-/** ユーザーが手動で描いたセクション(ML検出を経由しない) */
 export function createManualSection(rect: Rect): Section {
   return {
     id: createId('section'),

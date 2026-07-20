@@ -1,15 +1,11 @@
 """
-docling-project/ScreenParser (best.pt) を、ブラウザ推論用のONNXに変換するスクリプト。
+Build-time helper: convert docling-project/ScreenParser (best.pt) to browser ONNX.
 
-このスクリプトは開発者のローカル環境で一度だけ実行するビルド時ツールであり、
-`ultralytics`(AGPL-3.0)への依存はここに閉じ込め、Webアプリ本体には含めない。
+Keeps the ultralytics (AGPL-3.0) dependency out of the web app.
+Run once locally, then place the output at public/models/screenparser.onnx.
 
-事前準備:
     pip install ultralytics
-
-実行:
     python scripts/export_onnx.py
-    # 生成された screenparser.onnx を public/models/ に配置する
 """
 
 from huggingface_hub import hf_hub_download
@@ -18,25 +14,23 @@ from ultralytics import YOLO
 MODEL_ID = "docling-project/ScreenParser"
 IMG_SIZE = 1280
 
-# YOLO("docling-project/ScreenParser") のHub直接指定はultralytics側のrepo-id解決に失敗するため、
-# huggingface_hubで重みファイルを明示的にダウンロードしてローカルパスから読み込む。
+# Ultralytics Hub repo-id resolution fails for this model; download weights explicitly.
 weights_path = hf_hub_download(repo_id=MODEL_ID, filename="best.pt", token=False)
 model = YOLO(weights_path)
 
-# クラスID -> クラス名の対応。src/constants/classes.ts の CLASS_NAMES と
-# 順序が一致しているか必ず確認すること。
-print("class names (id順):")
+# Verify order matches src/constants/classes.ts CLASS_NAMES.
+print("class names (id order):")
 for class_id, name in model.names.items():
     print(f"  {class_id}: {name}")
 
 model.export(
     format="onnx",
     imgsz=IMG_SIZE,
-    opset=12,       # onnxruntime-web(WebGPU/WASM)との互換性を優先したopset
-    dynamic=False,  # 固定形状の方がブラウザ側の実装・最適化がシンプルになる
+    opset=12,       # Prefer compatibility with onnxruntime-web (WebGPU/WASM)
+    dynamic=False,  # Fixed shape keeps browser-side handling simple
     simplify=True,
-    nms=False,      # NMSはブラウザ側(src/utils/nms.ts)で行う
-    half=False,     # 半精度が必要ならTrueにしてサイズを削減(要精度検証)
+    nms=False,      # NMS runs in src/utils/nms.ts
+    half=False,     # Set True to shrink the file if accuracy is acceptable
 )
 
-print("\n変換完了。生成された *.onnx ファイルを public/models/screenparser.onnx として配置してください。")
+print("\nDone. Place the generated *.onnx as public/models/screenparser.onnx")

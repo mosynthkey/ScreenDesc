@@ -11,10 +11,8 @@ import { measureTextWidth, wrapText } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
 
 /**
- * アンカー点からラベル端まで滑らかな曲線(3次ベジェ)でつなぐパスを作る。
- * 両端付近だけ水平に出入りし、そこから先はすぐ目的のYへ向かうS字カーブにする。
- * 制御点をアンカー/ラベルからごく近い位置に置くことで、Y座標が近い複数の線が
- * 長い区間にわたって重なって見えるのを防ぐ(重なるのは各端の短い区間だけになる)。
+ * Cubic leader: short horizontal stubs at each end, then an S-curve.
+ * Nearby control points keep parallel leaders from overlapping over a long run.
  */
 export function buildLeaderPath(anchor: Point, endX: number, endY: number): string {
   const dx = endX - anchor.x
@@ -34,7 +32,6 @@ const MIN_LABEL_WIDTH = 120
 const MAX_LABEL_WIDTH = 260
 const ELBOW_INSET = 10
 
-/** フォントサイズに対する行高比率(既存の16px/22pxの比を踏襲) */
 function lineHeightFor(fontSize: number): number {
   return Math.round(fontSize * 1.375)
 }
@@ -123,7 +120,6 @@ function packLabelYs(
   const count = preferredCenters.length
   if (count === 0) return []
 
-  // 入力順(=注釈のorder)をそのままスタック順とする(アンカーYでは並べ替えない)
   const order = preferredCenters.map((_, itemIndex) => itemIndex)
 
   const orderedHeights = order.map((itemIndex) => heights[itemIndex]!)
@@ -252,10 +248,8 @@ function packSide(
 }
 
 /**
- * Place callout labels beside the image, near each target's Y,
- * with overlap resolution and short leader lines.
- * annotationsには「コールアウトとして描画する対象」のみを渡すこと
- * (表示モードはプロジェクト全体で統一されているため、呼び出し側で判定する)。
+ * Place callout labels beside the image near each target's Y.
+ * Pass only annotations that should render as callouts.
  */
 export function computeCalloutLayouts(
   annotations: Annotation[],

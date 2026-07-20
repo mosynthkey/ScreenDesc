@@ -22,10 +22,7 @@ function iou(a: Detection, b: Detection): number {
   return unionArea <= 0 ? 0 : interArea / unionArea
 }
 
-/**
- * クラスごとに Non-Maximum Suppression を適用する。
- * ONNXエクスポート時に nms=False としている前提（ブラウザ側でNMSを行う）。
- */
+/** Per-class NMS (ONNX export uses `nms=False`). */
 export function nonMaxSuppression(detections: Detection[], iouThreshold: number): Detection[] {
   const byClass = new Map<number, Detection[]>()
   for (const det of detections) {

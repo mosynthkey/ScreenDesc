@@ -7,7 +7,6 @@ function getContext(): CanvasRenderingContext2D | null {
   return sharedContext
 }
 
-/** 実際のフォントでの描画幅を測る(全角/半角混在テキストにも対応) */
 export function measureTextWidth(text: string, fontPx: number, fontFamily: string): number {
   const ctx = getContext()
   if (!ctx) return text.length * fontPx * 0.9
@@ -15,10 +14,7 @@ export function measureTextWidth(text: string, fontPx: number, fontFamily: strin
   return ctx.measureText(text).width
 }
 
-/**
- * maxWidth に収まるように貪欲法で行分割する。
- * スペース区切りの単語がmaxWidthに収まらない場合は文字単位でも分割する(CJKの連続文字向け)。
- */
+/** Greedy wrap; falls back to character splits for long CJK runs. */
 export function wrapText(
   text: string,
   fontPx: number,
@@ -41,7 +37,6 @@ export function wrapText(
       continue
     }
 
-    // 単語自体が1行に収まらない(CJKの連続文字など): 文字単位で詰める
     if (measureTextWidth(word, fontPx, fontFamily) > maxWidth) {
       pushCurrent()
       let chunk = ''

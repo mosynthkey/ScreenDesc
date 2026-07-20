@@ -23,7 +23,6 @@ export function useScreenParser() {
 
   function ensureWorker(): Worker {
     if (worker) return worker
-    // Web Worker上で推論を行うことで、モデルロードや推論中もUIスレッドをブロックしない。
     worker = new Worker(new URL('../workers/screenParser.worker.ts', import.meta.url), {
       type: 'module',
     })
@@ -54,7 +53,6 @@ export function useScreenParser() {
     return worker
   }
 
-  /** モデルロードを開始し、readyになるまで待てるPromiseを返す(既にready/loading中なら再利用) */
   function loadModel(): Promise<void> {
     if (status.value === 'ready') return Promise.resolve()
     if (loadPromise) return loadPromise
@@ -86,7 +84,6 @@ export function useScreenParser() {
 
     return new Promise<Detection[]>((resolve, reject) => {
       pending.set(requestId, { resolve, reject })
-      // ImageBitmapはtransferでworkerへ所有権ごと渡す(コピー不要で高速)
       ensureWorker().postMessage(req, [bitmap])
     })
   }

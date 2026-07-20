@@ -1,6 +1,4 @@
-// docling-project/ScreenParser のモデルカードに記載された55クラスのラベル一覧。
-// クラスIDはモデルの出力順（学習時のクラスインデックス）と一致させる必要がある。
-// 実際にエクスポートしたモデルの `model.names` と突き合わせて確認すること。
+// Must match ScreenParser class index order (`model.names` after ONNX export).
 export const CLASS_NAMES = [
   'Table',
   'Column/Browser',

@@ -13,8 +13,7 @@ import type {
 
 const INPUT_SIZE = 1280
 
-// wasmPathsは指定しない: onnxruntime-webの"bundle"版がimport.meta.url経由で
-// 自身のwasm/mjsをバンドラーに解決させる（Vite dev/buildの両方で正しく動作する）。
+// Leave wasmPaths unset so the onnxruntime-web bundle resolves wasm via import.meta.url.
 ort.env.wasm.numThreads = self.crossOriginIsolated ? navigator.hardwareConcurrency || 4 : 1
 
 let session: ort.InferenceSession | null = null
@@ -43,7 +42,7 @@ async function handleLoadModel(modelUrl: string) {
         graphOptimizationLevel: 'all',
       })
 
-      // ウォームアップ推論。初回本番推論でのシェーダーコンパイル/JITの遅延を吸収する。
+      // Warmup absorbs first-run shader compile / JIT cost.
       const inputName = newSession.inputNames[0]
       const dummy = new ort.Tensor('float32', new Float32Array(3 * INPUT_SIZE * INPUT_SIZE), [
         1,
@@ -108,10 +107,7 @@ interface DecodeContext {
   iouThreshold: number
 }
 
-/**
- * Ultralytics YOLO(detect, nms=False)のONNX出力をデコードする。
- * 出力shape: [1, 4 + numClasses, numBoxes]
- */
+/** Decode Ultralytics YOLO detect output `[1, 4 + numClasses, numBoxes]` (NMS off at export). */
 function decodeOutput(output: ort.Tensor, ctx: DecodeContext): Detection[] {
   const dims = output.dims
   if (dims.length !== 3) {

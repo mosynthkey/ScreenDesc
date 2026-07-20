@@ -4,7 +4,7 @@ export interface LineStyleSpec {
   label: string
   strokeWidth: number
   dasharray: string | null
-  /** 'difference'を指定すると、線の下の色を反転させて背景を問わず見えるようにする(色指定は無視される) */
+  /** When set to `difference`, stroke color is ignored and the line inverts underlying pixels. */
   blendMode?: 'difference'
 }
 

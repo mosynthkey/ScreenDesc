@@ -7,9 +7,8 @@ export interface LetterboxResult {
 }
 
 /**
- * 画像をアスペクト比を保ったまま targetSize x targetSize にリサイズし、
- * 余白を灰色(114,114,114)でパディングする（Ultralytics YOLOの前処理と同一仕様）。
- * 戻り値の data は NCHW / RGB / [0,1] 正規化済みの Float32Array。
+ * Ultralytics-compatible letterbox: pad with rgb(114,114,114).
+ * Returns NCHW RGB float32 in [0, 1].
  */
 export function letterboxToTensor(image: ImageBitmap, targetSize: number): LetterboxResult {
   const srcWidth = image.width
@@ -21,7 +20,6 @@ export function letterboxToTensor(image: ImageBitmap, targetSize: number): Lette
   const padX = Math.floor((targetSize - resizedWidth) / 2)
   const padY = Math.floor((targetSize - resizedHeight) / 2)
 
-  // OffscreenCanvasはWindow/Worker双方で使えるため、推論をWeb Worker内で実行できる。
   const canvas = new OffscreenCanvas(targetSize, targetSize)
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
@@ -36,7 +34,6 @@ export function letterboxToTensor(image: ImageBitmap, targetSize: number): Lette
   const pixelCount = targetSize * targetSize
   const chw = new Float32Array(pixelCount * 3)
 
-  // RGBA(HWC) -> RGB(CHW)、かつ 0-255 -> 0-1 正規化
   for (let i = 0; i < pixelCount; i++) {
     const srcOffset = i * 4
     chw[i] = rgba[srcOffset] / 255 // R channel

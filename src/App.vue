@@ -114,7 +114,6 @@ function onAddAnnotationAt(point: Point): void {
 }
 
 function onAddSection(rect: Rect): void {
-  // 手描きのセクションはML再検出をせず、そのまま矩形として追加する
   addSection(rect)
 }
 

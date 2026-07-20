@@ -233,7 +233,7 @@ button {
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  /* 上下左右すべてに余白を確保し、画像の端でスクロールが止まらないようにする */
+  /* Extra padding so the image edge is not flush with the scroll viewport. */
   padding: 140px;
   background:
     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 122, 255, 0.06), transparent 55%),
