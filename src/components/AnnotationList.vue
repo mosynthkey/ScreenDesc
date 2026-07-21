@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Annotation } from '../types/annotation'
-import { toCircledNumber } from '../utils/circledNumbers'
+import type { Annotation, NumberStyleId } from '../types/annotation'
+import { formatStepNumber } from '../utils/circledNumbers'
 import { useI18n } from '../i18n'
 
 const props = defineProps<{
   annotations: Annotation[]
   selectedIds: string[]
+  numberStyle: NumberStyleId
 }>()
 
 const emit = defineEmits<{
@@ -80,7 +81,7 @@ function onDrop(targetId: string, event: DragEvent): void {
         @drop="onDrop(annotation.id, $event)"
       >
         <span class="drag-handle" :title="t('annotationList.dragTitle')" aria-hidden="true">⠿</span>
-        <span class="annotation-number">{{ toCircledNumber(annotation.order) }}</span>
+        <span class="annotation-number">{{ formatStepNumber(annotation.order, numberStyle) }}</span>
         <input
           class="desc-input"
           type="text"

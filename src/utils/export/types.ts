@@ -5,6 +5,7 @@ import type {
   DocumentLayout,
   ExportOptions,
   LineStyleId,
+  NumberStyleId,
   Section,
 } from '../../types/annotation'
 
@@ -17,12 +18,15 @@ export interface ExportScene {
   options: ExportOptions
   annotationMode: AnnotationMode
   lineStyle: LineStyleId
+  lineWidth: number
   lineColor: string
   dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle: NumberStyleId
+  labelColor: string
   fontFamily: string
 }
 

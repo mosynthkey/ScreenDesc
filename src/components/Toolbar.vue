@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { AnnotationMode, ToolMode } from '../types/annotation'
+import type { ToolMode } from '../types/annotation'
 import type { ModelStatus } from '../types/detection'
 import { useI18n } from '../i18n'
 
@@ -8,7 +8,6 @@ const { t } = useI18n()
 
 defineProps<{
   toolMode: ToolMode
-  annotationMode: AnnotationMode
   showSections: boolean
   isDetecting: boolean
   canExport: boolean
@@ -19,7 +18,6 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:toolMode': [mode: ToolMode]
-  'update:annotationMode': [mode: AnnotationMode]
   toggleSections: []
   export: []
   upload: []
@@ -237,63 +235,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             </button>
           </div>
         </div>
-      </div>
-
-      <div class="dock-sep" />
-
-      <div class="dock-group">
-        <button
-          class="tool-btn"
-          :class="{ active: annotationMode === 'inline' }"
-          type="button"
-          :data-tooltip="t('tooltip.modeInline')"
-          :aria-label="t('aria.modeInline')"
-          @click="emit('update:annotationMode', 'inline'); setTool('annotate')"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8" />
-            <text
-              x="12"
-              y="16"
-              text-anchor="middle"
-              font-size="10"
-              font-weight="700"
-              fill="currentColor"
-            >
-              ①
-            </text>
-          </svg>
-        </button>
-
-        <button
-          class="tool-btn"
-          :class="{ active: annotationMode === 'callout' }"
-          type="button"
-          :data-tooltip="t('tooltip.modeCallout')"
-          :aria-label="t('aria.modeCallout')"
-          @click="emit('update:annotationMode', 'callout'); setTool('annotate')"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path
-              d="M4 17V7h7"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <rect
-              x="12"
-              y="5"
-              width="8"
-              height="5.5"
-              rx="1.2"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-            />
-          </svg>
-        </button>
       </div>
 
       <div class="dock-sep" />

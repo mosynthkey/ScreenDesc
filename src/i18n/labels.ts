@@ -7,7 +7,6 @@ const TEXT_STYLE_KEYS: Record<TextStylePreset, MessageKey> = {
   'black-white-stroke': 'textStyle.blackWhiteStroke',
   'semi-transparent-bg': 'textStyle.semiTransparentBg',
   'local-invert': 'textStyle.localInvert',
-  balloon: 'textStyle.balloon',
   label: 'textStyle.label',
 }
 

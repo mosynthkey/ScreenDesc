@@ -33,12 +33,14 @@ const {
   setDefaultTextStyle,
   setDefaultFontFamily,
   setLineStyle,
+  setLineWidth,
   setLineColor,
-  setDotColor,
   setDotRadius,
   setLineHalo,
   setCalloutFontSize,
   setCalloutBorderWidth,
+  setNumberStyle,
+  setLabelColor,
   toggleShowSections,
   clearSelection,
   selectSection,
@@ -263,7 +265,6 @@ function onKeydown(event: KeyboardEvent): void {
   <div class="app-shell" tabindex="0" @keydown="onKeydown">
     <Toolbar
       :tool-mode="state.toolMode"
-      :annotation-mode="state.defaultAnnotationMode"
       :show-sections="state.showSections"
       :is-detecting="isDetecting"
       :can-export="hasImage && !isExporting"
@@ -271,7 +272,6 @@ function onKeydown(event: KeyboardEvent): void {
       :model-status="modelStatus"
       :can-undo-crop="canUndoCrop"
       @update:tool-mode="setToolMode"
-      @update:annotation-mode="setDefaultAnnotationMode"
       @toggle-sections="toggleShowSections"
       @export="exportOpen = true"
       @upload="onReplaceClick"
@@ -313,6 +313,7 @@ function onKeydown(event: KeyboardEvent): void {
           <AnnotationList
             :annotations="sortedAnnotations"
             :selected-ids="[...state.selectedAnnotationIds]"
+            :number-style="state.numberStyle"
             @select="selectAnnotation"
             @reorder="reorderAnnotations"
             @remove="(id) => removeAnnotations([id])"
@@ -335,12 +336,15 @@ function onKeydown(event: KeyboardEvent): void {
         :show-sections="state.showSections"
         :annotation-mode="state.defaultAnnotationMode"
         :line-style="state.lineStyle"
+        :line-width="state.lineWidth"
         :line-color="state.lineColor"
-        :dot-color="state.dotColor"
+        :dot-color="state.lineColor"
         :dot-radius="state.dotRadius"
         :line-halo="state.lineHalo"
         :callout-font-size="state.calloutFontSize"
         :callout-border-width="state.calloutBorderWidth"
+        :number-style="state.numberStyle"
+        :label-color="state.labelColor"
         :font-family="state.defaultFontFamily"
         :is-detecting="isDetecting"
         :empty-hint="state.sections.length === 0"
@@ -365,22 +369,26 @@ function onKeydown(event: KeyboardEvent): void {
             :default-text-style="state.defaultTextStyle"
             :default-font-family="state.defaultFontFamily"
             :line-style="state.lineStyle"
+            :line-width="state.lineWidth"
             :line-color="state.lineColor"
-            :dot-color="state.dotColor"
             :dot-radius="state.dotRadius"
             :line-halo="state.lineHalo"
             :callout-font-size="state.calloutFontSize"
             :callout-border-width="state.calloutBorderWidth"
+            :number-style="state.numberStyle"
+            :label-color="state.labelColor"
             @update:default-annotation-mode="setDefaultAnnotationMode"
             @update:default-text-style="setDefaultTextStyle"
             @update:default-font-family="setDefaultFontFamily"
             @update:line-style="setLineStyle"
+            @update:line-width="setLineWidth"
             @update:line-color="setLineColor"
-            @update:dot-color="setDotColor"
             @update:dot-radius="setDotRadius"
             @update:line-halo="setLineHalo"
             @update:callout-font-size="setCalloutFontSize"
             @update:callout-border-width="setCalloutBorderWidth"
+            @update:number-style="setNumberStyle"
+            @update:label-color="setLabelColor"
             @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
           />
         </div>

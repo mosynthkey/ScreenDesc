@@ -2,12 +2,13 @@ import type {
   Annotation,
   CalloutLayoutItem,
   DocumentLayout,
+  NumberStyleId,
   Point,
   Section,
 } from '../types/annotation'
 import { clamp, rectCenter } from './geometry'
-import { toCircledNumber } from './circledNumbers'
-import { measureTextWidth, wrapText } from './textMeasure'
+import { formatStepNumber } from './circledNumbers'
+import { measureTextWidth } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
 import { t } from '../i18n'
 
@@ -30,38 +31,34 @@ const IMAGE_GUTTER = 14
 const PAGE_PAD = 8
 const LABEL_H_PADDING = 20
 const MIN_LABEL_WIDTH = 120
-const MAX_LABEL_WIDTH = 260
+const EMPTY_SIDE_MARGIN = 32
 const ELBOW_INSET = 10
 
 function lineHeightFor(fontSize: number): number {
   return Math.round(fontSize * 1.375)
 }
 
+function sideMarginFor(maxLabelWidth: number): number {
+  return maxLabelWidth + IMAGE_GUTTER + PAGE_PAD
+}
+
+/** Single-line label sized to measured text; canvas margins grow to fit. */
 function estimateLabelSize(
   description: string,
   order: number,
   fontFamily: string,
   fontSize: number,
+  numberStyle: NumberStyleId,
 ): { width: number; height: number; lines: string[] } {
-  const prefix = `${toCircledNumber(order)} `
+  const prefix = `${formatStepNumber(order, numberStyle)} `
   const text = `${prefix}${description || t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
-  const singleLineWidth = measureTextWidth(text, fontSize, fontCss) + LABEL_H_PADDING
-
-  if (singleLineWidth <= MAX_LABEL_WIDTH) {
-    return {
-      width: Math.max(MIN_LABEL_WIDTH, Math.ceil(singleLineWidth)),
-      height: Math.max(36, lineHeight + 14),
-      lines: [text],
-    }
-  }
-
-  const lines = wrapText(text, fontSize, fontCss, MAX_LABEL_WIDTH - LABEL_H_PADDING)
+  const textWidth = measureTextWidth(text, fontSize, fontCss) + LABEL_H_PADDING
   return {
-    width: MAX_LABEL_WIDTH,
-    height: Math.max(36, lines.length * lineHeight + 14),
-    lines,
+    width: Math.max(MIN_LABEL_WIDTH, Math.ceil(textWidth)),
+    height: Math.max(lineHeight + 14, Math.round(fontSize * 1.5)),
+    lines: [text],
   }
 }
 
@@ -135,16 +132,13 @@ function packLabelYs(
 
   const packed = [...preferredTops]
 
-  // Push down only when needed to clear the previous label
   for (let orderIndex = 1; orderIndex < count; orderIndex += 1) {
     const minTop =
       packed[orderIndex - 1]! + orderedHeights[orderIndex - 1]! + LABEL_GAP
     packed[orderIndex] = Math.max(packed[orderIndex]!, minTop)
   }
 
-  // If the stack runs past the bottom, shift everything up together
-  const stackBottom =
-    packed[count - 1]! + orderedHeights[count - 1]!
+  const stackBottom = packed[count - 1]! + orderedHeights[count - 1]!
   if (stackBottom > maxY) {
     const shift = stackBottom - maxY
     for (let orderIndex = 0; orderIndex < count; orderIndex += 1) {
@@ -152,7 +146,6 @@ function packLabelYs(
     }
   }
 
-  // Still clipped at the top → not enough space; pack from top with compressed gaps
   if (packed[0]! < minY) {
     const heightsSum = orderedHeights.reduce((sum, height) => sum + height, 0)
     const available = Math.max(0, maxY - minY - heightsSum)
@@ -173,17 +166,13 @@ function packLabelYs(
 
 function packSide(
   items: Annotation[],
+  sizes: Array<{ width: number; height: number; lines: string[] }>,
   sections: Section[],
   document: DocumentLayout,
   side: 'left' | 'right',
-  fontSize: number,
-  fontFamily: string,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
-  const sizes = items.map((annotation) =>
-    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize),
-  )
   const anchors = items.map((annotation) =>
     anchorForAnnotation(annotation, sections, side),
   )
@@ -212,7 +201,6 @@ function packSide(
       side === 'left'
         ? document.marginLeft - size.width - IMAGE_GUTTER
         : document.marginLeft + document.imageWidth + IMAGE_GUTTER
-    labelX = Math.max(PAGE_PAD, labelX)
 
     let labelY = autoTops[itemIndex]!
 
@@ -248,6 +236,21 @@ function packSide(
   return layouts
 }
 
+function splitBySide(
+  annotations: Annotation[],
+  sections: Section[],
+  imageWidth: number,
+): { leftItems: Annotation[]; rightItems: Annotation[] } {
+  const leftItems: Annotation[] = []
+  const rightItems: Annotation[] = []
+  for (const annotation of annotations) {
+    const side = preferredSide(annotation, sections, imageWidth)
+    if (side === 'left') leftItems.push(annotation)
+    else rightItems.push(annotation)
+  }
+  return { leftItems, rightItems }
+}
+
 /**
  * Place callout labels beside the image near each target's Y.
  * Pass only annotations that should render as callouts.
@@ -258,23 +261,22 @@ export function computeCalloutLayouts(
   document: DocumentLayout,
   fontSize: number,
   fontFamily: string,
+  numberStyle: NumberStyleId,
 ): CalloutLayoutItem[] {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
-
   if (callouts.length === 0) return []
 
-  const leftItems: Annotation[] = []
-  const rightItems: Annotation[] = []
-
-  for (const annotation of callouts) {
-    const side = preferredSide(annotation, sections, document.imageWidth)
-    if (side === 'left') leftItems.push(annotation)
-    else rightItems.push(annotation)
-  }
+  const { leftItems, rightItems } = splitBySide(callouts, sections, document.imageWidth)
+  const leftSizes = leftItems.map((annotation) =>
+    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
+  )
+  const rightSizes = rightItems.map((annotation) =>
+    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
+  )
 
   return [
-    ...packSide(leftItems, sections, document, 'left', fontSize, fontFamily),
-    ...packSide(rightItems, sections, document, 'right', fontSize, fontFamily),
+    ...packSide(leftItems, leftSizes, sections, document, 'left'),
+    ...packSide(rightItems, rightSizes, sections, document, 'right'),
   ]
 }
 
@@ -282,10 +284,10 @@ export function createDefaultDocumentLayout(
   imageWidth: number,
   imageHeight: number,
   calloutCount: number,
+  maxLabelWidth = MIN_LABEL_WIDTH,
 ): DocumentLayout {
-  // Tight margin: label width + gutter, not a wide empty band
   const sideMargin =
-    calloutCount > 0 ? MAX_LABEL_WIDTH + IMAGE_GUTTER + PAGE_PAD : 32
+    calloutCount > 0 ? sideMarginFor(maxLabelWidth) : EMPTY_SIDE_MARGIN
   return {
     imageWidth,
     imageHeight,
@@ -293,5 +295,58 @@ export function createDefaultDocumentLayout(
     marginRight: sideMargin,
     marginTop: 24,
     marginBottom: 24,
+  }
+}
+
+/** Measure labels, size side margins to fit, then pack callout layouts. */
+export function layoutCalloutsForImage(
+  annotations: Annotation[],
+  sections: Section[],
+  imageWidth: number,
+  imageHeight: number,
+  fontSize: number,
+  fontFamily: string,
+  numberStyle: NumberStyleId,
+): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
+  const callouts = [...annotations].sort((left, right) => left.order - right.order)
+  if (callouts.length === 0) {
+    return {
+      document: createDefaultDocumentLayout(imageWidth, imageHeight, 0),
+      layouts: [],
+    }
+  }
+
+  const { leftItems, rightItems } = splitBySide(callouts, sections, imageWidth)
+  const leftSizes = leftItems.map((annotation) =>
+    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
+  )
+  const rightSizes = rightItems.map((annotation) =>
+    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
+  )
+
+  const leftMax = leftSizes.reduce(
+    (maxWidth, size) => Math.max(maxWidth, size.width),
+    MIN_LABEL_WIDTH,
+  )
+  const rightMax = rightSizes.reduce(
+    (maxWidth, size) => Math.max(maxWidth, size.width),
+    MIN_LABEL_WIDTH,
+  )
+
+  const document: DocumentLayout = {
+    imageWidth,
+    imageHeight,
+    marginLeft: leftItems.length > 0 ? sideMarginFor(leftMax) : EMPTY_SIDE_MARGIN,
+    marginRight: rightItems.length > 0 ? sideMarginFor(rightMax) : EMPTY_SIDE_MARGIN,
+    marginTop: 24,
+    marginBottom: 24,
+  }
+
+  return {
+    document,
+    layouts: [
+      ...packSide(leftItems, leftSizes, sections, document, 'left'),
+      ...packSide(rightItems, rightSizes, sections, document, 'right'),
+    ],
   }
 }

@@ -4,12 +4,30 @@ import { MARKER_STROKE_WIDTH } from './markerSize'
 
 export type ResolvedTextStyle = Exclude<TextStylePreset, 'auto'>
 
+export const DEFAULT_LABEL_COLOR = '#0b6e4f'
+
+export function normalizeTextStyle(style: unknown): TextStylePreset {
+  if (style === 'balloon') return 'label'
+  if (
+    style === 'auto' ||
+    style === 'white-black-stroke' ||
+    style === 'black-white-stroke' ||
+    style === 'semi-transparent-bg' ||
+    style === 'local-invert' ||
+    style === 'label'
+  ) {
+    return style
+  }
+  return 'auto'
+}
+
 export function resolveTextStyle(
   preset: TextStylePreset,
   imageData: ImageData | null,
   position: Point,
 ): ResolvedTextStyle {
-  if (preset !== 'auto') return preset
+  const normalized = normalizeTextStyle(preset)
+  if (normalized !== 'auto') return normalized
   if (!imageData) return 'white-black-stroke'
 
   const luminance = sampleLuminance(imageData, position.x, position.y, 8)
@@ -25,10 +43,13 @@ export interface MarkerVisualStyle {
   background: string | null
   backgroundOpacity: number
   useInvert: boolean
-  shape: 'circle' | 'balloon' | 'label'
+  shape: 'circle' | 'label'
 }
 
-export function getMarkerVisualStyle(style: ResolvedTextStyle): MarkerVisualStyle {
+export function getMarkerVisualStyle(
+  style: ResolvedTextStyle,
+  labelColor: string = DEFAULT_LABEL_COLOR,
+): MarkerVisualStyle {
   switch (style) {
     case 'white-black-stroke':
       return {
@@ -70,26 +91,15 @@ export function getMarkerVisualStyle(style: ResolvedTextStyle): MarkerVisualStyl
         useInvert: true,
         shape: 'circle',
       }
-    case 'balloon':
-      return {
-        fill: '#111111',
-        stroke: '#111111',
-        strokeWidth: 1.5,
-        background: '#ffffff',
-        backgroundOpacity: 0.96,
-        useInvert: false,
-        shape: 'balloon',
-      }
     case 'label':
       return {
         fill: '#ffffff',
         stroke: 'none',
         strokeWidth: 0,
-        background: '#0b6e4f',
+        background: labelColor,
         backgroundOpacity: 1,
         useInvert: false,
         shape: 'label',
       }
   }
 }
-

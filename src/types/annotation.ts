@@ -18,15 +18,23 @@ export type TextStylePreset =
   | 'black-white-stroke'
   | 'semi-transparent-bg'
   | 'local-invert'
-  | 'balloon'
   | 'label'
 
 export type CalloutSide = 'left' | 'right' | 'auto'
 
 export type ToolMode = 'select' | 'add-section' | 'annotate' | 'crop'
 
-/** Stroke weight / dash only; color is `lineColor`. */
-export type LineStyleId = 'thin' | 'thick' | 'dashed' | 'invert'
+/** Line pattern only; stroke weight is `lineWidth`. */
+export type LineStyleId = 'solid' | 'dashed' | 'invert'
+
+
+export type NumberStyleId =
+  | 'circled'
+  | 'paren'
+  | 'dotted'
+  | 'paren-suffix'
+  | 'plain'
+
 
 export interface Section {
   id: string
@@ -88,6 +96,8 @@ export interface ProjectState {
   defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
+  /** Leader stroke width in px (also used for dashed / invert). */
+  lineWidth: number
   /** Ignored when `lineStyle` is `invert`. */
   lineColor: string
   dotColor: string
@@ -96,6 +106,10 @@ export interface ProjectState {
   calloutFontSize: number
   /** Label box stroke width; 0 = no border. */
   calloutBorderWidth: number
+  /** Project-wide step number style (① / (1) / …). */
+  numberStyle: NumberStyleId
+  /** Fill color for inline `label` markers. */
+  labelColor: string
   showSections: boolean
   calloutLayouts: CalloutLayoutItem[]
   document: DocumentLayout

@@ -5,14 +5,20 @@ import type {
   AnnotationMode,
   CalloutSide,
   LineStyleId,
+  NumberStyleId,
   TextStylePreset,
 } from '../types/annotation'
 import { textStyleLabel, textStyleOptions } from '../i18n/labels'
-import { useI18n } from '../i18n'
+import { useI18n, type MessageKey } from '../i18n'
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../utils/googleFonts'
-import { getLineStyleOptions } from '../utils/lineStyle'
+import { getLineStyleOptions, LINE_WIDTH_MAX, LINE_WIDTH_MIN } from '../utils/lineStyle'
+import { numberStyleIds } from '../utils/circledNumbers'
 
-const CALLOUT_FONT_SIZE_OPTIONS = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40]
+const CALLOUT_FONT_SIZE_MIN = 16
+const CALLOUT_FONT_SIZE_MAX = 80
+const DOT_RADIUS_MIN = 1.5
+const DOT_RADIUS_MAX = 14
+const DOT_RADIUS_STEP = 0.5
 
 defineProps<{
   annotation: Annotation | null
@@ -20,12 +26,14 @@ defineProps<{
   defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
+  lineWidth: number
   lineColor: string
-  dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle: NumberStyleId
+  labelColor: string
 }>()
 
 const emit = defineEmits<{
@@ -33,12 +41,14 @@ const emit = defineEmits<{
   'update:defaultTextStyle': [style: TextStylePreset]
   'update:defaultFontFamily': [fontFamily: string]
   'update:lineStyle': [style: LineStyleId]
+  'update:lineWidth': [width: number]
   'update:lineColor': [color: string]
-  'update:dotColor': [color: string]
   'update:dotRadius': [radius: number]
   'update:lineHalo': [enabled: boolean]
   'update:calloutFontSize': [size: number]
   'update:calloutBorderWidth': [width: number]
+  'update:numberStyle': [style: NumberStyleId]
+  'update:labelColor': [color: string]
   patch: [
     patch: Partial<{
       textStyle: TextStylePreset
@@ -52,13 +62,18 @@ const { t } = useI18n()
 
 const lineStyleOptions = computed(() => getLineStyleOptions())
 const styleOptions = computed(() => textStyleOptions())
-const dotRadiusOptions = computed(() => [
-  { value: 2.5, label: t('style.dotRadius.small') },
-  { value: 4.5, label: t('style.dotRadius.medium') },
-  { value: 6.5, label: t('style.dotRadius.large') },
-  { value: 9, label: t('style.dotRadius.xlarge') },
-])
+const NUMBER_STYLE_LABEL_KEYS: Record<NumberStyleId, MessageKey> = {
+  circled: 'style.numberStyle.circled',
+  paren: 'style.numberStyle.paren',
+  dotted: 'style.numberStyle.dotted',
+  'paren-suffix': 'style.numberStyle.parenSuffix',
+  plain: 'style.numberStyle.plain',
+}
+const numberStyleOptions = computed(() =>
+  numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
+)
 const calloutBorderWidthOptions = computed(() => [
+
   { value: 0, label: t('style.calloutBorder.none') },
   { value: 0.75, label: t('style.calloutBorder.hairline') },
   { value: 1.5, label: t('style.calloutBorder.medium') },
@@ -90,6 +105,17 @@ onMounted(() => {
           <option value="callout">{{ t('style.mode.callout') }}</option>
         </select>
       </div>
+      <div class="field">
+        <label>{{ t('style.numberStyle') }}</label>
+        <select
+          :value="numberStyle"
+          @change="emit('update:numberStyle', ($event.target as HTMLSelectElement).value as NumberStyleId)"
+        >
+          <option v-for="option in numberStyleOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
         <label>{{ t('style.lineStyle') }}</label>
         <select
@@ -101,37 +127,45 @@ onMounted(() => {
           </option>
         </select>
       </div>
+      <div v-if="defaultAnnotationMode === 'callout'" class="field">
+        <label class="slider-label">
+          <span>{{ t('style.lineWidth') }}</span>
+          <span class="slider-value">{{ lineWidth }}px</span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="LINE_WIDTH_MIN"
+          :max="LINE_WIDTH_MAX"
+          :step="0.5"
+          :value="lineWidth"
+          @input="emit('update:lineWidth', Number(($event.target as HTMLInputElement).value))"
+        />
+      </div>
       <div v-if="defaultAnnotationMode === 'callout' && lineStyle !== 'invert'" class="field">
-        <label>{{ t('style.lineAndDotColor') }}</label>
-        <div class="color-row">
-          <label class="color-swatch">
-            {{ t('style.lineColor') }}
-            <input
-              type="color"
-              :value="lineColor"
-              @input="emit('update:lineColor', ($event.target as HTMLInputElement).value)"
-            />
-          </label>
-          <label class="color-swatch">
-            {{ t('style.dotColor') }}
-            <input
-              type="color"
-              :value="dotColor"
-              @input="emit('update:dotColor', ($event.target as HTMLInputElement).value)"
-            />
-          </label>
-        </div>
+        <label class="color-swatch color-swatch-inline">
+          {{ t('style.lineAndDotColor') }}
+          <input
+            type="color"
+            :value="lineColor"
+            @input="emit('update:lineColor', ($event.target as HTMLInputElement).value)"
+          />
+        </label>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>{{ t('style.dotRadius') }}</label>
-        <select
+        <label class="slider-label">
+          <span>{{ t('style.dotRadius') }}</span>
+          <span class="slider-value">{{ dotRadius }}px</span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="DOT_RADIUS_MIN"
+          :max="DOT_RADIUS_MAX"
+          :step="DOT_RADIUS_STEP"
           :value="dotRadius"
-          @change="emit('update:dotRadius', Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option v-for="option in dotRadiusOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+          @input="emit('update:dotRadius', Number(($event.target as HTMLInputElement).value))"
+        />
       </div>
       <label v-if="defaultAnnotationMode === 'callout' && lineStyle !== 'invert'" class="check field">
         <input
@@ -142,15 +176,19 @@ onMounted(() => {
         {{ t('style.lineHalo') }}
       </label>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>{{ t('style.calloutFontSize') }}</label>
-        <select
+        <label class="slider-label">
+          <span>{{ t('style.calloutFontSize') }}</span>
+          <span class="slider-value">{{ calloutFontSize }}px</span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="CALLOUT_FONT_SIZE_MIN"
+          :max="CALLOUT_FONT_SIZE_MAX"
+          :step="1"
           :value="calloutFontSize"
-          @change="emit('update:calloutFontSize', Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option v-for="size in CALLOUT_FONT_SIZE_OPTIONS" :key="size" :value="size">
-            {{ size }}px
-          </option>
-        </select>
+          @input="emit('update:calloutFontSize', Number(($event.target as HTMLInputElement).value))"
+        />
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
         <label>{{ t('style.calloutBorderWidth') }}</label>
@@ -173,6 +211,16 @@ onMounted(() => {
             {{ option.label }}
           </option>
         </select>
+      </div>
+      <div v-if="defaultTextStyle === 'label'" class="field">
+        <label class="color-swatch color-swatch-inline">
+          {{ t('style.labelColor') }}
+          <input
+            type="color"
+            :value="labelColor"
+            @input="emit('update:labelColor', ($event.target as HTMLInputElement).value)"
+          />
+        </label>
       </div>
       <div class="field" style="margin-bottom: 0">
         <label>{{ t('style.defaultFont') }}</label>
@@ -207,6 +255,16 @@ onMounted(() => {
             {{ option.label }}
           </option>
         </select>
+      </div>
+      <div v-if="annotation.textStyle === 'label' || annotation.resolvedStyle === 'label'" class="field">
+        <label class="color-swatch color-swatch-inline">
+          {{ t('style.labelColor') }}
+          <input
+            type="color"
+            :value="labelColor"
+            @input="emit('update:labelColor', ($event.target as HTMLInputElement).value)"
+          />
+        </label>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
         <label>{{ t('style.calloutSide') }}</label>
@@ -283,6 +341,14 @@ onMounted(() => {
   color: var(--ink-muted);
 }
 
+.color-swatch-inline {
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.78rem;
+  font-weight: 590;
+  color: var(--ink-muted);
+}
+
 .color-swatch input[type='color'] {
   width: 36px;
   height: 28px;
@@ -300,5 +366,35 @@ onMounted(() => {
   gap: 8px;
   font-size: 0.82rem;
   cursor: pointer;
+}
+
+.slider-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.slider-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.size-slider {
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.size-slider:focus {
+  outline: none;
+  box-shadow: none;
 }
 </style>

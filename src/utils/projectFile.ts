@@ -2,11 +2,15 @@ import type {
   Annotation,
   AnnotationMode,
   LineStyleId,
+  NumberStyleId,
   Section,
   TextStylePreset,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
+import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
+import { normalizeLineStyle } from './lineStyle'
+import { DEFAULT_LABEL_COLOR, normalizeTextStyle } from './textVisibility'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
@@ -23,12 +27,15 @@ export interface ProjectFileData {
   defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
+  lineWidth: number
   lineColor: string
   dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle: NumberStyleId
+  labelColor: string
   showSections: boolean
 }
 
@@ -75,5 +82,22 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   ) {
     throw new Error(t('error.projectFileUnsupported'))
   }
-  return data as ProjectFileData
+  const project = data as ProjectFileData
+  if (!isNumberStyleId(project.numberStyle)) {
+    project.numberStyle = DEFAULT_NUMBER_STYLE
+  }
+  const normalizedLine = normalizeLineStyle(project.lineStyle, (project as { lineWidth?: number }).lineWidth)
+  project.lineStyle = normalizedLine.lineStyle
+  project.lineWidth = normalizedLine.lineWidth
+  project.defaultTextStyle = normalizeTextStyle(project.defaultTextStyle)
+  project.labelColor =
+    typeof project.labelColor === 'string' && project.labelColor
+      ? project.labelColor
+      : DEFAULT_LABEL_COLOR
+  project.annotations = project.annotations.map((annotation) => ({
+    ...annotation,
+    textStyle: normalizeTextStyle(annotation.textStyle),
+    resolvedStyle: normalizeTextStyle(annotation.resolvedStyle) as typeof annotation.resolvedStyle,
+  }))
+  return project
 }

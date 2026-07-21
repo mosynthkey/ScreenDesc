@@ -6,12 +6,13 @@ import type {
   CalloutLayoutItem,
   DocumentLayout,
   LineStyleId,
+  NumberStyleId,
   Point,
   Rect,
   Section,
   ToolMode,
 } from '../types/annotation'
-import { toCircledNumber } from '../utils/circledNumbers'
+import { formatStepNumber } from '../utils/circledNumbers'
 import { getMarkerVisualStyle } from '../utils/textVisibility'
 import { pointInRect } from '../utils/geometry'
 import {
@@ -42,12 +43,15 @@ const props = defineProps<{
   showSections: boolean
   annotationMode: AnnotationMode
   lineStyle: LineStyleId
+  lineWidth: number
   lineColor: string
   dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle: NumberStyleId
+  labelColor: string
   fontFamily: string
   isDetecting?: boolean
   emptyHint?: boolean
@@ -574,7 +578,7 @@ function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
   return blockTop + lineHeight * lineIndex + lineHeight / 2
 }
 
-const activeLineStyle = computed(() => getLineStyleSpec(props.lineStyle))
+const activeLineStyle = computed(() => getLineStyleSpec(props.lineStyle, props.lineWidth))
 const effectiveLineColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.lineColor))
 const effectiveDotColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.dotColor))
 
@@ -587,7 +591,7 @@ function leaderPathFor(layout: CalloutLayoutItem): string {
 }
 
 function markerStyle(annotation: Annotation) {
-  return getMarkerVisualStyle(annotation.resolvedStyle)
+  return getMarkerVisualStyle(annotation.resolvedStyle, props.labelColor)
 }
 
 const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
@@ -696,30 +700,24 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
             :d="leaderPathFor(layoutFor(annotation.id)!)"
             :style="{ strokeWidth: activeLineStyle.strokeWidth + 3 }"
           />
-          <path
-            class="leader"
-            :d="leaderPathFor(layoutFor(annotation.id)!)"
-            :style="{
-              stroke: effectiveLineColor,
-              strokeWidth: activeLineStyle.strokeWidth,
-              strokeDasharray: activeLineStyle.dasharray ?? 'none',
-              mixBlendMode: activeLineStyle.blendMode ?? 'normal',
-            }"
-          />
-          <circle
-            class="anchor-dot"
-            :cx="layoutFor(annotation.id)!.anchorPoint.x"
-            :cy="layoutFor(annotation.id)!.anchorPoint.y"
-            :r="dotRadius"
-            :style="{ fill: effectiveDotColor, mixBlendMode: activeLineStyle.blendMode ?? 'normal' }"
-          />
-          <circle
-            class="anchor-dot"
-            :cx="leaderEndX(layoutFor(annotation.id)!)"
-            :cy="layoutFor(annotation.id)!.elbowPoint.y"
-            :r="dotRadius"
-            :style="{ fill: effectiveDotColor, mixBlendMode: activeLineStyle.blendMode ?? 'normal' }"
-          />
+          <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
+            <path
+              class="leader"
+              :d="leaderPathFor(layoutFor(annotation.id)!)"
+              :style="{
+                stroke: effectiveLineColor,
+                strokeWidth: activeLineStyle.strokeWidth,
+                strokeDasharray: activeLineStyle.dasharray ?? 'none',
+              }"
+            />
+            <circle
+              class="anchor-dot"
+              :cx="layoutFor(annotation.id)!.anchorPoint.x"
+              :cy="layoutFor(annotation.id)!.anchorPoint.y"
+              :r="dotRadius"
+              :style="{ fill: effectiveDotColor }"
+            />
+          </g>
           <g
             :data-callout-label="annotation.id"
             :class="{ selected: selectedAnnotationIds.includes(annotation.id) }"
@@ -785,17 +783,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           "
         />
         <rect
-          v-if="markerStyle(annotation).shape === 'balloon'"
-          :data-marker="annotation.id"
-          :x="document.marginLeft + annotation.markerPosition.x - MARKER_RADIUS - 2"
-          :y="document.marginTop + annotation.markerPosition.y - MARKER_RADIUS - 2"
-          :width="MARKER_RADIUS * 2 + 4"
-          :height="MARKER_RADIUS * 2 - 4"
-          rx="12"
-          :fill="markerStyle(annotation).background || '#fff'"
-          :stroke="markerStyle(annotation).stroke"
-        />
-        <rect
           v-if="markerStyle(annotation).shape === 'label'"
           :data-marker="annotation.id"
           :x="document.marginLeft + annotation.markerPosition.x - MARKER_RADIUS"
@@ -816,7 +803,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           :stroke-width="markerStyle(annotation).strokeWidth"
           :style="{ fontFamily: activeFontFamily }"
         >
-          {{ toCircledNumber(annotation.order) }}
+          {{ formatStepNumber(annotation.order, numberStyle) }}
         </text>
       </g>
       </template>

@@ -4,6 +4,7 @@ import type {
   AnnotationMode,
   ExportOptions,
   LineStyleId,
+  NumberStyleId,
   Point,
   ProjectState,
   Rect,
@@ -12,13 +13,13 @@ import type {
   ToolMode,
 } from '../types/annotation'
 import { createId } from '../utils/id'
-import { sortByOrder } from '../utils/circledNumbers'
+import { DEFAULT_NUMBER_STYLE, sortByOrder } from '../utils/circledNumbers'
 import { containmentRatio, normalizeRect, rectCenter } from '../utils/geometry'
 import { createManualSection, detectSectionsML } from '../utils/mlSectionDetection'
 import { recognizeTextFromImage, type OcrLineHit } from '../utils/ocr'
 import { useScreenParser } from './useScreenParser'
 import {
-  computeCalloutLayouts,
+  layoutCalloutsForImage,
   createDefaultDocumentLayout,
 } from '../utils/calloutLayout'
 import { resolveTextStyle } from '../utils/textVisibility'
@@ -29,6 +30,8 @@ import {
   loadGoogleFont,
 } from '../utils/googleFonts'
 import { CALLOUT_FONT_SIZE } from '../utils/markerSize'
+import { DEFAULT_LINE_WIDTH, normalizeLineStyle } from '../utils/lineStyle'
+import { DEFAULT_LABEL_COLOR, normalizeTextStyle } from '../utils/textVisibility'
 import {
   deleteNamedProject,
   listSavedProjects,
@@ -54,13 +57,16 @@ const state = reactive<ProjectState>({
   defaultAnnotationMode: 'callout',
   defaultTextStyle: 'auto',
   defaultFontFamily: DEFAULT_FONT_FAMILY,
-  lineStyle: 'thick',
+  lineStyle: 'solid',
+  lineWidth: DEFAULT_LINE_WIDTH,
   lineColor: '#ffd60a',
   dotColor: '#ffd60a',
   dotRadius: 4.5,
   lineHalo: false,
   calloutFontSize: CALLOUT_FONT_SIZE,
   calloutBorderWidth: 0,
+  numberStyle: DEFAULT_NUMBER_STYLE,
+  labelColor: DEFAULT_LABEL_COLOR,
   showSections: true,
   calloutLayouts: [],
   document: createDefaultDocumentLayout(0, 0, 0),
@@ -100,18 +106,22 @@ function reindexOrders(): void {
 
 function refreshDocumentAndLayouts(): void {
   const calloutAnnotations = state.defaultAnnotationMode === 'callout' ? state.annotations : []
-  state.document = createDefaultDocumentLayout(
-    state.imageWidth,
-    state.imageHeight,
-    calloutAnnotations.length,
-  )
-  state.calloutLayouts = computeCalloutLayouts(
+  if (calloutAnnotations.length === 0) {
+    state.document = createDefaultDocumentLayout(state.imageWidth, state.imageHeight, 0)
+    state.calloutLayouts = []
+    return
+  }
+  const { document, layouts } = layoutCalloutsForImage(
     calloutAnnotations,
     state.sections,
-    state.document,
+    state.imageWidth,
+    state.imageHeight,
     state.calloutFontSize,
     state.defaultFontFamily,
+    state.numberStyle,
   )
+  state.document = document
+  state.calloutLayouts = layouts
 }
 
 function refreshResolvedStyles(): void {
@@ -202,6 +212,7 @@ watch(
       state.defaultAnnotationMode,
       state.calloutFontSize,
       state.defaultFontFamily,
+      state.numberStyle,
     ] as const,
   () => {
     refreshDocumentAndLayouts()
@@ -218,12 +229,15 @@ interface RestorableFields {
   defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
+  lineWidth?: number
   lineColor: string
   dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle?: NumberStyleId
+  labelColor?: string
   showSections: boolean
 }
 
@@ -238,17 +252,27 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.imageWidth = fields.imageWidth
   state.imageHeight = fields.imageHeight
   state.sections = fields.sections
-  state.annotations = fields.annotations
+  state.annotations = fields.annotations.map((annotation) => ({
+    ...annotation,
+    textStyle: normalizeTextStyle(annotation.textStyle),
+    resolvedStyle: normalizeTextStyle(annotation.resolvedStyle) as typeof annotation.resolvedStyle,
+  }))
   state.defaultAnnotationMode = fields.defaultAnnotationMode
-  state.defaultTextStyle = fields.defaultTextStyle
+  state.defaultTextStyle = normalizeTextStyle(fields.defaultTextStyle)
   state.defaultFontFamily = fields.defaultFontFamily
-  state.lineStyle = fields.lineStyle
+  {
+    const normalizedLine = normalizeLineStyle(fields.lineStyle, fields.lineWidth)
+    state.lineStyle = normalizedLine.lineStyle
+    state.lineWidth = normalizedLine.lineWidth
+  }
   state.lineColor = fields.lineColor
-  state.dotColor = fields.dotColor
+  state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
   state.lineHalo = fields.lineHalo
   state.calloutFontSize = fields.calloutFontSize
   state.calloutBorderWidth = fields.calloutBorderWidth
+  state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
+  state.labelColor = fields.labelColor ?? DEFAULT_LABEL_COLOR
   state.showSections = fields.showSections
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
@@ -288,12 +312,15 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     defaultTextStyle: state.defaultTextStyle,
     defaultFontFamily: state.defaultFontFamily,
     lineStyle: state.lineStyle,
+    lineWidth: state.lineWidth,
     lineColor: state.lineColor,
-    dotColor: state.dotColor,
+    dotColor: state.lineColor,
     dotRadius: state.dotRadius,
     lineHalo: state.lineHalo,
     calloutFontSize: state.calloutFontSize,
     calloutBorderWidth: state.calloutBorderWidth,
+    numberStyle: state.numberStyle,
+    labelColor: state.labelColor,
     showSections: state.showSections,
   }
 }
@@ -327,12 +354,15 @@ watch(
     state.defaultTextStyle,
     state.defaultFontFamily,
     state.lineStyle,
+    state.lineWidth,
     state.lineColor,
     state.dotColor,
     state.dotRadius,
     state.lineHalo,
     state.calloutFontSize,
     state.calloutBorderWidth,
+    state.numberStyle,
+    state.labelColor,
     state.showSections,
   ],
   () => scheduleSave(),
@@ -463,12 +493,17 @@ export function useAnnotationStore() {
     state.lineStyle = style
   }
 
-  function setLineColor(color: string): void {
-    state.lineColor = color
+  function setLineWidth(width: number): void {
+    state.lineWidth = width
   }
 
-  function setDotColor(color: string): void {
+  function setLineColor(color: string): void {
+    state.lineColor = color
     state.dotColor = color
+  }
+
+  function setLabelColor(color: string): void {
+    state.labelColor = color
   }
 
   function setDotRadius(radius: number): void {
@@ -485,6 +520,10 @@ export function useAnnotationStore() {
 
   function setCalloutBorderWidth(width: number): void {
     state.calloutBorderWidth = width
+  }
+
+  function setNumberStyle(style: NumberStyleId): void {
+    state.numberStyle = style
   }
 
   function toggleShowSections(): void {
@@ -644,12 +683,15 @@ export function useAnnotationStore() {
         options,
         annotationMode: state.defaultAnnotationMode,
         lineStyle: state.lineStyle,
+        lineWidth: state.lineWidth,
         lineColor: state.lineColor,
-        dotColor: state.dotColor,
+        dotColor: state.lineColor,
         dotRadius: state.dotRadius,
         lineHalo: state.lineHalo,
         calloutFontSize: state.calloutFontSize,
         calloutBorderWidth: state.calloutBorderWidth,
+        numberStyle: state.numberStyle,
+        labelColor: state.labelColor,
         fontFamily: state.defaultFontFamily,
       })
       downloadBlob(blob, `${options.filename}.${options.format}`)
@@ -735,12 +777,14 @@ export function useAnnotationStore() {
     setDefaultTextStyle,
     setDefaultFontFamily,
     setLineStyle,
+    setLineWidth,
     setLineColor,
-    setDotColor,
     setDotRadius,
     setLineHalo,
     setCalloutFontSize,
     setCalloutBorderWidth,
+    setNumberStyle,
+    setLabelColor,
     toggleShowSections,
     clearSelection,
     selectSection,

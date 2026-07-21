@@ -8,22 +8,52 @@ export interface LineStyleSpec {
   blendMode?: 'difference'
 }
 
-const SPECS: Record<LineStyleId, LineStyleSpec> = {
-  thin: { strokeWidth: 2, dasharray: null },
-  thick: { strokeWidth: 4.5, dasharray: null },
-  dashed: { strokeWidth: 2, dasharray: '6 4' },
-  invert: { strokeWidth: 3, dasharray: null, blendMode: 'difference' },
-}
+export const DEFAULT_LINE_WIDTH = 4.5
+export const LINE_WIDTH_MIN = 1
+export const LINE_WIDTH_MAX = 18
 
 export function getLineStyleOptions(): Array<{ value: LineStyleId; label: string }> {
   return [
-    { value: 'thin', label: t('lineStyle.thin') },
-    { value: 'thick', label: t('lineStyle.thick') },
+    { value: 'solid', label: t('lineStyle.solid') },
     { value: 'dashed', label: t('lineStyle.dashed') },
     { value: 'invert', label: t('lineStyle.invert') },
   ]
 }
 
-export function getLineStyleSpec(id: LineStyleId): LineStyleSpec {
-  return SPECS[id] ?? SPECS.thin
+export function getLineStyleSpec(id: LineStyleId, strokeWidth: number): LineStyleSpec {
+  const width = Math.max(LINE_WIDTH_MIN, strokeWidth)
+  if (id === 'dashed') {
+    const dash = Math.max(4, Math.round(width * 1.5 * 10) / 10)
+    const gap = Math.max(3, Math.round(width * 10) / 10)
+    return { strokeWidth: width, dasharray: `${dash} ${gap}` }
+  }
+  if (id === 'invert') {
+    return { strokeWidth: width, dasharray: null, blendMode: 'difference' }
+  }
+  return { strokeWidth: width, dasharray: null }
+}
+
+/** Map legacy thin/thick ids from older project files. */
+export function normalizeLineStyle(
+  style: unknown,
+  lineWidth?: unknown,
+): { lineStyle: LineStyleId; lineWidth: number } {
+  const width =
+    typeof lineWidth === 'number' && Number.isFinite(lineWidth)
+      ? Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, lineWidth))
+      : undefined
+
+  if (style === 'dashed') {
+    return { lineStyle: 'dashed', lineWidth: width ?? DEFAULT_LINE_WIDTH }
+  }
+  if (style === 'invert') {
+    return { lineStyle: 'invert', lineWidth: width ?? DEFAULT_LINE_WIDTH }
+  }
+  if (style === 'thin') {
+    return { lineStyle: 'solid', lineWidth: width ?? 2 }
+  }
+  if (style === 'thick' || style === 'solid') {
+    return { lineStyle: 'solid', lineWidth: width ?? DEFAULT_LINE_WIDTH }
+  }
+  return { lineStyle: 'solid', lineWidth: width ?? DEFAULT_LINE_WIDTH }
 }

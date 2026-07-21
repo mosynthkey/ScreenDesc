@@ -4,9 +4,10 @@ import type {
   CalloutLayoutItem,
   DocumentLayout,
   LineStyleId,
+  NumberStyleId,
   Section,
 } from '../../types/annotation'
-import { toCircledNumber } from '../circledNumbers'
+import { formatStepNumber } from '../circledNumbers'
 import { getMarkerVisualStyle } from '../textVisibility'
 import { MARKER_FONT_SIZE, MARKER_RADIUS } from '../markerSize'
 import { fontFamilyCss } from '../googleFonts'
@@ -32,20 +33,17 @@ function renderInlineMarker(
   annotation: Annotation,
   document: DocumentLayout,
   fontFamily: string,
+  numberStyle: NumberStyleId,
+  labelColor: string,
 ): string {
-  const visual = getMarkerVisualStyle(annotation.resolvedStyle)
+  const visual = getMarkerVisualStyle(annotation.resolvedStyle, labelColor)
   const cx = document.marginLeft + annotation.markerPosition.x
   const cy = document.marginTop + annotation.markerPosition.y
-  const label = toCircledNumber(annotation.order)
+  const label = formatStepNumber(annotation.order, numberStyle)
   const parts: string[] = []
   const radius = MARKER_RADIUS
 
-  if (visual.shape === 'balloon') {
-    parts.push(
-      `<rect x="${cx - radius - 2}" y="${cy - radius - 2}" width="${radius * 2 + 4}" height="${radius * 2 - 4}" rx="12" fill="${visual.background}" fill-opacity="${visual.backgroundOpacity}" stroke="${visual.stroke}" stroke-width="${visual.strokeWidth}" />`,
-      `<polygon points="${cx - 6},${cy + radius - 4} ${cx + 6},${cy + radius - 4} ${cx},${cy + radius + 8}" fill="${visual.background}" fill-opacity="${visual.backgroundOpacity}" />`,
-    )
-  } else if (visual.shape === 'label') {
+  if (visual.shape === 'label') {
     parts.push(
       `<rect x="${cx - radius}" y="${cy - radius + 2}" width="${radius * 2}" height="${radius * 2 - 4}" rx="6" fill="${visual.background}" fill-opacity="${visual.backgroundOpacity}" />`,
     )
@@ -72,6 +70,7 @@ function renderCallout(
   annotation: Annotation,
   layout: CalloutLayoutItem,
   lineStyle: LineStyleId,
+  lineWidth: number,
   lineColor: string,
   dotColor: string,
   dotRadius: number,
@@ -102,7 +101,7 @@ function renderCallout(
     })
     .join('')
 
-  const spec = getLineStyleSpec(lineStyle)
+  const spec = getLineStyleSpec(lineStyle, lineWidth)
   const isInvert = lineStyle === 'invert'
   const effectiveLineColor = isInvert ? '#ffffff' : lineColor
   const effectiveDotColor = isInvert ? '#ffffff' : dotColor
@@ -112,14 +111,16 @@ function renderCallout(
       ? `<path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${spec.strokeWidth + 3}" />`
       : ''
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
+  // Blend on the group so overlapping line+dot invert the backdrop once.
   const blendAttr = spec.blendMode ? ` style="mix-blend-mode:${spec.blendMode}"` : ''
 
   return `
     <g data-callout="${annotation.id}">
       ${haloPath}
-      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${blendAttr} />
-      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}"${blendAttr} />
-      <circle cx="${endX}" cy="${elbowPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}"${blendAttr} />
+      <g${blendAttr}>
+        <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} />
+        <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />
+      </g>
       <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="#ffffff" stroke="#1f2933" stroke-width="${calloutBorderWidth}" />
       <text dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${calloutFontSize}" font-weight="700" ${strokeAttrs('#111111', visual.stroke === 'none' ? 'none' : '#ffffff', 0)}>${tspans}</text>
     </g>
@@ -135,12 +136,15 @@ export function buildSceneSvg(params: {
   includeSectionGuides: boolean
   annotationMode: AnnotationMode
   lineStyle: LineStyleId
+  lineWidth: number
   lineColor: string
   dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle: NumberStyleId
+  labelColor: string
   fontFamily: string
   /** Optional embedded @font-face CSS (data URIs) for portable export */
   fontCss?: string
@@ -154,12 +158,15 @@ export function buildSceneSvg(params: {
     includeSectionGuides,
     annotationMode,
     lineStyle,
+    lineWidth,
     lineColor,
     dotColor,
     dotRadius,
     lineHalo,
     calloutFontSize,
     calloutBorderWidth,
+    numberStyle,
+    labelColor,
     fontFamily,
     fontCss = '',
   } = params
@@ -180,7 +187,9 @@ export function buildSceneSvg(params: {
   const inlineMarkers =
     annotationMode === 'inline'
       ? annotations
-          .map((annotation) => renderInlineMarker(annotation, document, fontFamily))
+          .map((annotation) =>
+            renderInlineMarker(annotation, document, fontFamily, numberStyle, labelColor),
+          )
           .join('')
       : ''
 
@@ -194,6 +203,7 @@ export function buildSceneSvg(params: {
               annotation,
               layout,
               lineStyle,
+              lineWidth,
               lineColor,
               dotColor,
               dotRadius,

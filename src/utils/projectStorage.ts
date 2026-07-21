@@ -2,6 +2,7 @@ import type {
   Annotation,
   AnnotationMode,
   LineStyleId,
+  NumberStyleId,
   Section,
   TextStylePreset,
 } from '../types/annotation'
@@ -25,12 +26,15 @@ export interface ProjectSnapshot {
   defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
+  lineWidth: number
   lineColor: string
   dotColor: string
   dotRadius: number
   lineHalo: boolean
   calloutFontSize: number
   calloutBorderWidth: number
+  numberStyle: NumberStyleId
+  labelColor: string
   showSections: boolean
 }
 
