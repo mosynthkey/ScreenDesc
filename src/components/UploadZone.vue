@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from '../i18n'
 
 const emit = defineEmits<{
   file: [file: File]
 }>()
 
+const { t } = useI18n()
 const isDragging = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 
@@ -30,10 +32,8 @@ function onInputChange(event: Event): void {
   <div class="upload-hero">
     <div class="upload-card">
       <div class="hero-mark" aria-hidden="true" />
-      <h1>スクリーンショットを開く</h1>
-      <p>
-        開くと全体をスキャンし、UI要素のセクション案を自動で提案します。
-      </p>
+      <h1>{{ t('upload.title') }}</h1>
+      <p>{{ t('upload.description') }}</p>
       <div
         class="upload-drop"
         :class="{ 'is-active': isDragging }"
@@ -43,12 +43,12 @@ function onInputChange(event: Event): void {
         @drop="onDrop"
       >
         <p class="hint upload-hint" style="margin-bottom: 18px">
-          対応形式: PNG / JPEG / WebP<br />
-          ドラッグ&ドロップ、クリップボード貼り付け(⌘V)にも対応<br />
-          読み込み後に全体をスキャンします
+          {{ t('upload.hint.formats') }}<br />
+          {{ t('upload.hint.dnd') }}<br />
+          {{ t('upload.hint.scanOnLoad') }}
         </p>
         <button class="btn btn-primary" type="button" @click="inputRef?.click()">
-          スクリーンショットを開く
+          {{ t('upload.button.open') }}
         </button>
         <input
           ref="inputRef"

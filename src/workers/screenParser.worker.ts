@@ -75,7 +75,7 @@ async function handleDetect(
   iouThreshold: number,
 ) {
   if (!session) {
-    post<ModelErrorMessage>({ type: 'MODEL_ERROR', message: 'モデルが読み込まれていません' })
+    post<ModelErrorMessage>({ type: 'MODEL_ERROR', message: 'Model is not loaded' })
     bitmap.close()
     return
   }
@@ -111,14 +111,14 @@ interface DecodeContext {
 function decodeOutput(output: ort.Tensor, ctx: DecodeContext): Detection[] {
   const dims = output.dims
   if (dims.length !== 3) {
-    throw new Error(`想定外の出力shapeです: [${dims.join(', ')}]`)
+    throw new Error(`Unexpected output shape: [${dims.join(', ')}]`)
   }
 
   const [, numChannels, numBoxes] = dims
   const numClasses = numChannels - 4
   if (numClasses !== CLASS_NAMES.length) {
     console.warn(
-      `モデル出力のクラス数(${numClasses})とCLASS_NAMESの定義数(${CLASS_NAMES.length})が一致していません。`,
+      `Model class count (${numClasses}) does not match CLASS_NAMES (${CLASS_NAMES.length}).`,
     )
   }
 

@@ -40,6 +40,7 @@ import {
   type SavedProjectMeta,
 } from '../utils/projectStorage'
 import { buildProjectFile, parseProjectFile, suggestProjectFileName } from '../utils/projectFile'
+import { t } from '../i18n'
 
 const state = reactive<ProjectState>({
   imageUrl: null,
@@ -683,7 +684,7 @@ export function useAnnotationStore() {
 
   async function loadSavedProject(id: string): Promise<void> {
     const snapshot = await loadNamedProject(id)
-    if (!snapshot) throw new Error('保存済みのプロジェクトが見つかりませんでした')
+    if (!snapshot) throw new Error(t('error.savedProjectNotFound'))
     if (cropHistory.value) {
       URL.revokeObjectURL(cropHistory.value.imageUrl)
       cropHistory.value = null

@@ -2,6 +2,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { AnnotationMode, ToolMode } from '../types/annotation'
 import type { ModelStatus } from '../types/detection'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 defineProps<{
   toolMode: ToolMode
@@ -82,28 +85,28 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
       <div class="brand-mark" aria-hidden="true" />
       <div class="brand-text">
         <div class="brand-name">ScreenDesc</div>
-        <div class="brand-tag">取扱説明書注釈</div>
+        <div class="brand-tag">{{ t('brand.tagline') }}</div>
       </div>
     </div>
 
     <div class="header-actions">
       <span v-if="modelStatus !== 'ready'" class="status-chip">
-        {{ modelStatus === 'error' ? 'モデル読み込み失敗' : 'モデル読み込み中…' }}
+        {{ modelStatus === 'error' ? t('status.modelLoadFailed') : t('status.modelLoading') }}
       </span>
-      <span v-if="isDetecting" class="status-chip">提案中…</span>
+      <span v-if="isDetecting" class="status-chip">{{ t('status.proposing') }}</span>
 
       <div class="project-menu-wrap">
         <button
           class="header-btn"
           type="button"
-          data-tooltip="プロジェクトの保存・読み込み"
+          :data-tooltip="t('tooltip.projectMenu')"
           @click.stop="toggleProjectMenu"
         >
-          プロジェクト ▾
+          {{ t('button.project') }}
         </button>
         <div v-if="projectMenuOpen" class="project-menu" @click.stop>
           <button class="project-menu-item" type="button" @click="chooseProjectStorage">
-            保存 / 読み込み(ブラウザ内)
+            {{ t('menu.projectStorage') }}
           </button>
           <div class="project-menu-sep" />
           <button
@@ -112,10 +115,10 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :disabled="!hasImage"
             @click="chooseExportProjectFile"
           >
-            エクスポート(ファイルに書き出し)
+            {{ t('menu.exportProjectFile') }}
           </button>
           <button class="project-menu-item" type="button" @click="chooseImportProject">
-            インポート(ファイルから読み込み)
+            {{ t('menu.importProjectFile') }}
           </button>
         </div>
       </div>
@@ -123,33 +126,33 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
       <button
         class="header-btn"
         type="button"
-        :data-tooltip="hasImage ? '別のスクリーンショットに差し替えます' : 'スクリーンショットを開きます'"
+        :data-tooltip="hasImage ? t('tooltip.replaceImage') : t('tooltip.openImage')"
         @click="emit('upload')"
       >
-        {{ hasImage ? '画像を差し替え' : '画像を開く' }}
+        {{ hasImage ? t('button.replaceImage') : t('button.openImage') }}
       </button>
       <button
         class="header-btn header-btn-primary"
         type="button"
-        data-tooltip="注釈付き画像を書き出します"
+        :data-tooltip="t('tooltip.export')"
         :disabled="!canExport"
         @click="emit('export')"
       >
-        書き出し
+        {{ t('button.export') }}
       </button>
     </div>
   </header>
 
   <!-- Single floating dock: tools + modes + scan (no duplicate second bar) -->
   <div v-if="hasImage" class="tool-dock" @keydown.stop>
-    <div class="dock-bar material" role="toolbar" aria-label="編集ツール">
+    <div class="dock-bar material" role="toolbar" :aria-label="t('aria.editToolbar')">
       <div class="dock-group">
         <button
           class="tool-btn"
           :class="{ active: toolMode === 'select' }"
           type="button"
-          data-tooltip="選択・移動 (V)"
-          aria-label="選択・移動"
+          :data-tooltip="t('tooltip.toolSelect')"
+          :aria-label="t('aria.toolSelect')"
           @click="setTool('select')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -161,8 +164,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           class="tool-btn"
           :class="{ active: toolMode === 'add-section' }"
           type="button"
-          data-tooltip="範囲を描いてセクションを1件提案 (F)"
-          aria-label="範囲を描いて提案"
+          :data-tooltip="t('tooltip.toolAddSection')"
+          :aria-label="t('aria.toolAddSection')"
           @click="setTool('add-section')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -180,8 +183,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           class="tool-btn"
           :class="{ active: toolMode === 'annotate' }"
           type="button"
-          data-tooltip="セクションをクリックして注釈を追加 (A)"
-          aria-label="注釈"
+          :data-tooltip="t('tooltip.toolAnnotate')"
+          :aria-label="t('aria.toolAnnotate')"
           @click="setTool('annotate')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -194,8 +197,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           class="tool-btn"
           :class="{ active: toolMode === 'crop' }"
           type="button"
-          data-tooltip="範囲を描いて画像を切り抜く (X)"
-          aria-label="切り抜き"
+          :data-tooltip="t('tooltip.toolCrop')"
+          :aria-label="t('aria.toolCrop')"
           @click="setTool('crop')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -214,8 +217,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           <button
             class="tool-btn tool-btn-caret"
             type="button"
-            data-tooltip="切り抜きメニュー"
-            aria-label="切り抜きメニューを開く"
+            :data-tooltip="t('tooltip.cropMenu')"
+            :aria-label="t('aria.cropMenu')"
             @click.stop="toggleCropMenu"
           >
             <svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true">
@@ -230,7 +233,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               :disabled="!canUndoCrop"
               @click="chooseUndoCrop"
             >
-              切り抜きを元に戻す
+              {{ t('menu.undoCrop') }}
             </button>
           </div>
         </div>
@@ -243,8 +246,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           class="tool-btn"
           :class="{ active: annotationMode === 'inline' }"
           type="button"
-          data-tooltip="画像内に番号を置く (I)"
-          aria-label="画像内番号"
+          :data-tooltip="t('tooltip.modeInline')"
+          :aria-label="t('aria.modeInline')"
           @click="emit('update:annotationMode', 'inline'); setTool('annotate')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -266,8 +269,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           class="tool-btn"
           :class="{ active: annotationMode === 'callout' }"
           type="button"
-          data-tooltip="引き出し線付きコールアウト (C)"
-          aria-label="コールアウト"
+          :data-tooltip="t('tooltip.modeCallout')"
+          :aria-label="t('aria.modeCallout')"
           @click="emit('update:annotationMode', 'callout'); setTool('annotate')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -300,8 +303,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           class="tool-btn"
           :class="{ active: showSections }"
           type="button"
-          data-tooltip="セクション枠の表示 / 非表示"
-          aria-label="セクション表示"
+          :data-tooltip="t('tooltip.toggleSections')"
+          :aria-label="t('aria.toggleSections')"
           @click="emit('toggleSections')"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -322,8 +325,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         <button
           class="tool-btn"
           type="button"
-          data-tooltip="画面全体を再スキャン"
-          aria-label="全体スキャン"
+          :data-tooltip="t('tooltip.rescan')"
+          :aria-label="t('aria.rescan')"
           :disabled="isDetecting"
           @click="emit('propose')"
         >

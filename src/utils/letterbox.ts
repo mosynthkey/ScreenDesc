@@ -23,7 +23,7 @@ export function letterboxToTensor(image: ImageBitmap, targetSize: number): Lette
   const canvas = new OffscreenCanvas(targetSize, targetSize)
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
-    throw new Error('Canvas 2D context を取得できませんでした')
+    throw new Error('Failed to get Canvas 2D context')
   }
 
   ctx.fillStyle = 'rgb(114, 114, 114)'

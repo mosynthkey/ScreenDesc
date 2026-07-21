@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import type {
   Annotation,
   AnnotationMode,
@@ -7,24 +7,12 @@ import type {
   LineStyleId,
   TextStylePreset,
 } from '../types/annotation'
-import { TEXT_STYLE_LABELS, TEXT_STYLE_OPTIONS } from '../i18n/labels'
+import { textStyleLabel, textStyleOptions } from '../i18n/labels'
+import { useI18n } from '../i18n'
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../utils/googleFonts'
-import { LINE_STYLE_OPTIONS } from '../utils/lineStyle'
+import { getLineStyleOptions } from '../utils/lineStyle'
 
 const CALLOUT_FONT_SIZE_OPTIONS = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40]
-const DOT_RADIUS_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 2.5, label: '小' },
-  { value: 4.5, label: '標準' },
-  { value: 6.5, label: '大' },
-  { value: 9, label: '特大' },
-]
-const CALLOUT_BORDER_WIDTH_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 0, label: '枠なし' },
-  { value: 0.75, label: '極細' },
-  { value: 1.5, label: '標準' },
-  { value: 2.5, label: '太め' },
-  { value: 4, label: '極太' },
-]
 
 defineProps<{
   annotation: Annotation | null
@@ -60,6 +48,24 @@ const emit = defineEmits<{
   ]
 }>()
 
+const { t } = useI18n()
+
+const lineStyleOptions = computed(() => getLineStyleOptions())
+const styleOptions = computed(() => textStyleOptions())
+const dotRadiusOptions = computed(() => [
+  { value: 2.5, label: t('style.dotRadius.small') },
+  { value: 4.5, label: t('style.dotRadius.medium') },
+  { value: 6.5, label: t('style.dotRadius.large') },
+  { value: 9, label: t('style.dotRadius.xlarge') },
+])
+const calloutBorderWidthOptions = computed(() => [
+  { value: 0, label: t('style.calloutBorder.none') },
+  { value: 0.75, label: t('style.calloutBorder.hairline') },
+  { value: 1.5, label: t('style.calloutBorder.medium') },
+  { value: 2.5, label: t('style.calloutBorder.bold') },
+  { value: 4, label: t('style.calloutBorder.heavy') },
+])
+
 onMounted(() => {
   for (const option of GOOGLE_FONT_OPTIONS) {
     loadGoogleFont(option.family)
@@ -72,34 +78,34 @@ onMounted(() => {
     <div class="settings-group settings-group-project">
       <h3 class="panel-title">
         <span class="title-icon" aria-hidden="true">⚙</span>
-        プロジェクト全体の設定
+        {{ t('style.projectSettingsTitle') }}
       </h3>
       <div class="field">
-        <label>配置方法</label>
+        <label>{{ t('style.placementMethod') }}</label>
         <select
           :value="defaultAnnotationMode"
           @change="emit('update:defaultAnnotationMode', ($event.target as HTMLSelectElement).value as AnnotationMode)"
         >
-          <option value="inline">画像内番号</option>
-          <option value="callout">コールアウト</option>
+          <option value="inline">{{ t('style.mode.inline') }}</option>
+          <option value="callout">{{ t('style.mode.callout') }}</option>
         </select>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>引き出し線の太さ・線種</label>
+        <label>{{ t('style.lineStyle') }}</label>
         <select
           :value="lineStyle"
           @change="emit('update:lineStyle', ($event.target as HTMLSelectElement).value as LineStyleId)"
         >
-          <option v-for="option in LINE_STYLE_OPTIONS" :key="option.value" :value="option.value">
+          <option v-for="option in lineStyleOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
       </div>
       <div v-if="defaultAnnotationMode === 'callout' && lineStyle !== 'invert'" class="field">
-        <label>引き出し線・両端の丸の色</label>
+        <label>{{ t('style.lineAndDotColor') }}</label>
         <div class="color-row">
           <label class="color-swatch">
-            線
+            {{ t('style.lineColor') }}
             <input
               type="color"
               :value="lineColor"
@@ -107,7 +113,7 @@ onMounted(() => {
             />
           </label>
           <label class="color-swatch">
-            丸
+            {{ t('style.dotColor') }}
             <input
               type="color"
               :value="dotColor"
@@ -117,12 +123,12 @@ onMounted(() => {
         </div>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>始点・終点の丸の大きさ</label>
+        <label>{{ t('style.dotRadius') }}</label>
         <select
           :value="dotRadius"
           @change="emit('update:dotRadius', Number(($event.target as HTMLSelectElement).value))"
         >
-          <option v-for="option in DOT_RADIUS_OPTIONS" :key="option.value" :value="option.value">
+          <option v-for="option in dotRadiusOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
@@ -133,10 +139,10 @@ onMounted(() => {
           :checked="lineHalo"
           @change="emit('update:lineHalo', ($event.target as HTMLInputElement).checked)"
         />
-        線に白い縁取りを付ける(背景が濃い時に見やすくする)
+        {{ t('style.lineHalo') }}
       </label>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>コールアウトの文字サイズ</label>
+        <label>{{ t('style.calloutFontSize') }}</label>
         <select
           :value="calloutFontSize"
           @change="emit('update:calloutFontSize', Number(($event.target as HTMLSelectElement).value))"
@@ -147,29 +153,29 @@ onMounted(() => {
         </select>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>コールアウト枠の太さ</label>
+        <label>{{ t('style.calloutBorderWidth') }}</label>
         <select
           :value="calloutBorderWidth"
           @change="emit('update:calloutBorderWidth', Number(($event.target as HTMLSelectElement).value))"
         >
-          <option v-for="option in CALLOUT_BORDER_WIDTH_OPTIONS" :key="option.value" :value="option.value">
+          <option v-for="option in calloutBorderWidthOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
       </div>
       <div class="field">
-        <label>デフォルトの文字スタイル</label>
+        <label>{{ t('style.defaultTextStyle') }}</label>
         <select
           :value="defaultTextStyle"
           @change="emit('update:defaultTextStyle', ($event.target as HTMLSelectElement).value as TextStylePreset)"
         >
-          <option v-for="option in TEXT_STYLE_OPTIONS" :key="option.value" :value="option.value">
+          <option v-for="option in styleOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
       </div>
       <div class="field" style="margin-bottom: 0">
-        <label>デフォルトのフォント（Google Fonts）</label>
+        <label>{{ t('style.defaultFont') }}</label>
         <select
           :value="defaultFontFamily"
           @change="emit('update:defaultFontFamily', ($event.target as HTMLSelectElement).value)"
@@ -189,43 +195,44 @@ onMounted(() => {
     <div v-if="annotation" class="settings-group settings-group-annotation">
       <h3 class="panel-title">
         <span class="title-icon" aria-hidden="true">✎</span>
-        選択中の注釈
+        {{ t('style.selectedAnnotationTitle') }}
       </h3>
       <div class="field">
-        <label>文字スタイル</label>
+        <label>{{ t('style.textStyle') }}</label>
         <select
           :value="annotation.textStyle"
           @change="emit('patch', { textStyle: ($event.target as HTMLSelectElement).value as TextStylePreset })"
         >
-          <option v-for="option in TEXT_STYLE_OPTIONS" :key="option.value" :value="option.value">
+          <option v-for="option in styleOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>コールアウトの位置</label>
+        <label>{{ t('style.calloutSide') }}</label>
         <select
           :value="annotation.calloutSide"
           @change="emit('patch', { calloutSide: ($event.target as HTMLSelectElement).value as CalloutSide })"
         >
-          <option value="auto">自動</option>
-          <option value="left">左</option>
-          <option value="right">右</option>
+          <option value="auto">{{ t('style.calloutSide.auto') }}</option>
+          <option value="left">{{ t('style.calloutSide.left') }}</option>
+          <option value="right">{{ t('style.calloutSide.right') }}</option>
         </select>
       </div>
       <div class="field" style="margin-bottom: 0">
-        <label>説明</label>
+        <label>{{ t('style.description') }}</label>
         <textarea
           :value="annotation.description"
-          placeholder="例: ［保存］をクリック"
+          :placeholder="t('style.descriptionPlaceholder')"
           @input="emit('patch', { description: ($event.target as HTMLTextAreaElement).value })"
         />
       </div>
       <p class="hint" style="margin-top: 10px; margin-bottom: 0">
-        適用スタイル: <strong>{{ TEXT_STYLE_LABELS[annotation.resolvedStyle] }}</strong>
+        {{ t('style.resolvedStylePrefix') }}
+        <strong>{{ textStyleLabel(annotation.resolvedStyle) }}</strong>
       </p>
     </div>
-    <p v-else class="hint">注釈を選択すると、スタイルと説明を編集できます。</p>
+    <p v-else class="hint">{{ t('style.noSelectionHint') }}</p>
   </div>
 </template>
 

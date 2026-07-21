@@ -6,6 +6,7 @@ import type {
   TextStylePreset,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
+import { t } from '../i18n'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
@@ -35,7 +36,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('画像の読み込みに失敗しました'))
+    reader.onerror = () => reject(new Error(t('error.imageReadFailed')))
     reader.readAsDataURL(blob)
   })
 }
@@ -64,7 +65,7 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   try {
     data = JSON.parse(text)
   } catch {
-    throw new Error('プロジェクトファイルの形式が正しくありません(JSON解析エラー)')
+    throw new Error(t('error.projectFileInvalidJson'))
   }
   if (
     !data ||
@@ -72,7 +73,7 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
     (data as ProjectFileData).version !== FILE_VERSION ||
     typeof (data as ProjectFileData).imageDataUrl !== 'string'
   ) {
-    throw new Error('対応していないプロジェクトファイルです')
+    throw new Error(t('error.projectFileUnsupported'))
   }
   return data as ProjectFileData
 }

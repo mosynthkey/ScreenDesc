@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import type { Annotation } from '../types/annotation'
 import { toCircledNumber } from '../utils/circledNumbers'
+import { useI18n } from '../i18n'
 
 const props = defineProps<{
   annotations: Annotation[]
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   editDescription: [id: string, value: string]
 }>()
 
+const { t } = useI18n()
 const draggingId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 
@@ -54,88 +56,166 @@ function onDrop(targetId: string, event: DragEvent): void {
 </script>
 
 <template>
-  <div>
-    <h3 class="panel-title">注釈一覧</h3>
+  <div class="annotation-list">
+    <h3 class="panel-title">{{ t('annotationList.title') }}</h3>
     <p v-if="annotations.length === 0" class="hint">
-      範囲を描いてセクションを提案し、クリックでステップマーカーを追加。ドラッグで移動、ダブルクリックで説明編集。
+      {{ t('annotationList.emptyHint') }}
     </p>
 
-    <div
-      v-for="annotation in annotations"
-      :key="annotation.id"
-      class="annotation-item"
-      draggable="true"
-      :class="{
-        selected: selectedIds.includes(annotation.id),
-        dragging: draggingId === annotation.id,
-        'drag-over': dragOverId === annotation.id && draggingId !== annotation.id,
-      }"
-      @click="emit('select', annotation.id, $event.shiftKey)"
-      @dragstart="onDragStart(annotation.id, $event)"
-      @dragover="onDragOver(annotation.id, $event)"
-      @dragend="onDragEnd"
-      @drop="onDrop(annotation.id, $event)"
-    >
-      <div class="drag-handle" title="ドラッグで並び替え" aria-hidden="true">⠿</div>
-      <div class="annotation-number">{{ toCircledNumber(annotation.order) }}</div>
-      <div class="annotation-meta">
-        <strong>{{ annotation.description || '（説明なし）' }}</strong>
+    <ul v-else class="list" role="list">
+      <li
+        v-for="annotation in annotations"
+        :key="annotation.id"
+        class="annotation-item"
+        draggable="true"
+        :class="{
+          selected: selectedIds.includes(annotation.id),
+          dragging: draggingId === annotation.id,
+          'drag-over': dragOverId === annotation.id && draggingId !== annotation.id,
+        }"
+        @click="emit('select', annotation.id, $event.shiftKey)"
+        @dragstart="onDragStart(annotation.id, $event)"
+        @dragover="onDragOver(annotation.id, $event)"
+        @dragend="onDragEnd"
+        @drop="onDrop(annotation.id, $event)"
+      >
+        <span class="drag-handle" :title="t('annotationList.dragTitle')" aria-hidden="true">⠿</span>
+        <span class="annotation-number">{{ toCircledNumber(annotation.order) }}</span>
         <input
           class="desc-input"
           type="text"
           :value="annotation.description"
-          placeholder="手順の説明"
+          :placeholder="t('annotationList.descriptionPlaceholder')"
           @click.stop
           @input="emit('editDescription', annotation.id, ($event.target as HTMLInputElement).value)"
         />
-      </div>
-      <button class="icon-btn" type="button" title="削除" @click.stop="emit('remove', annotation.id)">
-        ×
-      </button>
-    </div>
+        <button
+          class="icon-btn remove-btn"
+          type="button"
+          :title="t('annotationList.removeTitle')"
+          @click.stop="emit('remove', annotation.id)"
+        >
+          ×
+        </button>
+      </li>
+    </ul>
   </div>
 </template>
 
 <style scoped>
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .annotation-item {
-  grid-template-columns: auto auto 1fr auto;
+  display: grid;
+  grid-template-columns: 14px 1.5rem 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 4px;
+  margin: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.annotation-item:hover {
+  background: rgba(120, 120, 128, 0.08);
+}
+
+.annotation-item:active {
+  transform: none;
+}
+
+.annotation-item.selected {
+  background: var(--accent-soft);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.annotation-item.dragging {
+  opacity: 0.35;
+}
+
+.annotation-item.drag-over {
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .drag-handle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  color: var(--ink-muted);
-  font-size: 1rem;
+  color: transparent;
+  font-size: 0.85rem;
   line-height: 1;
   cursor: grab;
   touch-action: none;
+  user-select: none;
 }
 
-.annotation-item.dragging {
-  opacity: 0.4;
+.annotation-item:hover .drag-handle,
+.annotation-item.dragging .drag-handle {
+  color: var(--ink-muted);
 }
 
-.annotation-item.drag-over {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft) inset;
+.annotation-number {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .desc-input {
   width: 100%;
-  margin-top: 6px;
+  min-width: 0;
+  margin: 0;
   border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-size: 0.78rem;
-  background: rgba(255, 255, 255, 0.7);
-  transition: border-color var(--spring), box-shadow var(--spring);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: transparent;
+  transition: border-color var(--spring), background var(--spring);
+}
+
+.desc-input::placeholder {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.desc-input:hover {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .desc-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: #fff;
+}
+
+.remove-btn {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.annotation-item:hover .remove-btn,
+.annotation-item.selected .remove-btn,
+.remove-btn:focus-visible {
+  opacity: 1;
+}
+
+.remove-btn:hover {
+  color: var(--ink);
+  background: rgba(120, 120, 128, 0.16);
 }
 </style>

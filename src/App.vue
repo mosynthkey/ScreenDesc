@@ -10,6 +10,9 @@ import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
 import type { ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
+import { useI18n } from './i18n'
+
+const { t } = useI18n()
 
 const store = useAnnotationStore()
 const {
@@ -143,7 +146,7 @@ async function onProjectFileChange(event: Event): Promise<void> {
   try {
     await loadProjectFromFile(file)
   } catch (err) {
-    projectLoadError.value = err instanceof Error ? err.message : 'プロジェクトの読み込みに失敗しました'
+    projectLoadError.value = err instanceof Error ? err.message : t('error.projectLoadFailed')
   }
 }
 
@@ -185,7 +188,7 @@ async function onLoadSavedProject(id: string): Promise<void> {
     await loadSavedProject(id)
     projectStorageOpen.value = false
   } catch (err) {
-    projectLoadError.value = err instanceof Error ? err.message : 'プロジェクトの読み込みに失敗しました'
+    projectLoadError.value = err instanceof Error ? err.message : t('error.projectLoadFailed')
   } finally {
     projectStorageBusy.value = false
   }
@@ -298,12 +301,12 @@ function onKeydown(event: KeyboardEvent): void {
     <div class="workspace">
       <aside class="panel">
         <div class="panel-section">
-          <h3 class="panel-title">作業の流れ</h3>
+          <h3 class="panel-title">{{ t('sidebar.workflowTitle') }}</h3>
           <p class="hint">
-            1. アップロード時に全体をスキャン<br />
-            2. 必要なら範囲を手描きでセクション追加<br />
-            3. セクションをクリックして注釈を追加<br />
-            4. PNG / SVG / PDF で書き出し
+            {{ t('sidebar.workflow.step1') }}<br />
+            {{ t('sidebar.workflow.step2') }}<br />
+            {{ t('sidebar.workflow.step3') }}<br />
+            {{ t('sidebar.workflow.step4') }}
           </p>
         </div>
         <div class="panel-section">
@@ -382,13 +385,13 @@ function onKeydown(event: KeyboardEvent): void {
           />
         </div>
         <div class="panel-section">
-          <h3 class="panel-title">ショートカット</h3>
+          <h3 class="panel-title">{{ t('sidebar.shortcutsTitle') }}</h3>
           <p class="hint">
-            F セクション追加 · V 選択 · A 注釈 · X 切り抜き<br />
-            I 画像内番号 · C コールアウト<br />
-            ピンチ → 画像のみ拡大縮小<br />
-            範囲ドラッグ → セクションを手描き追加<br />
-            Delete → 削除 · Esc → 選択解除
+            {{ t('sidebar.shortcuts.line1') }}<br />
+            {{ t('sidebar.shortcuts.line2') }}<br />
+            {{ t('sidebar.shortcuts.line3') }}<br />
+            {{ t('sidebar.shortcuts.line4') }}<br />
+            {{ t('sidebar.shortcuts.line5') }}
           </p>
         </div>
       </aside>

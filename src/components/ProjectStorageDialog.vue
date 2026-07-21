@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { SavedProjectMeta } from '../utils/projectStorage'
+import { locale, useI18n } from '../i18n'
 
 const props = defineProps<{
   open: boolean
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   remove: [id: string]
 }>()
 
+const { t } = useI18n()
 const nameInput = ref('')
 
 watch(
@@ -26,18 +28,22 @@ watch(
   },
 )
 
+function dateLocale(): string {
+  return locale.value === 'ja' ? 'ja-JP' : 'en-US'
+}
+
 function defaultName(): string {
-  const stamp = new Date().toLocaleString('ja-JP', {
+  const stamp = new Date().toLocaleString(dateLocale(), {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
-  return `プロジェクト ${stamp}`
+  return t('projectStorage.defaultName', { stamp })
 }
 
 function formatDate(ts: number): string {
-  return new Date(ts).toLocaleString('ja-JP', {
+  return new Date(ts).toLocaleString(dateLocale(), {
     year: 'numeric',
     month: 'numeric',
     day: 'numeric',
@@ -56,30 +62,33 @@ function submitSave(): void {
 <template>
   <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal">
-      <h2>ブラウザ内ストレージに保存 / 読み込み</h2>
-      <p class="hint">
-        この端末のブラウザ内に複数のプロジェクトを保存・管理できます。他の端末に持ち出す場合は「エクスポート」を使ってください。
-      </p>
+      <h2>{{ t('projectStorage.title') }}</h2>
+      <p class="hint">{{ t('projectStorage.description') }}</p>
 
       <div class="field">
-        <label>名前を付けて保存</label>
+        <label>{{ t('projectStorage.saveAsLabel') }}</label>
         <div class="save-row">
-          <input v-model="nameInput" type="text" placeholder="プロジェクト名" :disabled="!hasImage" />
+          <input
+            v-model="nameInput"
+            type="text"
+            :placeholder="t('projectStorage.namePlaceholder')"
+            :disabled="!hasImage"
+          />
           <button
             class="btn btn-primary"
             type="button"
             :disabled="!hasImage || !nameInput.trim() || isBusy"
             @click="submitSave"
           >
-            保存
+            {{ t('projectStorage.save') }}
           </button>
         </div>
-        <p v-if="!hasImage" class="hint">画像を開いてから保存できます。</p>
+        <p v-if="!hasImage" class="hint">{{ t('projectStorage.needImageHint') }}</p>
       </div>
 
       <div class="field">
-        <label>保存済みのプロジェクト</label>
-        <p v-if="projects.length === 0" class="hint">まだ保存されたプロジェクトはありません。</p>
+        <label>{{ t('projectStorage.savedListLabel') }}</label>
+        <p v-if="projects.length === 0" class="hint">{{ t('projectStorage.empty') }}</p>
         <ul v-else class="saved-list">
           <li v-for="project in projects" :key="project.id" class="saved-item">
             <div class="saved-meta">
@@ -88,19 +97,19 @@ function submitSave(): void {
             </div>
             <div class="saved-actions">
               <button class="btn btn-ghost" type="button" :disabled="isBusy" @click="emit('load', project.id)">
-                開く
+                {{ t('projectStorage.open') }}
               </button>
               <button
                 class="btn btn-ghost"
                 type="button"
                 :disabled="!hasImage || isBusy"
-                title="現在のプロジェクトでこの保存を上書きします"
+                :title="t('projectStorage.overwriteTitle')"
                 @click="emit('overwrite', project.id)"
               >
-                上書き保存
+                {{ t('projectStorage.overwrite') }}
               </button>
               <button class="btn btn-danger" type="button" :disabled="isBusy" @click="emit('remove', project.id)">
-                削除
+                {{ t('projectStorage.remove') }}
               </button>
             </div>
           </li>
@@ -108,7 +117,9 @@ function submitSave(): void {
       </div>
 
       <div class="modal-actions">
-        <button class="btn btn-ghost" type="button" @click="emit('close')">閉じる</button>
+        <button class="btn btn-ghost" type="button" @click="emit('close')">
+          {{ t('projectStorage.close') }}
+        </button>
       </div>
     </div>
   </div>

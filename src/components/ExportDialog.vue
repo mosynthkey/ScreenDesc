@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import type { ExportFormat, ExportOptions } from '../types/annotation'
+import { useI18n } from '../i18n'
 
 defineProps<{
   open: boolean
@@ -11,12 +12,14 @@ const emit = defineEmits<{
   export: [options: ExportOptions]
 }>()
 
+const { t } = useI18n()
+
 const form = reactive({
   format: 'png' as ExportFormat,
   includeSectionGuides: false,
   includeOriginal: false,
   scale: 2,
-  filename: 'マニュアル注釈',
+  filename: t('export.defaultFilename'),
 })
 
 function submit(): void {
@@ -27,9 +30,9 @@ function submit(): void {
 <template>
   <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal">
-      <h2>書き出し</h2>
+      <h2>{{ t('export.title') }}</h2>
       <div class="field">
-        <label>形式</label>
+        <label>{{ t('export.format') }}</label>
         <select v-model="form.format">
           <option value="png">PNG</option>
           <option value="svg">SVG</option>
@@ -37,11 +40,11 @@ function submit(): void {
         </select>
       </div>
       <div class="field">
-        <label>ファイル名</label>
+        <label>{{ t('export.filename') }}</label>
         <input v-model="form.filename" type="text" />
       </div>
       <div class="field">
-        <label>解像度（PNG / PDF）</label>
+        <label>{{ t('export.scale') }}</label>
         <select v-model.number="form.scale">
           <option :value="1">1×</option>
           <option :value="2">2×</option>
@@ -50,18 +53,22 @@ function submit(): void {
       </div>
       <label class="check">
         <input v-model="form.includeSectionGuides" type="checkbox" />
-        セクション枠も含める
+        {{ t('export.includeSectionGuides') }}
       </label>
       <label class="check" style="margin-top: 8px">
         <input v-model="form.includeOriginal" type="checkbox" />
-        元の画像(注釈なし)も一緒に書き出す
+        {{ t('export.includeOriginal') }}
       </label>
       <p class="hint" style="margin-top: 10px">
-        PDF は注釈済みページを画像として埋め込みます。将来はベクトル PDF バックエンドに差し替え可能な設計です。
+        {{ t('export.pdfHint') }}
       </p>
       <div class="modal-actions">
-        <button class="btn btn-ghost" type="button" @click="emit('close')">キャンセル</button>
-        <button class="btn btn-primary" type="button" @click="submit">ダウンロード</button>
+        <button class="btn btn-ghost" type="button" @click="emit('close')">
+          {{ t('export.cancel') }}
+        </button>
+        <button class="btn btn-primary" type="button" @click="submit">
+          {{ t('export.download') }}
+        </button>
       </div>
     </div>
   </div>

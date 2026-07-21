@@ -22,10 +22,13 @@ import {
 import { fontFamilyCss } from '../utils/googleFonts'
 import { getLineStyleSpec } from '../utils/lineStyle'
 import { buildLeaderPath } from '../utils/calloutLayout'
+import { useI18n } from '../i18n'
 
 const MIN_VIEW_ZOOM = 0.25
 const MAX_VIEW_ZOOM = 8
 const STAGE_INSET = 48
+
+const { t } = useI18n()
 
 const props = defineProps<{
   imageUrl: string
@@ -593,9 +596,9 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 <template>
   <div ref="viewportRef" class="canvas-area">
     <div v-if="emptyHint && !isDetecting" class="canvas-banner">
-      注釈したい範囲をドラッグしてください。その範囲に合うセクションを1件提案します。
+      {{ t('canvas.emptyHint') }}
     </div>
-    <div v-if="isDetecting" class="canvas-banner detecting">セクションを提案中…</div>
+    <div v-if="isDetecting" class="canvas-banner detecting">{{ t('canvas.detecting') }}</div>
     <div
       class="canvas-stage"
       :style="{ width: `${stageWidth}px`, height: `${stageHeight}px` }"
@@ -824,11 +827,11 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
       <input
         v-model="editDraft"
         type="text"
-        placeholder="手順の説明"
+        :placeholder="t('canvas.descriptionPlaceholder')"
         @keydown.enter="commitEdit"
         @keydown.escape="editingId = null"
       />
-      <button class="btn btn-primary" type="button" @click="commitEdit">確定</button>
+      <button class="btn btn-primary" type="button" @click="commitEdit">{{ t('canvas.commit') }}</button>
     </div>
   </div>
 </template>

@@ -70,7 +70,7 @@ export function useScreenParser() {
   function detect(bitmap: ImageBitmap, options: DetectOptions = {}): Promise<Detection[]> {
     if (status.value !== 'ready') {
       bitmap.close()
-      return Promise.reject(new Error('モデルが読み込まれていません。先に loadModel() を呼んでください。'))
+      return Promise.reject(new Error('Model is not loaded. Call loadModel() first.'))
     }
 
     const requestId = nextRequestId++

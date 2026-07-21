@@ -1,20 +1,32 @@
 import type { SectionKind, TextStylePreset } from '../types/annotation'
+import { t, type MessageKey } from './index'
 
-export const SECTION_KIND_LABELS: Record<SectionKind, string> = {
-  region: '領域',
-  text: 'テキスト',
+const TEXT_STYLE_KEYS: Record<TextStylePreset, MessageKey> = {
+  auto: 'textStyle.auto',
+  'white-black-stroke': 'textStyle.whiteBlackStroke',
+  'black-white-stroke': 'textStyle.blackWhiteStroke',
+  'semi-transparent-bg': 'textStyle.semiTransparentBg',
+  'local-invert': 'textStyle.localInvert',
+  balloon: 'textStyle.balloon',
+  label: 'textStyle.label',
 }
 
-export const TEXT_STYLE_LABELS: Record<TextStylePreset, string> = {
-  auto: '自動（背景に合わせる）',
-  'white-black-stroke': '白文字＋黒縁',
-  'black-white-stroke': '黒文字＋白縁',
-  'semi-transparent-bg': '半透明背景',
-  'local-invert': '周辺を反転',
-  balloon: '吹き出し',
-  label: 'ラベル',
+const SECTION_KIND_KEYS: Record<SectionKind, MessageKey> = {
+  region: 'sectionKind.region',
+  text: 'sectionKind.text',
 }
 
-export const TEXT_STYLE_OPTIONS = (
-  Object.entries(TEXT_STYLE_LABELS) as [TextStylePreset, string][]
-).map(([value, label]) => ({ value, label }))
+export function sectionKindLabel(kind: SectionKind): string {
+  return t(SECTION_KIND_KEYS[kind])
+}
+
+export function textStyleLabel(style: TextStylePreset): string {
+  return t(TEXT_STYLE_KEYS[style])
+}
+
+export function textStyleOptions(): Array<{ value: TextStylePreset; label: string }> {
+  return (Object.keys(TEXT_STYLE_KEYS) as TextStylePreset[]).map((value) => ({
+    value,
+    label: textStyleLabel(value),
+  }))
+}

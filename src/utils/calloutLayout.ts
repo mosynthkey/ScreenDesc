@@ -9,6 +9,7 @@ import { clamp, rectCenter } from './geometry'
 import { toCircledNumber } from './circledNumbers'
 import { measureTextWidth, wrapText } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
+import { t } from '../i18n'
 
 /**
  * Cubic leader: short horizontal stubs at each end, then an S-curve.
@@ -43,7 +44,7 @@ function estimateLabelSize(
   fontSize: number,
 ): { width: number; height: number; lines: string[] } {
   const prefix = `${toCircledNumber(order)} `
-  const text = `${prefix}${description || '説明'}`
+  const text = `${prefix}${description || t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
   const singleLineWidth = measureTextWidth(text, fontSize, fontCss) + LABEL_H_PADDING
