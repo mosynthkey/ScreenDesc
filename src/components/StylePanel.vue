@@ -20,21 +20,29 @@ const DOT_RADIUS_MIN = 1.5
 const DOT_RADIUS_MAX = 14
 const DOT_RADIUS_STEP = 0.5
 
-defineProps<{
-  annotation: Annotation | null
-  defaultAnnotationMode: AnnotationMode
-  defaultTextStyle: TextStylePreset
-  defaultFontFamily: string
-  lineStyle: LineStyleId
-  lineWidth: number
-  lineColor: string
-  dotRadius: number
-  lineHalo: boolean
-  calloutFontSize: number
-  calloutBorderWidth: number
-  numberStyle: NumberStyleId
-  labelColor: string
-}>()
+withDefaults(
+  defineProps<{
+    annotation: Annotation | null
+    defaultAnnotationMode: AnnotationMode
+    defaultTextStyle: TextStylePreset
+    defaultFontFamily: string
+    lineStyle: LineStyleId
+    lineWidth: number
+    lineColor: string
+    dotRadius: number
+    lineHalo: boolean
+    calloutFontSize: number
+    calloutBorderWidth: number
+    numberStyle: NumberStyleId
+    labelColor: string
+    showProject?: boolean
+    showAnnotation?: boolean
+  }>(),
+  {
+    showProject: true,
+    showAnnotation: true,
+  },
+)
 
 const emit = defineEmits<{
   'update:defaultAnnotationMode': [mode: AnnotationMode]
@@ -90,7 +98,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="settings-group settings-group-project">
+    <div v-if="showProject" class="settings-group settings-group-project">
       <h3 class="panel-title">
         <span class="title-icon" aria-hidden="true">⚙</span>
         {{ t('style.projectSettingsTitle') }}
@@ -240,7 +248,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="annotation" class="settings-group settings-group-annotation">
+    <div v-if="showAnnotation && annotation" class="settings-group settings-group-annotation">
       <h3 class="panel-title">
         <span class="title-icon" aria-hidden="true">✎</span>
         {{ t('style.selectedAnnotationTitle') }}
@@ -265,7 +273,7 @@ onMounted(() => {
         />
       </div>
     </div>
-    <p v-else class="hint">{{ t('style.noSelectionHint') }}</p>
+    <p v-else-if="showAnnotation" class="hint">{{ t('style.noSelectionHint') }}</p>
   </div>
 </template>
 

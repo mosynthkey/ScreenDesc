@@ -302,8 +302,8 @@ function onKeydown(event: KeyboardEvent): void {
 
     <div class="workspace" :class="{ 'is-home': !hasImage }">
       <template v-if="hasImage">
-        <aside class="panel">
-          <div class="panel-section">
+        <aside class="panel panel-left">
+          <div class="panel-section panel-section-list">
             <AnnotationList
               :annotations="sortedAnnotations"
               :selected-ids="[...state.selectedAnnotationIds]"
@@ -311,6 +311,26 @@ function onKeydown(event: KeyboardEvent): void {
               @reorder="reorderAnnotations"
               @remove="(id) => removeAnnotations([id])"
               @edit-description="(id, value) => updateAnnotation(id, { description: value })"
+            />
+          </div>
+          <div class="panel-section panel-section-annotation">
+            <StylePanel
+              :show-project="false"
+              :show-annotation="true"
+              :annotation="selectedAnnotation"
+              :default-annotation-mode="state.defaultAnnotationMode"
+              :default-text-style="state.defaultTextStyle"
+              :default-font-family="state.defaultFontFamily"
+              :line-style="state.lineStyle"
+              :line-width="state.lineWidth"
+              :line-color="state.lineColor"
+              :dot-radius="state.dotRadius"
+              :line-halo="state.lineHalo"
+              :callout-font-size="state.calloutFontSize"
+              :callout-border-width="state.calloutBorderWidth"
+              :number-style="state.numberStyle"
+              :label-color="state.labelColor"
+              @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
             />
           </div>
         </aside>
@@ -355,7 +375,9 @@ function onKeydown(event: KeyboardEvent): void {
         <aside class="panel">
           <div class="panel-section">
             <StylePanel
-              :annotation="selectedAnnotation"
+              :show-project="true"
+              :show-annotation="false"
+              :annotation="null"
               :default-annotation-mode="state.defaultAnnotationMode"
               :default-text-style="state.defaultTextStyle"
               :default-font-family="state.defaultFontFamily"
@@ -380,7 +402,6 @@ function onKeydown(event: KeyboardEvent): void {
               @update:callout-border-width="setCalloutBorderWidth"
               @update:number-style="setNumberStyle"
               @update:label-color="setLabelColor"
-              @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
             />
           </div>
         </aside>
@@ -415,6 +436,26 @@ function onKeydown(event: KeyboardEvent): void {
 <style scoped>
 .workspace.is-home {
   grid-template-columns: 1fr;
+}
+
+.panel-left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-section-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border-bottom: none;
+}
+
+.panel-section-annotation {
+  flex: 0 0 auto;
+  margin-top: auto;
+  border-bottom: none;
+  border-top: 1px solid var(--line);
 }
 
 .project-load-error {
