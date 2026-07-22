@@ -212,7 +212,6 @@ watch(
       state.imageWidth,
       state.imageHeight,
       state.calloutFontSize,
-      state.defaultFontFamily,
       state.numberStyle,
     ] as const,
   () => {
@@ -274,8 +273,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   ocrLines.value = fields.ocrLines
-  loadGoogleFont(state.defaultFontFamily)
-
+  await ensureGoogleFontsLoaded([state.defaultFontFamily])
   refreshDocumentAndLayouts()
 }
 
@@ -591,6 +589,9 @@ export function useAnnotationStore() {
       CALLOUT_FONT_SIZE_MAX,
       Math.max(CALLOUT_FONT_SIZE_MIN, size),
     )
+    for (const annotation of state.annotations) {
+      annotation.calloutPosition = null
+    }
   }
 
   function setCalloutBorderWidth(width: number): void {
@@ -602,6 +603,9 @@ export function useAnnotationStore() {
 
   function setNumberStyle(style: NumberStyleId): void {
     state.numberStyle = style
+    for (const annotation of state.annotations) {
+      annotation.calloutPosition = null
+    }
   }
 
   function toggleShowSections(): void {
@@ -703,9 +707,13 @@ export function useAnnotationStore() {
     return annotation
   }
 
-  function setDefaultFontFamily(fontFamily: string): void {
+  async function setDefaultFontFamily(fontFamily: string): Promise<void> {
     state.defaultFontFamily = fontFamily
-    loadGoogleFont(fontFamily)
+    await ensureGoogleFontsLoaded([fontFamily])
+    for (const annotation of state.annotations) {
+      annotation.calloutPosition = null
+    }
+    refreshDocumentAndLayouts()
   }
 
   function updateAnnotation(
