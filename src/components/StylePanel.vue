@@ -7,12 +7,8 @@ import type {
   NumberStyleId,
 } from '../types/annotation'
 import { useI18n, type MessageKey } from '../i18n'
-import {
-  fontsByGroup,
-  loadAllGoogleFonts,
-  loadGoogleFont,
-  type FontGroupId,
-} from '../utils/googleFonts'
+import FontFamilyPicker from './FontFamilyPicker.vue'
+import { loadGoogleFont } from '../utils/googleFonts'
 import {
   getLineStyleOptions,
   LINE_HALO_WIDTH_MAX,
@@ -91,20 +87,6 @@ const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
 )
 
-const FONT_GROUP_LABEL_KEYS: Record<FontGroupId, MessageKey> = {
-  japanese: 'style.fontGroup.japanese',
-  sans: 'style.fontGroup.sans',
-  serif: 'style.fontGroup.serif',
-  display: 'style.fontGroup.display',
-}
-
-const fontGroups = computed(() =>
-  fontsByGroup().map((entry) => ({
-    ...entry,
-    label: t(FONT_GROUP_LABEL_KEYS[entry.group]),
-  })),
-)
-
 watch(
   () => props.defaultFontFamily,
   (family) => {
@@ -112,10 +94,6 @@ watch(
   },
   { immediate: true },
 )
-
-function onFontPickerOpen(): void {
-  loadAllGoogleFonts()
-}
 </script>
 
 <template>
@@ -267,22 +245,10 @@ function onFontPickerOpen(): void {
       </div>
       <div class="field" style="margin-bottom: 0">
         <label>{{ t('style.defaultFont') }}</label>
-        <select
-          :value="defaultFontFamily"
-          @focus="onFontPickerOpen"
-          @change="emit('update:defaultFontFamily', ($event.target as HTMLSelectElement).value)"
-        >
-          <optgroup v-for="group in fontGroups" :key="group.group" :label="group.label">
-            <option
-              v-for="option in group.fonts"
-              :key="option.family"
-              :value="option.family"
-              :style="{ fontFamily: `'${option.family}', sans-serif` }"
-            >
-              {{ option.label }}
-            </option>
-          </optgroup>
-        </select>
+        <FontFamilyPicker
+          :model-value="defaultFontFamily"
+          @update:model-value="emit('update:defaultFontFamily', $event)"
+        />
       </div>
     </div>
 
