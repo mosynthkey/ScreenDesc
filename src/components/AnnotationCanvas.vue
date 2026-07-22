@@ -108,6 +108,7 @@ const svgRef = ref<SVGSVGElement | null>(null)
 const drag = ref<DragState | null>(null)
 const editingId = ref<string | null>(null)
 const editDraft = ref('')
+const editInputRef = ref<HTMLInputElement | null>(null)
 const pointerMoved = ref(false)
 
 /** User zoom relative to fit-to-width (1 = fit canvas area). */
@@ -537,16 +538,31 @@ function onPointerUp(): void {
   drag.value = null
 }
 
-function onDblClick(event: MouseEvent): void {
-  const target = event.target as Element
-  const markerId = target.getAttribute('data-marker')
-  const calloutId = target.getAttribute('data-callout-label')
-  const annotationId = markerId || calloutId
-  if (!annotationId) return
+function annotationIdFromTarget(target: Element | null): string | null {
+  if (!target) return null
+  return (
+    target.closest('[data-callout-label]')?.getAttribute('data-callout-label') ??
+    target.closest('[data-marker]')?.getAttribute('data-marker')
+  )
+}
+
+async function beginEdit(annotationId: string): Promise<void> {
   const annotation = props.annotations.find((item) => item.id === annotationId)
   if (!annotation) return
+  drag.value = null
   editingId.value = annotationId
   editDraft.value = annotation.description
+  emit('selectAnnotation', annotationId, false)
+  await nextTick()
+  editInputRef.value?.focus()
+  editInputRef.value?.select()
+}
+
+function onDblClick(event: MouseEvent): void {
+  event.preventDefault()
+  const annotationId = annotationIdFromTarget(event.target as Element)
+  if (!annotationId) return
+  void beginEdit(annotationId)
 }
 
 function commitEdit(): void {
@@ -554,6 +570,19 @@ function commitEdit(): void {
   emit('commitDescription', editingId.value, editDraft.value)
   editingId.value = null
 }
+
+function cancelEdit(): void {
+  editingId.value = null
+}
+
+const screenScale = computed(() =>
+  documentWidth.value > 0 ? stageWidth.value / documentWidth.value : 1,
+)
+
+const editingCalloutLayout = computed(() => {
+  if (!editingId.value || props.annotationMode !== 'callout') return null
+  return props.calloutLayouts.find((item) => item.annotationId === editingId.value) ?? null
+})
 
 const draftSection = computed(() => {
   if (drag.value?.kind !== 'create-section') return null
@@ -737,6 +766,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               }"
             />
             <text
+              v-show="editingId !== annotation.id"
               :data-callout-label="annotation.id"
               class="callout-text"
               :x="layoutFor(annotation.id)!.labelPosition.x + 10"
@@ -745,6 +775,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               <tspan
                 v-for="(line, lineIndex) in layoutFor(annotation.id)!.lines"
                 :key="lineIndex"
+                :data-callout-label="annotation.id"
                 :x="layoutFor(annotation.id)!.labelPosition.x + 10"
                 :y="calloutLineY(layoutFor(annotation.id)!, lineIndex)"
               >{{ line }}</tspan>
@@ -809,15 +840,40 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
       </g>
       </template>
     </svg>
+
+      <div
+        v-if="editingId && editingCalloutLayout"
+        class="callout-inplace-edit"
+        :style="{
+          left: `${editingCalloutLayout.labelPosition.x * screenScale}px`,
+          top: `${editingCalloutLayout.labelPosition.y * screenScale}px`,
+          width: `${editingCalloutLayout.labelWidth * screenScale}px`,
+          minHeight: `${editingCalloutLayout.labelHeight * screenScale}px`,
+          fontFamily: activeFontFamily,
+          fontSize: `${calloutFontSize * screenScale}px`,
+        }"
+        @pointerdown.stop
+      >
+        <input
+          ref="editInputRef"
+          v-model="editDraft"
+          type="text"
+          :placeholder="t('canvas.descriptionPlaceholder')"
+          @keydown.enter.prevent="commitEdit"
+          @keydown.escape.prevent="cancelEdit"
+          @blur="commitEdit"
+        />
+      </div>
     </div>
 
-    <div v-if="editingId" class="inline-edit">
+    <div v-if="editingId && !editingCalloutLayout" class="inline-edit">
       <input
+        ref="editInputRef"
         v-model="editDraft"
         type="text"
         :placeholder="t('canvas.descriptionPlaceholder')"
         @keydown.enter="commitEdit"
-        @keydown.escape="editingId = null"
+        @keydown.escape="cancelEdit"
       />
       <button class="btn btn-primary" type="button" @click="commitEdit">{{ t('canvas.commit') }}</button>
     </div>
@@ -832,8 +888,35 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 }
 
 .canvas-stage {
+  position: relative;
   margin: 24px;
   flex: 0 0 auto;
+}
+
+.callout-inplace-edit {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1.5px solid var(--selection);
+  box-shadow: var(--shadow);
+}
+
+.callout-inplace-edit input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.375;
 }
 
 .scene {
@@ -902,7 +985,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 .callout-label {
   fill: #fff;
   stroke: #1f2933;
-  cursor: move;
+  cursor: text;
 }
 
 .selected .callout-label {
