@@ -750,6 +750,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               :height="layoutFor(annotation.id)!.labelHeight"
               rx="6"
               :style="{
+                stroke: effectiveDotColor,
                 strokeWidth: selectedAnnotationIds.includes(annotation.id)
                   ? calloutBorderWidth + 0.75
                   : calloutBorderWidth,
@@ -907,12 +908,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 
 .callout-label {
   fill: #fff;
-  stroke: #1f2933;
   cursor: text;
-}
-
-.selected .callout-label {
-  stroke: #2563eb;
 }
 
 .callout-text {

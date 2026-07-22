@@ -74,7 +74,7 @@ function renderCallout(
         ${dotHalo}
         <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />
       </g>
-      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="#ffffff" stroke="#1f2933" stroke-width="${calloutBorderWidth}" />
+      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="#ffffff" stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
       <text dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${calloutFontSize}" font-weight="700" fill="#111111">${tspans}</text>
     </g>
   `
