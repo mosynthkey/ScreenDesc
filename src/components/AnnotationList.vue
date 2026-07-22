@@ -210,7 +210,7 @@ function onDrop(event: DragEvent): void {
   padding: 0;
   border: none;
   border-radius: 8px;
-  background: rgba(120, 120, 128, 0.1);
+  background: #fff;
   color: var(--ink-muted);
   font-size: 0.95rem;
   line-height: 1;
@@ -221,7 +221,7 @@ function onDrop(event: DragEvent): void {
 
 .drag-handle:hover {
   color: var(--ink);
-  background: rgba(120, 120, 128, 0.18);
+  background: #fff;
 }
 
 .drag-handle:active {
