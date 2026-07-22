@@ -24,6 +24,8 @@ export const DEFAULT_CALLOUT_FILL_COLOR = '#ffffff'
 export const DEFAULT_CALLOUT_FILL_OPACITY = 1
 export const CALLOUT_FILL_OPACITY_MIN = 0
 export const CALLOUT_FILL_OPACITY_MAX = 1
+/** Page / export canvas color behind the screenshot and margins. */
+export const DEFAULT_PAGE_BACKGROUND_COLOR = '#ffffff'
 
 export interface CommonSettings {
   defaultFontFamily: string
@@ -40,6 +42,7 @@ export interface CommonSettings {
   calloutFillColor: string
   /** 0–1 */
   calloutFillOpacity: number
+  pageBackgroundColor: string
   numberStyle: NumberStyleId
 }
 
@@ -68,6 +71,7 @@ export function createDefaultCommonSettings(): CommonSettings {
     calloutFillEnabled: true,
     calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
     calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
+    pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
     numberStyle: DEFAULT_NUMBER_STYLE,
   }
 }
@@ -101,6 +105,14 @@ export function normalizeCalloutFillColor(value: unknown): string {
     if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
   }
   return DEFAULT_CALLOUT_FILL_COLOR
+}
+
+export function normalizePageBackgroundColor(value: unknown): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
+  }
+  return DEFAULT_PAGE_BACKGROUND_COLOR
 }
 
 export function normalizeCalloutFillOpacity(value: unknown): number {
@@ -170,6 +182,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     calloutFillEnabled: normalizeCalloutFillEnabled(raw.calloutFillEnabled),
     calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),
     calloutFillOpacity: normalizeCalloutFillOpacity(raw.calloutFillOpacity),
+    pageBackgroundColor: normalizePageBackgroundColor(raw.pageBackgroundColor),
     numberStyle,
   }
 }

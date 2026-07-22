@@ -28,6 +28,7 @@ export interface ExportScene {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  pageBackgroundColor: string
   fontFamily: string
 }
 

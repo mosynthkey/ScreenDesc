@@ -13,6 +13,7 @@ const emit = defineEmits<{
   file: [file: File]
   open: [id: string]
   remove: [id: string]
+  downloadBundle: []
 }>()
 
 const { t } = useI18n()
@@ -122,8 +123,19 @@ defineExpose({ openFilePicker })
 
     <section class="gallery">
       <div class="gallery-header">
-        <h2>{{ t('home.galleryTitle') }}</h2>
-        <span class="hint">{{ t('home.galleryCount', { count: projects.length }) }}</span>
+        <div class="gallery-heading">
+          <h2>{{ t('home.galleryTitle') }}</h2>
+          <span class="hint">{{ t('home.galleryCount', { count: projects.length }) }}</span>
+        </div>
+        <button
+          class="btn btn-ghost"
+          type="button"
+          :disabled="projects.length === 0 || isBusy"
+          :title="t('home.downloadBundleTitle')"
+          @click="emit('downloadBundle')"
+        >
+          {{ t('home.downloadBundle') }}
+        </button>
       </div>
       <p v-if="projects.length === 0" class="hint gallery-empty">{{ t('home.galleryEmpty') }}</p>
       <ul v-else class="gallery-grid">
@@ -215,10 +227,17 @@ defineExpose({ openFilePicker })
 
 .gallery-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.gallery-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
 }
 
 .gallery-header h2 {

@@ -37,6 +37,7 @@ export interface ProjectSnapshot {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  pageBackgroundColor: string
   numberStyle: NumberStyleId
   showSections: boolean
   /** When set, edits auto-overwrite this named browser save. */
@@ -160,6 +161,18 @@ export async function loadNamedProject(id: string): Promise<ProjectSnapshot | nu
   })
   db.close()
   return result
+}
+
+export async function loadAllNamedProjects(): Promise<
+  Array<{ meta: SavedProjectMeta; snapshot: ProjectSnapshot }>
+> {
+  const metas = await listSavedProjects()
+  const loaded: Array<{ meta: SavedProjectMeta; snapshot: ProjectSnapshot }> = []
+  for (const meta of metas) {
+    const snapshot = await loadNamedProject(meta.id)
+    if (snapshot) loaded.push({ meta, snapshot })
+  }
+  return loaded
 }
 
 export async function loadNamedProjectImageBlob(id: string): Promise<Blob | null> {

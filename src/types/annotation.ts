@@ -103,6 +103,8 @@ export interface ProjectState {
   calloutFillColor: string
   /** Label background opacity (0–1). */
   calloutFillOpacity: number
+  /** Page / export canvas color behind the screenshot and margins. */
+  pageBackgroundColor: string
   /** Project-wide step number style (① / (1) / …). */
   numberStyle: NumberStyleId
   showSections: boolean

@@ -37,6 +37,7 @@ const emit = defineEmits<{
   undoCrop: []
   exportProjectFile: []
   openImportProject: []
+  replaceImage: []
   openProjectStorage: []
   newProject: []
   renameProject: [name: string]
@@ -130,6 +131,11 @@ function chooseExportProjectFile(): void {
 
 function chooseImportProject(): void {
   emit('openImportProject')
+  projectMenuOpen.value = false
+}
+
+function chooseReplaceImage(): void {
+  emit('replaceImage')
   projectMenuOpen.value = false
 }
 
@@ -260,10 +266,28 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         </button>
         <div v-if="projectMenuOpen" class="project-menu" @click.stop>
           <button class="project-menu-item" type="button" @click="chooseNewProject">
-            {{ t('menu.newProject') }}
+            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path
+                d="M12 5v14M5 12h14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>{{ t('menu.newProject') }}</span>
           </button>
           <button class="project-menu-item" type="button" @click="chooseProjectStorage">
-            {{ t('menu.projectStorage') }}
+            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path
+                d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>{{ t('menu.projectStorage') }}</span>
           </button>
           <div class="project-menu-sep" />
           <button
@@ -272,10 +296,89 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :disabled="!hasImage"
             @click="chooseExportProjectFile"
           >
-            {{ t('menu.exportProjectFile') }}
+            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path
+                d="M12 4v10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <path
+                d="M8 8l4-4 4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>{{ t('menu.exportProjectFile') }}</span>
           </button>
           <button class="project-menu-item" type="button" @click="chooseImportProject">
-            {{ t('menu.importProjectFile') }}
+            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path
+                d="M12 14V4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <path
+                d="M8 10l4 4 4-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>{{ t('menu.importProjectFile') }}</span>
+          </button>
+          <div class="project-menu-sep" />
+          <button
+            class="project-menu-item"
+            type="button"
+            :disabled="!hasImage"
+            :title="t('tooltip.replaceImage')"
+            @click="chooseReplaceImage"
+          >
+            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <rect
+                x="3.5"
+                y="5.5"
+                width="17"
+                height="13"
+                rx="2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <circle cx="9" cy="10.5" r="1.6" fill="currentColor" />
+              <path
+                d="M4.5 16.5l4.2-4.2a1.2 1.2 0 0 1 1.7 0L14 16l2.2-2.2a1.2 1.2 0 0 1 1.7 0l1.6 1.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>{{ t('menu.replaceImage') }}</span>
           </button>
         </div>
       </div>
@@ -287,23 +390,47 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :disabled="!canExport"
         @click="emit('copyClipboard')"
       >
-        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+        <svg
+          v-if="!copyJustSucceeded"
+          class="header-btn-icon"
+          viewBox="0 0 24 24"
+          width="15"
+          height="15"
+          aria-hidden="true"
+        >
+          <path
+            d="M9 4.5h5.2a1.8 1.8 0 0 1 1.8 1.8V7H9.8A1.8 1.8 0 0 0 8 8.8V18H7a1.8 1.8 0 0 1-1.8-1.8V6.3A1.8 1.8 0 0 1 7 4.5h2Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
+          />
           <rect
-            x="8"
-            y="8"
-            width="11"
-            height="13"
-            rx="2"
+            x="9"
+            y="7"
+            width="10.5"
+            height="12.5"
+            rx="1.8"
             fill="none"
             stroke="currentColor"
             stroke-width="1.8"
           />
+        </svg>
+        <svg
+          v-else
+          class="header-btn-icon"
+          viewBox="0 0 24 24"
+          width="15"
+          height="15"
+          aria-hidden="true"
+        >
           <path
-            d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+            d="M5 12.5l4.2 4.2L19 7"
             fill="none"
             stroke="currentColor"
             stroke-width="1.8"
             stroke-linecap="round"
+            stroke-linejoin="round"
           />
         </svg>
         <span>{{ copyJustSucceeded ? t('button.copied') : t('button.copyClipboard') }}</span>
@@ -681,13 +808,15 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 4px;
-  min-width: 180px;
+  min-width: 220px;
   box-shadow: var(--shadow-lg);
   z-index: 50;
 }
 
 .project-menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   text-align: left;
   border: none;
@@ -698,6 +827,11 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   padding: 9px 10px;
   border-radius: 7px;
   white-space: nowrap;
+}
+
+.project-menu-icon {
+  flex: 0 0 auto;
+  opacity: 0.78;
 }
 
 .project-menu-item:hover:not(:disabled) {

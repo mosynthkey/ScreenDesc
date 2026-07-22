@@ -8,6 +8,9 @@ export const ja: Record<MessageKey, string> = {
   'about.title': 'ScreenDesc について',
   'about.openAria': 'ScreenDesc について',
   'about.version': 'バージョン {version}',
+  'about.librariesTitle': '使用ライブラリとライセンス',
+  'about.licenseLabel': '{license} ライセンス',
+  'about.close': '閉じる',
 
   'nav.aria': 'メインナビゲーション',
   'nav.gallery': 'ギャラリー',
@@ -19,8 +22,8 @@ export const ja: Record<MessageKey, string> = {
   'status.proposing': '提案中…',
 
   'button.project': 'プロジェクト ▾',
-  'button.copyClipboard': 'コピー',
-  'button.copied': 'コピー済み',
+  'button.copyClipboard': 'クリップボードにコピー',
+  'button.copied': 'クリップボードにコピー済み',
   'button.export': '書き出し',
   'button.newProject': '新規作成',
   'button.importProject': 'インポート',
@@ -33,7 +36,9 @@ export const ja: Record<MessageKey, string> = {
   'tooltip.copyClipboard': '注釈付き画像をクリップボードにコピーします',
   'tooltip.export': '注釈付き画像を書き出します',
   'tooltip.newProject': 'スクリーンショットから新規プロジェクトを作成します',
-  'tooltip.importProjectFile': 'ScreenDesc プロジェクトファイルを読み込みます',
+  'tooltip.importProjectFile': 'ScreenDesc のプロジェクト / バンドルファイルを読み込みます',
+  'tooltip.replaceImage':
+    'スクリーンショットを差し替えます。サイズが違う場合はクロップまたは余白で合わせます。',
   'tooltip.toolSelect': '選択・移動 (V)',
   'tooltip.toolAddSection': '範囲を描いてセクションを1件提案 (F)',
   'tooltip.toolAnnotate': 'セクションをクリックして注釈を追加 (A)',
@@ -53,6 +58,7 @@ export const ja: Record<MessageKey, string> = {
   'menu.projectStorage': '保存 / 読み込み(ブラウザ内)',
   'menu.exportProjectFile': 'エクスポート(ファイルに書き出し)',
   'menu.importProjectFile': 'インポート(ファイルから読み込み)',
+  'menu.replaceImage': '画像を差し替え…',
   'menu.undoCrop': '切り抜きを元に戻す',
 
   'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
@@ -67,6 +73,12 @@ export const ja: Record<MessageKey, string> = {
   'cropConfirm.overwriteHint': 'いまのプロジェクトの画像を差し替えます（切り抜きは1回だけ元に戻せます）',
   'cropConfirm.cancel': 'キャンセル',
 
+  'replaceDetect.title': '自動認識を再実行しますか？',
+  'replaceDetect.body':
+    '画像を差し替えました。新しい画像でセクションの自動認識を再度実行しますか？実行すると、いまの注釈はクリアされます。',
+  'replaceDetect.run': '再実行する',
+  'replaceDetect.keep': 'いまのまま',
+
   'home.title': 'ScreenDesc',
   'home.description': '新しい注釈プロジェクトを作るか、このブラウザに保存したプロジェクトを開きます。',
   'home.newTitle': '新規作成',
@@ -77,7 +89,8 @@ export const ja: Record<MessageKey, string> = {
   'home.galleryCount': '{count} 件',
   'home.galleryEmpty': 'まだ保存がありません。作成後、プロジェクト → 保存 / 読み込み で残せます。',
   'home.removeAria': '保存済みプロジェクトを削除',
-
+  'home.downloadBundle': 'すべてダウンロード',
+  'home.downloadBundleTitle': '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
   'sidebar.workflowTitle': '作業の流れ',
   'sidebar.workflow.step1': '1. アップロード時に全体をスキャン',
   'sidebar.workflow.step2': '2. 必要なら範囲を手描きでセクション追加',
@@ -94,6 +107,7 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.dragTitle': 'ドラッグで並び替え',
   'annotationList.emptyDescription': '説明なし',
   'annotationList.removeTitle': '削除',
+  'annotationList.multiSelectHint': 'Shift+クリックで複数選択',
 
   'canvas.emptyHint':
     '注釈したい範囲をドラッグしてください。その範囲に合うセクションを1件提案します。',
@@ -113,7 +127,7 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.defaultName': 'プロジェクト {stamp}',
   'projectStorage.title': 'ブラウザ内ストレージに保存 / 読み込み',
   'projectStorage.description':
-    'この端末のブラウザ内に複数のプロジェクトを保存・管理できます。他の端末に持ち出す場合は「エクスポート」を使ってください。',
+    'この端末のブラウザ内に複数のプロジェクトを保存・管理できます。「すべてダウンロード」で1つのバンドルファイルにまとめ、ほかの端末でインポートできます。',
   'projectStorage.autosaveHint':
     '編集中の内容は、このブラウザに自動保存されます。',
   'projectStorage.currentLabel': 'いまのプロジェクト',
@@ -135,11 +149,14 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.overwriteTitle': '現在のプロジェクトでこの保存を上書きします',
   'projectStorage.overwrite': '上書き保存',
   'projectStorage.remove': '削除',
+  'projectStorage.downloadBundle': 'すべてダウンロード',
+  'projectStorage.downloadBundleTitle':
+    '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
   'projectStorage.close': '閉じる',
 
   'style.calloutBorder.none': '枠なし',
   'style.projectSettingsTitle': '共通設定',
-  'style.presetsManage': '保存 / 呼び出し',
+  'style.presetsManage': 'プリセット',
   'style.section.number': '番号',
   'style.section.stroke': '線',
   'style.section.anchor': 'アンカー',
@@ -161,6 +178,7 @@ export const ja: Record<MessageKey, string> = {
   'style.lineHaloColor': '縁取りの色',
   'style.calloutFontSize': '説明の文字サイズ',
   'style.calloutFill': '説明の背景',
+  'style.pageBackground': '制作画像の背景色',
   'style.calloutFillColor': '背景色',
   'style.calloutFillOpacity': '不透明度',
   'style.calloutBorder': '説明枠',
@@ -180,16 +198,25 @@ export const ja: Record<MessageKey, string> = {
   'style.fontGroup.serif': 'セリフ',
   'style.fontGroup.display': 'ディスプレイ',
   'style.selectedAnnotationTitle': '選択中の注釈',
+  'style.selectedAnnotationsTitle': '{count}件の注釈を選択中',
+  'style.multiSelectionHint':
+    '配置・ラベル座標・アンカーオフセットは、選択中の注釈すべてに適用されます。',
+  'style.mixed': '混在',
   'style.calloutSide': '説明の配置',
   'style.calloutSide.auto': '自動',
   'style.calloutSide.left': '左',
   'style.calloutSide.right': '右',
+  'style.labelPositionX': 'ラベル X',
+  'style.labelPositionY': 'ラベル Y',
+  'style.labelPositionHint': 'キャンバス上でラベルをドラッグできます（画像の上にも配置可）。',
+  'style.labelPositionReset': 'ラベル位置をリセット',
   'style.description': '説明',
   'style.descriptionPlaceholder': '例: ［保存］をクリック',
-  'style.noSelectionHint': '注釈を選択すると、スタイルと説明を編集できます。',
+  'style.noSelectionHint':
+    '注釈を選択すると、スタイルと説明を編集できます。Shift+クリックで複数選択できます。',
 
   'commonSettings.defaultName': '設定 {stamp}',
-  'commonSettings.title': '共通設定の保存 / 呼び出し',
+  'commonSettings.title': '共通設定のプリセット',
   'commonSettings.description':
     'いまの共通設定を保存し、別のプロジェクトでも呼び出して適用できます。',
   'commonSettings.saveAsLabel': '名前を付けて保存',
@@ -217,10 +244,18 @@ export const ja: Record<MessageKey, string> = {
 
   'callout.emptyDescription': '説明',
 
+  'error.dismiss': '閉じる',
   'error.projectLoadFailed': 'プロジェクトの読み込みに失敗しました',
   'error.imageReadFailed': '画像の読み込みに失敗しました',
+  'error.imageFitFailed': 'プロジェクトと同じサイズへの変換に失敗しました',
+  'error.imageReplaceNoProject': '画像を差し替える前にプロジェクトを開いてください',
+  'error.imageReplaceFailed': '画像の差し替えに失敗しました',
   'error.projectFileInvalidJson': 'プロジェクトファイルの形式が正しくありません(JSON解析エラー)',
   'error.projectFileUnsupported': '対応していないプロジェクトファイルです',
+  'error.projectBundleInvalid': 'プロジェクトバンドルの形式が正しくありません',
+  'error.projectBundleUnsupported': 'ScreenDesc のプロジェクトバンドルではありません',
+  'error.projectBundleEmpty': 'バンドルに含める保存済みプロジェクトがありません',
+  'error.projectBundleDownloadFailed': 'プロジェクトバンドルのダウンロードに失敗しました',
   'error.savedProjectNotFound': '保存済みのプロジェクトが見つかりませんでした',
   'error.clipboardCopyFailed': 'クリップボードにコピーできませんでした',
   'error.commonSettingsNotFound': '保存済みの共通設定が見つかりませんでした',

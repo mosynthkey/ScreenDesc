@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { APP_NAME, APP_VERSION } from '../appMeta'
+import { RUNTIME_LIBRARIES } from '../credits'
 import { useI18n } from '../i18n'
 
 export type AppPageId = 'gallery' | 'edit'
@@ -17,23 +18,24 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const aboutOpen = ref(false)
 
-function toggleAbout(): void {
-  aboutOpen.value = !aboutOpen.value
+function openAbout(): void {
+  aboutOpen.value = true
 }
 
 function closeAbout(): void {
   aboutOpen.value = false
 }
 
-function handleWindowClick(event: MouseEvent): void {
-  const target = event.target as HTMLElement | null
-  if (aboutOpen.value && !target?.closest('.nav-about')) {
+function onAboutKeydown(event: KeyboardEvent): void {
+  if (!aboutOpen.value) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
     closeAbout()
   }
 }
 
-onMounted(() => window.addEventListener('click', handleWindowClick))
-onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
+onMounted(() => window.addEventListener('keydown', onAboutKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
 </script>
 
 <template>
@@ -124,28 +126,63 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
     </div>
 
     <div class="nav-about">
-      <div
-        v-if="aboutOpen"
-        class="about-popover"
-        role="dialog"
-        :aria-label="t('about.title')"
-      >
-        <div class="about-name">{{ APP_NAME }}</div>
-        <p class="about-tagline">{{ t('brand.tagline') }}</p>
-        <p class="about-version">{{ t('about.version', { version: APP_VERSION }) }}</p>
-      </div>
       <button
         class="nav-brand"
         type="button"
         :aria-label="t('about.openAria')"
         :aria-expanded="aboutOpen"
         :title="t('about.openAria')"
-        @click.stop="toggleAbout"
+        @click="openAbout"
       >
         <span class="brand-mark" aria-hidden="true" />
       </button>
     </div>
   </nav>
+
+  <Teleport to="body">
+    <div
+      v-if="aboutOpen"
+      class="modal-backdrop"
+      @click.self="closeAbout"
+    >
+      <div
+        class="modal about-modal"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('about.title')"
+      >
+        <div class="about-mark" aria-hidden="true" />
+        <h2 class="about-name">{{ APP_NAME }}</h2>
+        <p class="about-tagline">{{ t('brand.tagline') }}</p>
+        <p class="about-version">{{ t('about.version', { version: APP_VERSION }) }}</p>
+
+        <section class="about-libraries" :aria-label="t('about.librariesTitle')">
+          <h3 class="about-libraries-title">{{ t('about.librariesTitle') }}</h3>
+          <ul class="about-library-list">
+            <li v-for="library in RUNTIME_LIBRARIES" :key="library.name" class="about-library-item">
+              <a
+                class="about-library-name"
+                :href="library.url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ library.name }}
+              </a>
+              <span class="about-library-license">
+                {{ t('about.licenseLabel', { license: library.license }) }}
+              </span>
+            </li>
+          </ul>
+        </section>
+
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="button" @click="closeAbout">
+            {{ t('about.close') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -219,7 +256,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 }
 
 .nav-about {
-  position: relative;
   flex: 0 0 auto;
   margin-top: auto;
   padding-top: 8px;
@@ -252,37 +288,101 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.35);
 }
 
-.about-popover {
-  position: absolute;
-  left: calc(100% + 10px);
-  bottom: 0;
-  z-index: 60;
-  width: max-content;
-  min-width: 180px;
-  padding: 12px 14px;
+.about-modal {
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(860px, calc(100vh - 48px));
+  overflow: auto;
+  text-align: center;
+}
+
+.about-mark {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
   border-radius: 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  background: linear-gradient(145deg, #5ac8fa 0%, #007aff 55%, #5856d6 100%);
+  box-shadow:
+    0 8px 20px rgba(0, 122, 255, 0.28),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.4);
 }
 
 .about-name {
-  font-size: 0.95rem;
+  margin: 0;
+  font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .about-tagline {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   color: var(--ink-secondary);
-  font-size: 0.78rem;
-  line-height: 1.4;
+  font-size: 0.88rem;
+  line-height: 1.45;
 }
 
 .about-version {
-  margin: 8px 0 0;
+  margin: 12px 0 0;
   color: var(--ink-muted);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
+}
+
+.about-libraries {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.about-libraries-title {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.about-library-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.about-library-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(120, 120, 128, 0.08);
+}
+
+.about-library-name {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.about-library-name:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.about-library-license {
+  flex: 0 0 auto;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.about-modal .modal-actions {
+  justify-content: center;
+  margin-top: 16px;
 }
 </style>

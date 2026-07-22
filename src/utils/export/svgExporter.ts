@@ -28,6 +28,7 @@ export const svgExporter: Exporter = {
       calloutFillEnabled: scene.calloutFillEnabled,
       calloutFillColor: scene.calloutFillColor,
       calloutFillOpacity: scene.calloutFillOpacity,
+      pageBackgroundColor: scene.pageBackgroundColor,
       fontFamily: scene.fontFamily,
       fontCss,
     })

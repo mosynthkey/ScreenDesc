@@ -9,13 +9,13 @@ import type {
 import {
   buildAnchorArrowGeometry,
   buildAnchorHeadPath,
-  buildAnchorLeaderPath,
+  dotLeaderAttachPoint,
   isArrowAnchorStyle,
   leaderAttachPoint,
 } from '../anchorStyle'
 import { fontFamilyCss } from '../googleFonts'
 import { getLineStyleSpec } from '../lineStyle'
-import { buildLeaderPath } from '../calloutLayout'
+import { buildLeaderPath, leaderAttachOnLabel } from '../calloutLayout'
 import { resolveCalloutFill } from '../commonSettings'
 
 function escapeXml(value: string): string {
@@ -44,10 +44,9 @@ function renderCallout(
   calloutFillOpacity: number,
   fontFamily: string,
 ): string {
-  const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, elbowPoint } = layout
+  const { labelPosition, labelWidth, labelHeight, lines, anchorPoint } = layout
   const textX = labelPosition.x + Math.max(10, calloutFontSize * 0.28)
-  const endX =
-    layout.side === 'left' ? labelPosition.x + labelWidth : labelPosition.x
+  const leaderEnd = leaderAttachOnLabel(layout)
 
   const lineHeight = Math.round(calloutFontSize * 1.375)
   const blockHeight = lines.length * lineHeight
@@ -74,44 +73,36 @@ function renderCallout(
 
   let body: string
   if (isArrowAnchorStyle(anchorStyle)) {
-    const combined = buildAnchorLeaderPath(
-      anchorStyle,
-      anchorPoint,
-      endX,
-      elbowPoint.y,
-      dotRadius,
+    // Head and leader must be separate: filling a combined path paints the open cubic.
+    const geometry = buildAnchorArrowGeometry(anchorPoint, leaderEnd.x, dotRadius)
+    const head = buildAnchorHeadPath(anchorStyle, geometry)
+    const leader = buildLeaderPath(
+      leaderAttachPoint(anchorStyle, geometry),
+      leaderEnd.x,
+      leaderEnd.y,
     )
     const fill = anchorStyle === 'arrow' ? effectiveDotColor : 'none'
+    const haloWidth = spec.strokeWidth + lineHaloWidth
     const halo =
       lineHaloWidth > 0 && !isInvert
-        ? `<path d="${combined}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" ${strokeJoin} />`
+        ? `<path d="${leader}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" ${strokeJoin} />
+      <path d="${head}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" ${strokeJoin} />`
         : ''
-
-    if (spec.dasharray) {
-      const geometry = buildAnchorArrowGeometry(anchorPoint, endX, dotRadius)
-      const head = buildAnchorHeadPath(anchorStyle, geometry)
-      const leader = buildLeaderPath(leaderAttachPoint(anchorStyle, geometry), endX, elbowPoint.y)
-      body = `${halo}
-        <path d="${head}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />
-        <path d="${leader}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
-    } else {
-      body = `${halo}
-        <path d="${combined}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />`
-    }
+    body = `${halo}
+      <path d="${head}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />
+      <path d="${leader}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
   } else {
-    const pathD = buildLeaderPath(anchorPoint, endX, elbowPoint.y)
-    const haloPath =
+    const leaderStart = dotLeaderAttachPoint(anchorPoint, leaderEnd.x, dotRadius)
+    const pathD = buildLeaderPath(leaderStart, leaderEnd.x, leaderEnd.y)
+    const haloWidth = spec.strokeWidth + lineHaloWidth
+    const halo =
       lineHaloWidth > 0 && !isInvert
-        ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
+        ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" ${strokeJoin} />
+      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" />`
         : ''
-    const dotHalo =
-      lineHaloWidth > 0 && !isInvert
-        ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius + lineHaloWidth / 2}" fill="${lineHaloColor}" />`
-        : ''
-    body = `${haloPath}
-      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} />
-      ${dotHalo}
-      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />`
+    body = `${halo}
+      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" />
+      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
   }
 
   return `
@@ -145,6 +136,7 @@ export function buildSceneSvg(params: {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  pageBackgroundColor: string
   fontFamily: string
   /** Optional embedded @font-face CSS (data URIs) for portable export */
   fontCss?: string
@@ -169,6 +161,7 @@ export function buildSceneSvg(params: {
     calloutFillEnabled,
     calloutFillColor,
     calloutFillOpacity,
+    pageBackgroundColor,
     fontFamily,
     fontCss = '',
   } = params
@@ -216,7 +209,7 @@ export function buildSceneSvg(params: {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${styleBlock}
-  <rect width="100%" height="100%" fill="#f4f6f8" />
+  <rect width="100%" height="100%" fill="${escapeXml(pageBackgroundColor)}" />
   <image xlink:href="${escapeXml(imageHref)}" x="${document.marginLeft}" y="${document.marginTop}" width="${document.imageWidth}" height="${document.imageHeight}" preserveAspectRatio="none" />
   ${sectionGuides}
   ${callouts}

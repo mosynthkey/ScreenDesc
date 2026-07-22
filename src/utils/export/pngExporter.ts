@@ -38,6 +38,7 @@ export const pngExporter: Exporter = {
       calloutFillEnabled: scene.calloutFillEnabled,
       calloutFillColor: scene.calloutFillColor,
       calloutFillOpacity: scene.calloutFillOpacity,
+      pageBackgroundColor: scene.pageBackgroundColor,
       fontFamily: scene.fontFamily,
       fontCss,
     })
@@ -54,7 +55,7 @@ export const pngExporter: Exporter = {
       const context = canvas.getContext('2d')
       if (!context) throw new Error('Canvas unavailable')
 
-      context.fillStyle = '#f4f6f8'
+      context.fillStyle = scene.pageBackgroundColor
       context.fillRect(0, 0, canvas.width, canvas.height)
       context.drawImage(rendered, 0, 0, canvas.width, canvas.height)
 

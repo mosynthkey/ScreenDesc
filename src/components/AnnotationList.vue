@@ -82,9 +82,12 @@ function onDrop(event: DragEvent): void {
     <p v-if="annotations.length === 0" class="hint">
       {{ t('annotationList.emptyHint') }}
     </p>
+    <p v-else-if="annotations.length > 1" class="hint multi-hint">
+      {{ t('annotationList.multiSelectHint') }}
+    </p>
 
     <ul
-      v-else
+      v-if="annotations.length > 0"
       class="list"
       role="list"
       @dragover="onListDragOver"
@@ -141,6 +144,10 @@ function onDrop(event: DragEvent): void {
 </template>
 
 <style scoped>
+.multi-hint {
+  margin: -2px 0 10px;
+}
+
 .list {
   list-style: none;
   margin: 0;

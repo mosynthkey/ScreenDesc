@@ -18,6 +18,7 @@ const emit = defineEmits<{
   overwrite: [id: string]
   load: [id: string]
   remove: [id: string]
+  downloadBundle: []
 }>()
 
 const { t } = useI18n()
@@ -158,6 +159,15 @@ function submitSave(): void {
       </div>
 
       <div class="modal-actions">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          :disabled="projects.length === 0 || isBusy"
+          :title="t('projectStorage.downloadBundleTitle')"
+          @click="emit('downloadBundle')"
+        >
+          {{ t('projectStorage.downloadBundle') }}
+        </button>
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('projectStorage.close') }}
         </button>
@@ -278,5 +288,9 @@ function submitSave(): void {
 .saved-actions .btn {
   padding: 6px 10px;
   font-size: 0.78rem;
+}
+
+.modal-actions {
+  justify-content: space-between;
 }
 </style>

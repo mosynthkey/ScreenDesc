@@ -19,11 +19,14 @@ import {
   normalizeCalloutFillColor,
   normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
+  normalizePageBackgroundColor,
 } from './commonSettings'
 import { clampAnchorOffsetAxis } from './markerSize'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
+const BUNDLE_KIND = 'bundle'
+const BUNDLE_EXTENSION = '.screendesc-bundle.json'
 
 export interface ProjectFileData {
   version: 1
@@ -49,9 +52,28 @@ export interface ProjectFileData {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  pageBackgroundColor: string
   numberStyle: NumberStyleId
   showSections: boolean
 }
+
+export interface ProjectBundleEntry {
+  name: string
+  updatedAt: number
+  project: ProjectFileData
+}
+
+export interface ProjectBundleFileData {
+  version: 1
+  kind: typeof BUNDLE_KIND
+  projects: ProjectBundleEntry[]
+}
+
+export type ProjectFileFields = Omit<ProjectFileData, 'version' | 'imageDataUrl'>
+
+export type ParsedScreenDescFile =
+  | { kind: 'project'; project: ProjectFileData }
+  | { kind: 'bundle'; bundle: ProjectBundleFileData }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -100,12 +122,12 @@ function sanitizeAnnotation(
   }
 }
 
-export async function buildProjectFile(
+async function buildProjectFileData(
   imageBlob: Blob,
-  fields: Omit<ProjectFileData, 'version' | 'imageDataUrl'>,
-): Promise<Blob> {
+  fields: ProjectFileFields,
+): Promise<ProjectFileData> {
   const imageDataUrl = await blobToDataUrl(imageBlob)
-  const data: ProjectFileData = {
+  return {
     version: FILE_VERSION,
     imageDataUrl,
     ...fields,
@@ -113,31 +135,54 @@ export async function buildProjectFile(
       sanitizeAnnotation(annotation, fields.imageWidth, fields.imageHeight),
     ),
   }
+}
+
+export async function buildProjectFile(
+  imageBlob: Blob,
+  fields: ProjectFileFields,
+): Promise<Blob> {
+  const data = await buildProjectFileData(imageBlob, fields)
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
 
-export function suggestProjectFileName(): string {
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
-  return `screendesc-${stamp}${FILE_EXTENSION}`
+export async function buildProjectBundleFile(
+  entries: Array<{
+    name: string
+    updatedAt: number
+    imageBlob: Blob
+    fields: ProjectFileFields
+  }>,
+): Promise<Blob> {
+  const projects: ProjectBundleEntry[] = []
+  for (const entry of entries) {
+    projects.push({
+      name: entry.name,
+      updatedAt: entry.updatedAt,
+      project: await buildProjectFileData(entry.imageBlob, entry.fields),
+    })
+  }
+  const data: ProjectBundleFileData = {
+    version: FILE_VERSION,
+    kind: BUNDLE_KIND,
+    projects,
+  }
+  return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
 
-export async function parseProjectFile(file: File): Promise<ProjectFileData> {
-  const text = await file.text()
-  let data: unknown
-  try {
-    data = JSON.parse(text)
-  } catch {
-    throw new Error(t('error.projectFileInvalidJson'))
-  }
-  if (
-    !data ||
-    typeof data !== 'object' ||
-    (data as ProjectFileData).version !== FILE_VERSION ||
-    typeof (data as ProjectFileData).imageDataUrl !== 'string'
-  ) {
-    throw new Error(t('error.projectFileUnsupported'))
-  }
-  const project = data as ProjectFileData
+function fileStamp(): string {
+  return new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
+}
+
+export function suggestProjectFileName(): string {
+  return `screendesc-${fileStamp()}${FILE_EXTENSION}`
+}
+
+export function suggestProjectBundleFileName(): string {
+  return `screendesc-bundle-${fileStamp()}${BUNDLE_EXTENSION}`
+}
+
+function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
+  const project = { ...raw }
   if (!isNumberStyleId(project.numberStyle)) {
     project.numberStyle = DEFAULT_NUMBER_STYLE
   }
@@ -164,6 +209,9 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   project.calloutFillOpacity = normalizeCalloutFillOpacity(
     (project as { calloutFillOpacity?: unknown }).calloutFillOpacity,
   )
+  project.pageBackgroundColor = normalizePageBackgroundColor(
+    (project as { pageBackgroundColor?: unknown }).pageBackgroundColor,
+  )
   project.anchorStyle = normalizeAnchorStyle(
     (project as { anchorStyle?: unknown }).anchorStyle,
   )
@@ -171,4 +219,135 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
     sanitizeAnnotation(annotation, project.imageWidth, project.imageHeight),
   )
   return project
+}
+
+function isProjectBundleData(data: unknown): data is ProjectBundleFileData {
+  if (!data || typeof data !== 'object') return false
+  const bundle = data as ProjectBundleFileData
+  return (
+    bundle.version === FILE_VERSION &&
+    bundle.kind === BUNDLE_KIND &&
+    Array.isArray(bundle.projects)
+  )
+}
+
+function isProjectFileData(data: unknown): data is ProjectFileData {
+  if (!data || typeof data !== 'object') return false
+  const project = data as ProjectFileData
+  return (
+    project.version === FILE_VERSION &&
+    typeof project.imageDataUrl === 'string' &&
+    (project as { kind?: unknown }).kind !== BUNDLE_KIND
+  )
+}
+
+function parseJsonFile(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(t('error.projectFileInvalidJson'))
+  }
+}
+
+function normalizeBundleFileData(raw: ProjectBundleFileData): ProjectBundleFileData {
+  const projects: ProjectBundleEntry[] = []
+  for (const entry of raw.projects) {
+    if (!entry || typeof entry !== 'object' || !isProjectFileData(entry.project)) {
+      throw new Error(t('error.projectBundleInvalid'))
+    }
+    const name = typeof entry.name === 'string' ? entry.name.trim() : ''
+    projects.push({
+      name: name || t('header.untitledProject'),
+      updatedAt:
+        typeof entry.updatedAt === 'number' && Number.isFinite(entry.updatedAt)
+          ? entry.updatedAt
+          : Date.now(),
+      project: normalizeProjectFileData(entry.project),
+    })
+  }
+  return {
+    version: FILE_VERSION,
+    kind: BUNDLE_KIND,
+    projects,
+  }
+}
+
+export async function parseScreenDescFile(file: File): Promise<ParsedScreenDescFile> {
+  const data = parseJsonFile(await file.text())
+  if (isProjectBundleData(data)) {
+    return { kind: 'bundle', bundle: normalizeBundleFileData(data) }
+  }
+  if (isProjectFileData(data)) {
+    return { kind: 'project', project: normalizeProjectFileData(data) }
+  }
+  throw new Error(t('error.projectFileUnsupported'))
+}
+
+export async function parseProjectFile(file: File): Promise<ProjectFileData> {
+  const parsed = await parseScreenDescFile(file)
+  if (parsed.kind !== 'project') {
+    throw new Error(t('error.projectFileUnsupported'))
+  }
+  return parsed.project
+}
+
+export async function parseProjectBundleFile(file: File): Promise<ProjectBundleFileData> {
+  const parsed = await parseScreenDescFile(file)
+  if (parsed.kind !== 'bundle') {
+    throw new Error(t('error.projectBundleUnsupported'))
+  }
+  return parsed.bundle
+}
+
+/** Strip session-only fields before writing a portable project file. */
+export function projectFileFieldsFromSnapshot(
+  snapshot: {
+    imageWidth: number
+    imageHeight: number
+    sections: Section[]
+    annotations: Annotation[]
+    ocrLines: OcrLineHit[]
+    defaultFontFamily: string
+    lineStyle: LineStyleId
+    lineWidth: number
+    lineColor: string
+    dotColor: string
+    dotRadius: number
+    anchorStyle: AnchorStyleId
+    lineHaloWidth: number
+    lineHaloColor: string
+    calloutFontSize: number
+    calloutBorderEnabled: boolean
+    calloutFillEnabled: boolean
+    calloutFillColor: string
+    calloutFillOpacity: number
+    pageBackgroundColor: string
+    numberStyle: NumberStyleId
+    showSections: boolean
+  },
+): ProjectFileFields {
+  return {
+    imageWidth: snapshot.imageWidth,
+    imageHeight: snapshot.imageHeight,
+    sections: snapshot.sections,
+    annotations: snapshot.annotations,
+    ocrLines: snapshot.ocrLines,
+    defaultFontFamily: snapshot.defaultFontFamily,
+    lineStyle: snapshot.lineStyle,
+    lineWidth: snapshot.lineWidth,
+    lineColor: snapshot.lineColor,
+    dotColor: snapshot.dotColor,
+    dotRadius: snapshot.dotRadius,
+    anchorStyle: snapshot.anchorStyle,
+    lineHaloWidth: snapshot.lineHaloWidth,
+    lineHaloColor: snapshot.lineHaloColor,
+    calloutFontSize: snapshot.calloutFontSize,
+    calloutBorderEnabled: snapshot.calloutBorderEnabled,
+    calloutFillEnabled: snapshot.calloutFillEnabled,
+    calloutFillColor: snapshot.calloutFillColor,
+    calloutFillOpacity: snapshot.calloutFillOpacity,
+    pageBackgroundColor: snapshot.pageBackgroundColor,
+    numberStyle: snapshot.numberStyle,
+    showSections: snapshot.showSections,
+  }
 }

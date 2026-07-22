@@ -15,6 +15,7 @@ import { t } from '../i18n'
 /**
  * Cubic leader with a single bend (C-curve): leave horizontally from the start,
  * then curve into the label. Avoids the S-twist of opposing horizontal stubs.
+ * Stub length is capped against |dy| so thick strokes do not self-intersect at the bend.
  */
 export function buildLeaderPath(start: Point, endX: number, endY: number): string {
   const dx = endX - start.x
@@ -22,10 +23,50 @@ export function buildLeaderPath(start: Point, endX: number, endY: number): strin
   const direction = dx === 0 ? 1 : Math.sign(dx)
   const absDx = Math.abs(dx)
   const absDy = Math.abs(dy)
-  // Prefer a clear horizontal run; shorten when the end is close or mostly vertical.
-  const stub = Math.min(absDx, Math.max(absDx * 0.55, Math.min(48, absDy * 0.35 + 12)))
+  // Keep the horizontal run short enough that the bend stays gentle under wide strokes.
+  const stub = Math.min(
+    absDx * 0.55,
+    48,
+    Math.max(8, absDx * 0.35),
+    absDy > 0 ? absDy * 0.45 + 10 : absDx,
+  )
   const elbowX = start.x + direction * stub
   return `M ${start.x} ${start.y} C ${elbowX} ${start.y}, ${elbowX} ${endY}, ${endX} ${endY}`
+}
+
+/** Attach the leader to the label edge facing the anchor (works for side and on-image labels). */
+export function leaderAttachOnLabel(layout: CalloutLayoutItem): Point {
+  const labelCenterX = layout.labelPosition.x + layout.labelWidth / 2
+  const labelCenterY = layout.labelPosition.y + layout.labelHeight / 2
+  return {
+    x:
+      layout.anchorPoint.x < labelCenterX
+        ? layout.labelPosition.x
+        : layout.labelPosition.x + layout.labelWidth,
+    y: labelCenterY,
+  }
+}
+
+function documentSize(document: DocumentLayout): { width: number; height: number } {
+  return {
+    width: document.marginLeft + document.imageWidth + document.marginRight,
+    height: document.marginTop + document.imageHeight + document.marginBottom,
+  }
+}
+
+function clampLabelTopLeft(
+  point: Point,
+  labelWidth: number,
+  labelHeight: number,
+  document: DocumentLayout,
+): Point {
+  const { width, height } = documentSize(document)
+  const maxX = Math.max(PAGE_PAD, width - PAGE_PAD - labelWidth)
+  const maxY = Math.max(PAGE_PAD, height - PAGE_PAD - labelHeight)
+  return {
+    x: clamp(point.x, PAGE_PAD, maxX),
+    y: clamp(point.y, PAGE_PAD, maxY),
+  }
 }
 
 const LABEL_GAP_MIN = 12
@@ -216,21 +257,23 @@ function packSide(
   const minY = PAGE_PAD
   const maxY = documentHeight - PAGE_PAD
 
-  const preferredCenters = items.map((annotation, itemIndex) => {
-    const size = sizes[itemIndex]!
-    if (annotation.calloutPosition) {
-      return annotation.calloutPosition.y + size.height / 2
-    }
-    return document.marginTop + anchors[itemIndex]!.y
-  })
+  // Manual (dragged/edited) labels keep free XY; only auto labels are stacked.
+  const autoIndices: number[] = []
+  for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+    if (!items[itemIndex]!.calloutPosition) autoIndices.push(itemIndex)
+  }
 
-  const packedTops = packLabelYs(
-    preferredCenters,
-    sizes.map((size) => size.height),
+  const packedAutoTops = packLabelYs(
+    autoIndices.map((itemIndex) => document.marginTop + anchors[itemIndex]!.y),
+    autoIndices.map((itemIndex) => sizes[itemIndex]!.height),
     minY,
     maxY,
     gap,
   )
+  const autoTopByIndex = new Map<number, number>()
+  autoIndices.forEach((itemIndex, autoIndex) => {
+    autoTopByIndex.set(itemIndex, packedAutoTops[autoIndex]!)
+  })
 
   const layouts: CalloutLayoutItem[] = []
 
@@ -247,20 +290,17 @@ function packSide(
         : imageRight + IMAGE_GUTTER
 
     let labelX = autoLabelX
-    const labelY = packedTops[itemIndex]!
+    let labelY = autoTopByIndex.get(itemIndex) ?? minY
 
     if (annotation.calloutPosition) {
-      labelX = annotation.calloutPosition.x
-      // Keep dragged labels outside the screenshot when size/margins change.
-      if (side === 'left') {
-        labelX = Math.min(labelX, imageLeft - size.width - IMAGE_GUTTER)
-        labelX = Math.max(PAGE_PAD, labelX)
-      } else {
-        labelX = Math.max(labelX, imageRight + IMAGE_GUTTER)
-        const maxX =
-          imageRight + document.marginRight - size.width - PAGE_PAD
-        labelX = Math.min(labelX, Math.max(imageRight + IMAGE_GUTTER, maxX))
-      }
+      const clamped = clampLabelTopLeft(
+        annotation.calloutPosition,
+        size.width,
+        size.height,
+        document,
+      )
+      labelX = clamped.x
+      labelY = clamped.y
     }
 
     const labelCenterY = labelY + size.height / 2
@@ -306,7 +346,7 @@ function splitBySide(
 }
 
 /**
- * Place callout labels beside the image near each target's Y.
+ * Place callout labels beside the image (auto) or at a free document position when set.
  */
 export function computeCalloutLayouts(
   annotations: Annotation[],

@@ -48,6 +48,7 @@ import {
 import {
   DEFAULT_CALLOUT_FILL_COLOR,
   DEFAULT_CALLOUT_FILL_OPACITY,
+  DEFAULT_PAGE_BACKGROUND_COLOR,
   deleteCommonSettingsPreset,
   listCommonSettingsPresets,
   loadCommonSettingsPreset,
@@ -56,6 +57,7 @@ import {
   normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
   normalizeCommonSettings,
+  normalizePageBackgroundColor,
   resolveCalloutBorderWidth,
   saveCommonSettingsPreset,
   type CommonSettings,
@@ -65,6 +67,7 @@ import {
   clearAutosavedProject,
   deleteNamedProject,
   listSavedProjects,
+  loadAllNamedProjects,
   loadNamedProject,
   loadProject,
   renameNamedProject,
@@ -73,7 +76,16 @@ import {
   type ProjectSnapshot,
   type SavedProjectMeta,
 } from '../utils/projectStorage'
-import { buildProjectFile, parseProjectFile, suggestProjectFileName } from '../utils/projectFile'
+import {
+  buildProjectBundleFile,
+  buildProjectFile,
+  parseScreenDescFile,
+  projectFileFieldsFromSnapshot,
+  suggestProjectBundleFileName,
+  suggestProjectFileName,
+  type ProjectFileData,
+} from '../utils/projectFile'
+import { fitImageToExactSize, loadImageFromBlob } from '../utils/fitImageToSize'
 import { t } from '../i18n'
 
 const state = reactive<ProjectState>({
@@ -99,6 +111,7 @@ const state = reactive<ProjectState>({
   calloutFillEnabled: true,
   calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
   calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
+  pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
   numberStyle: DEFAULT_NUMBER_STYLE,
   showSections: true,
   calloutLayouts: [],
@@ -333,6 +346,7 @@ interface RestorableFields {
   calloutFillEnabled?: boolean
   calloutFillColor?: string
   calloutFillOpacity?: number
+  pageBackgroundColor?: string
   numberStyle?: NumberStyleId
   showSections: boolean
 }
@@ -369,6 +383,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
   state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
   state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
+  state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
   state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
   state.showSections = fields.showSections
   state.selectedSectionIds = []
@@ -429,6 +444,7 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     calloutFillEnabled: state.calloutFillEnabled,
     calloutFillColor: state.calloutFillColor,
     calloutFillOpacity: state.calloutFillOpacity,
+    pageBackgroundColor: state.pageBackgroundColor,
     numberStyle: state.numberStyle,
     showSections: state.showSections,
     activeNamedProjectId: activeNamedProject.value?.id ?? null,
@@ -503,6 +519,7 @@ watch(
     state.calloutFillEnabled,
     state.calloutFillColor,
     state.calloutFillOpacity,
+    state.pageBackgroundColor,
     state.numberStyle,
     state.showSections,
   ],
@@ -533,6 +550,16 @@ export function useAnnotationStore() {
     } finally {
       isDetecting.value = false
     }
+  }
+
+  /** Re-run section detection after an image replace; clears annotations tied to old sections. */
+  async function rediscoverSectionsAfterReplace(): Promise<void> {
+    if (!imageElement.value) return
+    pushEditUndo()
+    state.annotations = []
+    state.selectedAnnotationIds = []
+    await runSectionDetection()
+    refreshDocumentAndLayouts()
   }
 
   async function applyImageSource(
@@ -573,6 +600,35 @@ export function useAnnotationStore() {
     clearNamedSaveSchedule()
     clearEditUndoStack()
     await applyImageSource(file)
+  }
+
+  /** Replace the project image; keeps sections/annotations. Fits to current size via crop or pad. */
+  async function replaceImageFile(file: File): Promise<void> {
+    if (!state.imageUrl || state.imageWidth <= 0 || state.imageHeight <= 0) {
+      throw new Error(t('error.imageReplaceNoProject'))
+    }
+
+    const sourceImage = await loadImageFromBlob(file)
+    const fitted = await fitImageToExactSize(
+      sourceImage,
+      state.imageWidth,
+      state.imageHeight,
+    )
+
+    if (cropHistory.value) {
+      URL.revokeObjectURL(cropHistory.value.imageUrl)
+      cropHistory.value = null
+    }
+
+    if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
+    const url = URL.createObjectURL(fitted.blob)
+    const image = await loadImageElement(url)
+    imageElement.value = image
+    state.imageUrl = url
+    state.imageWidth = image.naturalWidth
+    state.imageHeight = image.naturalHeight
+    refreshDocumentAndLayouts()
+    scheduleSave()
   }
 
   async function clearCurrentProject(): Promise<void> {
@@ -730,6 +786,10 @@ export function useAnnotationStore() {
     state.calloutFillOpacity = normalizeCalloutFillOpacity(opacity)
   }
 
+  function setPageBackgroundColor(color: string): void {
+    state.pageBackgroundColor = normalizePageBackgroundColor(color)
+  }
+
   function setNumberStyle(style: NumberStyleId): void {
     state.numberStyle = style
     for (const annotation of state.annotations) {
@@ -761,6 +821,7 @@ export function useAnnotationStore() {
 
   function selectAnnotation(annotationId: string, additive: boolean): void {
     if (additive) {
+      state.selectedSectionIds = []
       if (state.selectedAnnotationIds.includes(annotationId)) {
         state.selectedAnnotationIds = state.selectedAnnotationIds.filter(
           (id) => id !== annotationId,
@@ -868,6 +929,7 @@ export function useAnnotationStore() {
       calloutFillEnabled: state.calloutFillEnabled,
       calloutFillColor: state.calloutFillColor,
       calloutFillOpacity: state.calloutFillOpacity,
+      pageBackgroundColor: state.pageBackgroundColor,
       numberStyle: state.numberStyle,
     }
   }
@@ -896,6 +958,7 @@ export function useAnnotationStore() {
     state.calloutFillEnabled = settings.calloutFillEnabled
     state.calloutFillColor = settings.calloutFillColor
     state.calloutFillOpacity = settings.calloutFillOpacity
+    state.pageBackgroundColor = settings.pageBackgroundColor
     state.numberStyle = settings.numberStyle
 
     await ensureGoogleFontsLoaded([state.defaultFontFamily])
@@ -926,9 +989,8 @@ export function useAnnotationStore() {
     deleteCommonSettingsPreset(id)
   }
 
-  function updateAnnotation(
-    annotationId: string,
-    patch: Partial<
+  type AnnotationPatch = Partial<
+    Omit<
       Pick<
         Annotation,
         | 'description'
@@ -937,26 +999,114 @@ export function useAnnotationStore() {
         | 'calloutPosition'
         | 'anchorOffset'
         | 'sectionId'
-      >
-    >,
-  ): void {
+      >,
+      'calloutPosition'
+    >
+  > & {
+    calloutPosition?: Point | null
+    /** Set one axis on many annotations without forcing the other axis equal. */
+    anchorOffsetX?: number
+    anchorOffsetY?: number
+    calloutPositionX?: number
+    calloutPositionY?: number
+  }
+
+  function isCalloutPositionPatch(patch: AnnotationPatch): boolean {
+    return (
+      'calloutPosition' in patch ||
+      patch.calloutPositionX !== undefined ||
+      patch.calloutPositionY !== undefined
+    )
+  }
+
+  function applyAnnotationPatch(annotation: Annotation, patch: AnnotationPatch): void {
+    if (patch.anchorOffset) {
+      annotation.anchorOffset = sanitizeAnchorOffset(patch.anchorOffset)
+    }
+    if (patch.anchorOffsetX !== undefined || patch.anchorOffsetY !== undefined) {
+      annotation.anchorOffset = sanitizeAnchorOffset({
+        x: patch.anchorOffsetX ?? annotation.anchorOffset.x,
+        y: patch.anchorOffsetY ?? annotation.anchorOffset.y,
+      })
+    }
+    if ('calloutPosition' in patch) {
+      annotation.calloutPosition = patch.calloutPosition
+        ? { ...patch.calloutPosition }
+        : null
+    }
+    if (patch.calloutPositionX !== undefined || patch.calloutPositionY !== undefined) {
+      const layout = state.calloutLayouts.find((item) => item.annotationId === annotation.id)
+      const base = annotation.calloutPosition ?? layout?.labelPosition ?? { x: 0, y: 0 }
+      annotation.calloutPosition = {
+        x: patch.calloutPositionX ?? base.x,
+        y: patch.calloutPositionY ?? base.y,
+      }
+    }
+    const {
+      anchorOffset: _ignoredOffset,
+      anchorOffsetX: _ignoredX,
+      anchorOffsetY: _ignoredY,
+      calloutPosition: _ignoredCallout,
+      calloutPositionX: _ignoredCalloutX,
+      calloutPositionY: _ignoredCalloutY,
+      ...rest
+    } = patch
+    Object.assign(annotation, rest)
+  }
+
+  function updateAnnotation(annotationId: string, patch: AnnotationPatch): void {
     const annotation = state.annotations.find((item) => item.id === annotationId)
     if (!annotation) return
-    const coalesceKey = patch.calloutPosition
+    const coalesceKey = isCalloutPositionPatch(patch)
       ? `callout-pos:${annotationId}`
-      : patch.anchorOffset
+      : patch.anchorOffset ||
+          patch.anchorOffsetX !== undefined ||
+          patch.anchorOffsetY !== undefined
         ? `anchor-offset:${annotationId}`
         : patch.description !== undefined
           ? `description:${annotationId}`
           : null
     pushEditUndo(coalesceKey)
-    if (patch.anchorOffset) {
-      annotation.anchorOffset = sanitizeAnchorOffset(patch.anchorOffset)
-      const { anchorOffset: _ignored, ...rest } = patch
-      Object.assign(annotation, rest)
+    applyAnnotationPatch(annotation, patch)
+  }
+
+  function updateAnnotations(annotationIds: string[], patch: AnnotationPatch): void {
+    if (annotationIds.length === 0) return
+    if (annotationIds.length === 1) {
+      updateAnnotation(annotationIds[0]!, patch)
       return
     }
-    Object.assign(annotation, patch)
+    const idKey = [...annotationIds].sort().join(',')
+    const coalesceKey = isCalloutPositionPatch(patch)
+      ? `callout-pos-multi:${idKey}`
+      : patch.anchorOffset ||
+          patch.anchorOffsetX !== undefined ||
+          patch.anchorOffsetY !== undefined
+        ? `anchor-offset-multi:${idKey}`
+        : null
+    pushEditUndo(coalesceKey)
+    for (const annotationId of annotationIds) {
+      const annotation = state.annotations.find((item) => item.id === annotationId)
+      if (!annotation) continue
+      applyAnnotationPatch(annotation, patch)
+    }
+  }
+
+  /** Move several callouts by the same document-space delta (multi-drag). */
+  function nudgeCalloutPositions(
+    moves: Array<{ annotationId: string; position: Point }>,
+  ): void {
+    if (moves.length === 0) return
+    const idKey = moves
+      .map((move) => move.annotationId)
+      .sort()
+      .join(',')
+    pushEditUndo(`callout-pos-multi:${idKey}`)
+    for (const move of moves) {
+      const annotation = state.annotations.find((item) => item.id === move.annotationId)
+      if (!annotation) continue
+      annotation.calloutPosition = { ...move.position }
+    }
   }
 
   function removeAnnotations(annotationIds: string[]): void {
@@ -1014,6 +1164,7 @@ export function useAnnotationStore() {
       calloutFillEnabled: state.calloutFillEnabled,
       calloutFillColor: state.calloutFillColor,
       calloutFillOpacity: state.calloutFillOpacity,
+      pageBackgroundColor: state.pageBackgroundColor,
       fontFamily: state.defaultFontFamily,
     })
   }
@@ -1067,9 +1218,66 @@ export function useAnnotationStore() {
   async function saveProjectToFile(): Promise<void> {
     const snapshot = await buildCurrentSnapshot()
     if (!snapshot) return
-    const { imageBlob, ...fields } = snapshot
-    const fileBlob = await buildProjectFile(imageBlob, fields)
+    const fileBlob = await buildProjectFile(
+      snapshot.imageBlob,
+      projectFileFieldsFromSnapshot(snapshot),
+    )
     downloadBlob(fileBlob, suggestProjectFileName())
+  }
+
+  async function downloadAllProjectsBundle(): Promise<number> {
+    if (namedSaveDirty) {
+      await persistActiveNamedProject()
+    }
+    const loaded = await loadAllNamedProjects()
+    if (loaded.length === 0) {
+      throw new Error(t('error.projectBundleEmpty'))
+    }
+    const fileBlob = await buildProjectBundleFile(
+      loaded.map(({ meta, snapshot }) => ({
+        name: meta.name,
+        updatedAt: meta.updatedAt,
+        imageBlob: snapshot.imageBlob,
+        fields: projectFileFieldsFromSnapshot(snapshot),
+      })),
+    )
+    downloadBlob(fileBlob, suggestProjectBundleFileName())
+    return loaded.length
+  }
+
+  async function snapshotFromProjectFile(data: ProjectFileData): Promise<ProjectSnapshot> {
+    const imageBlob = await fetch(data.imageDataUrl).then((res) => res.blob())
+    return {
+      imageBlob,
+      ...projectFileFieldsFromSnapshot(data),
+    }
+  }
+
+  async function openProjectFile(
+    file: File,
+  ): Promise<{ kind: 'project' } | { kind: 'bundle'; count: number }> {
+    const parsed = await parseScreenDescFile(file)
+    if (parsed.kind === 'bundle') {
+      if (parsed.bundle.projects.length === 0) {
+        throw new Error(t('error.projectBundleEmpty'))
+      }
+      for (const entry of parsed.bundle.projects) {
+        const snapshot = await snapshotFromProjectFile(entry.project)
+        await saveNamedProject(entry.name, snapshot)
+      }
+      return { kind: 'bundle', count: parsed.bundle.projects.length }
+    }
+
+    const snapshot = await snapshotFromProjectFile(parsed.project)
+    if (cropHistory.value) {
+      URL.revokeObjectURL(cropHistory.value.imageUrl)
+      cropHistory.value = null
+    }
+    activeNamedProject.value = null
+    clearNamedSaveSchedule()
+    clearEditUndoStack()
+    await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
+    return { kind: 'project' }
   }
 
   async function saveProjectAs(name: string, overwriteId?: string): Promise<string | null> {
@@ -1133,16 +1341,7 @@ export function useAnnotationStore() {
   }
 
   async function loadProjectFromFile(file: File): Promise<void> {
-    const data = await parseProjectFile(file)
-    const imageBlob = await fetch(data.imageDataUrl).then((res) => res.blob())
-    if (cropHistory.value) {
-      URL.revokeObjectURL(cropHistory.value.imageUrl)
-      cropHistory.value = null
-    }
-    activeNamedProject.value = null
-    clearNamedSaveSchedule()
-    clearEditUndoStack()
-    await applyRestoredSnapshot(imageBlob, data)
+    await openProjectFile(file)
   }
 
   function deleteSelection(): void {
@@ -1169,10 +1368,12 @@ export function useAnnotationStore() {
     canUndoEdit,
     imageElement: readonly(imageElement),
     loadImageFile,
+    replaceImageFile,
     clearCurrentProject,
     cropImage,
     undoCrop,
     runSectionDetection,
+    rediscoverSectionsAfterReplace,
     setToolMode,
     setDefaultFontFamily,
     getCommonSettings,
@@ -1193,6 +1394,7 @@ export function useAnnotationStore() {
     setCalloutFillEnabled,
     setCalloutFillColor,
     setCalloutFillOpacity,
+    setPageBackgroundColor,
     setNumberStyle,
     toggleShowSections,
     clearSelection,
@@ -1204,11 +1406,15 @@ export function useAnnotationStore() {
     createAnnotationForSection,
     addAnnotationAtPoint,
     updateAnnotation,
+    updateAnnotations,
+    nudgeCalloutPositions,
     removeAnnotations,
     reorderAnnotations,
     exportProject,
     copyAnnotatedImageToClipboard,
     saveProjectToFile,
+    downloadAllProjectsBundle,
+    openProjectFile,
     loadProjectFromFile,
     saveProjectAs,
     setProjectName,

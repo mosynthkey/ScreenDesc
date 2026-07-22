@@ -17,11 +17,11 @@ import { getLineStyleSpec } from '../utils/lineStyle'
 import {
   buildAnchorArrowGeometry,
   buildAnchorHeadPath,
-  buildAnchorLeaderPath,
+  dotLeaderAttachPoint,
   isArrowAnchorStyle,
   leaderAttachPoint,
 } from '../utils/anchorStyle'
-import { buildLeaderPath } from '../utils/calloutLayout'
+import { buildLeaderPath, leaderAttachOnLabel } from '../utils/calloutLayout'
 import { resolveCalloutFill } from '../utils/commonSettings'
 import { useI18n } from '../i18n'
 
@@ -54,6 +54,7 @@ const props = defineProps<{
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  pageBackgroundColor: string
   fontFamily: string
   isDetecting?: boolean
   emptyHint?: boolean
@@ -67,6 +68,7 @@ const emit = defineEmits<{
   addAnnotationAt: [point: Point]
   updateSectionRect: [sectionId: string, rect: Rect]
   updateCalloutPosition: [annotationId: string, point: Point]
+  nudgeCalloutPositions: [moves: Array<{ annotationId: string; position: Point }>]
   addSection: [rect: Rect]
   commitDescription: [annotationId: string, description: string]
   cropImage: [rect: Rect]
@@ -90,6 +92,8 @@ type DragState =
       kind: 'callout'
       annotationId: string
       offset: Point
+      /** Document-space start positions when dragging a multi-selection together. */
+      groupStarts?: Record<string, Point>
     }
   | {
       kind: 'create-section'
@@ -356,7 +360,25 @@ function onPointerDown(event: PointerEvent): void {
   if (calloutId) {
     const layout = props.calloutLayouts.find((item) => item.annotationId === calloutId)
     if (!layout) return
-    emit('selectAnnotation', calloutId, event.shiftKey)
+    const additive = event.shiftKey
+    const alreadySelected = props.selectedAnnotationIds.includes(calloutId)
+    const keepGroup =
+      !additive && alreadySelected && props.selectedAnnotationIds.length > 1
+    if (!keepGroup) {
+      emit('selectAnnotation', calloutId, additive)
+    }
+    // Shift toggles multi-select without starting a drag.
+    if (additive) return
+
+    const movingIds = keepGroup ? [...props.selectedAnnotationIds] : [calloutId]
+    const groupStarts: Record<string, Point> = {}
+    for (const annotationId of movingIds) {
+      const itemLayout = props.calloutLayouts.find((item) => item.annotationId === annotationId)
+      if (itemLayout) {
+        groupStarts[annotationId] = { ...itemLayout.labelPosition }
+      }
+    }
+
     drag.value = {
       kind: 'callout',
       annotationId: calloutId,
@@ -364,6 +386,7 @@ function onPointerDown(event: PointerEvent): void {
         x: layout.labelPosition.x - docPoint.x,
         y: layout.labelPosition.y - docPoint.y,
       },
+      groupStarts: Object.keys(groupStarts).length > 1 ? groupStarts : undefined,
     }
     return
   }
@@ -443,10 +466,26 @@ function onPointerMove(event: PointerEvent): void {
   }
 
   if (drag.value.kind === 'callout') {
-    emit('updateCalloutPosition', drag.value.annotationId, {
+    const nextPrimary = {
       x: docPoint.x + drag.value.offset.x,
       y: docPoint.y + drag.value.offset.y,
-    })
+    }
+    const groupStarts = drag.value.groupStarts
+    if (groupStarts) {
+      const startPrimary = groupStarts[drag.value.annotationId]
+      if (!startPrimary) return
+      const deltaX = nextPrimary.x - startPrimary.x
+      const deltaY = nextPrimary.y - startPrimary.y
+      emit(
+        'nudgeCalloutPositions',
+        Object.entries(groupStarts).map(([annotationId, start]) => ({
+          annotationId,
+          position: { x: start.x + deltaX, y: start.y + deltaY },
+        })),
+      )
+      return
+    }
+    emit('updateCalloutPosition', drag.value.annotationId, nextPrimary)
     return
   }
 
@@ -608,50 +647,34 @@ const calloutFill = computed(() =>
   resolveCalloutFill(props.calloutFillEnabled, props.calloutFillColor, props.calloutFillOpacity),
 )
 
-function leaderEndX(layout: CalloutLayoutItem): number {
-  return layout.side === 'left' ? layout.labelPosition.x + layout.labelWidth : layout.labelPosition.x
+function leaderEnd(layout: CalloutLayoutItem): Point {
+  return leaderAttachOnLabel(layout)
+}
+
+function leaderStartFor(layout: CalloutLayoutItem): Point {
+  const end = leaderEnd(layout)
+  if (isArrowAnchorStyle(props.anchorStyle)) {
+    return leaderAttachPoint(
+      props.anchorStyle,
+      buildAnchorArrowGeometry(layout.anchorPoint, end.x, props.dotRadius),
+    )
+  }
+  return dotLeaderAttachPoint(layout.anchorPoint, end.x, props.dotRadius)
 }
 
 function leaderPathFor(layout: CalloutLayoutItem): string {
-  return buildLeaderPath(layout.anchorPoint, leaderEndX(layout), layout.elbowPoint.y)
-}
-
-function arrowLeaderPathFor(layout: CalloutLayoutItem): string {
-  const geometry = buildAnchorArrowGeometry(
-    layout.anchorPoint,
-    leaderEndX(layout),
-    props.dotRadius,
-  )
-  return buildLeaderPath(
-    leaderAttachPoint(props.anchorStyle, geometry),
-    leaderEndX(layout),
-    layout.elbowPoint.y,
-  )
-}
-
-function combinedAnchorLeaderPathFor(layout: CalloutLayoutItem): string {
-  if (!isArrowAnchorStyle(props.anchorStyle)) return leaderPathFor(layout)
-  return buildAnchorLeaderPath(
-    props.anchorStyle,
-    layout.anchorPoint,
-    leaderEndX(layout),
-    layout.elbowPoint.y,
-    props.dotRadius,
-  )
+  const end = leaderEnd(layout)
+  return buildLeaderPath(leaderStartFor(layout), end.x, end.y)
 }
 
 function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   if (!isArrowAnchorStyle(props.anchorStyle)) return ''
-  const geometry = buildAnchorArrowGeometry(
-    layout.anchorPoint,
-    leaderEndX(layout),
-    props.dotRadius,
-  )
+  const end = leaderEnd(layout)
+  const geometry = buildAnchorArrowGeometry(layout.anchorPoint, end.x, props.dotRadius)
   return buildAnchorHeadPath(props.anchorStyle, geometry)
 }
 
 const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
-const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
 </script>
 
 <template>
@@ -684,7 +707,7 @@ const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
         y="0"
         :width="documentWidth"
         :height="documentHeight"
-        fill="#f4f6f8"
+        :fill="pageBackgroundColor"
       />
 
       <image
@@ -752,10 +775,14 @@ const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
         <template v-if="layoutFor(annotation.id)">
           <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
             <template v-if="isArrowAnchorStyle(anchorStyle)">
+              <!--
+                Keep head and leader as separate paths. Filling a combined path
+                paints the open cubic (implicit close) and looks like a twisted ribbon.
+              -->
               <path
                 v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
                 class="leader-halo"
-                :d="combinedAnchorLeaderPathFor(layoutFor(annotation.id)!)"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
                 fill="none"
                 :style="{
                   stroke: lineHaloColor,
@@ -764,39 +791,37 @@ const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
                   strokeLinejoin: 'round',
                 }"
               />
-              <template v-if="isDashedLeader">
-                <path
-                  class="anchor-head"
-                  :d="anchorHeadPathFor(layoutFor(annotation.id)!)"
-                  :fill="anchorStyle === 'arrow' ? effectiveDotColor : 'none'"
-                  :style="{
-                    stroke: effectiveLineColor,
-                    strokeWidth: activeLineStyle.strokeWidth,
-                    strokeLinecap: 'round',
-                    strokeLinejoin: 'round',
-                  }"
-                />
-                <path
-                  class="leader"
-                  :d="arrowLeaderPathFor(layoutFor(annotation.id)!)"
-                  fill="none"
-                  :style="{
-                    stroke: effectiveLineColor,
-                    strokeWidth: activeLineStyle.strokeWidth,
-                    strokeDasharray: activeLineStyle.dasharray ?? 'none',
-                    strokeLinecap: 'round',
-                    strokeLinejoin: 'round',
-                  }"
-                />
-              </template>
               <path
-                v-else
-                class="anchor-leader"
-                :d="combinedAnchorLeaderPathFor(layoutFor(annotation.id)!)"
+                v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
+                class="anchor-head-halo"
+                :d="anchorHeadPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: lineHaloColor,
+                  strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
+              />
+              <path
+                class="anchor-head"
+                :d="anchorHeadPathFor(layoutFor(annotation.id)!)"
                 :fill="anchorStyle === 'arrow' ? effectiveDotColor : 'none'"
                 :style="{
                   stroke: effectiveLineColor,
                   strokeWidth: activeLineStyle.strokeWidth,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
+              />
+              <path
+                class="leader"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
                   strokeLinecap: 'round',
                   strokeLinejoin: 'round',
                 }"
@@ -807,18 +832,12 @@ const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
                 v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
                 class="leader-halo"
                 :d="leaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
                 :style="{
                   stroke: lineHaloColor,
                   strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
-                }"
-              />
-              <path
-                class="leader"
-                :d="leaderPathFor(layoutFor(annotation.id)!)"
-                :style="{
-                  stroke: effectiveLineColor,
-                  strokeWidth: activeLineStyle.strokeWidth,
-                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
                 }"
               />
               <circle
@@ -826,15 +845,35 @@ const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
                 class="anchor-dot-halo"
                 :cx="layoutFor(annotation.id)!.anchorPoint.x"
                 :cy="layoutFor(annotation.id)!.anchorPoint.y"
-                :r="dotRadius + lineHaloWidth / 2"
-                :style="{ fill: lineHaloColor }"
+                :r="dotRadius"
+                fill="none"
+                :style="{
+                  stroke: lineHaloColor,
+                  strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
+                }"
               />
               <circle
                 class="anchor-dot"
                 :cx="layoutFor(annotation.id)!.anchorPoint.x"
                 :cy="layoutFor(annotation.id)!.anchorPoint.y"
                 :r="dotRadius"
-                :style="{ fill: effectiveDotColor }"
+                :style="{
+                  fill: effectiveDotColor,
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                }"
+              />
+              <path
+                class="leader"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
               />
             </template>
           </g>

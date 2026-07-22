@@ -6,6 +6,9 @@ export const en = {
   'about.title': 'About ScreenDesc',
   'about.openAria': 'About ScreenDesc',
   'about.version': 'Version {version}',
+  'about.librariesTitle': 'Libraries & licenses',
+  'about.licenseLabel': '{license} license',
+  'about.close': 'Close',
 
   'nav.aria': 'Main navigation',
   'nav.gallery': 'Gallery',
@@ -17,8 +20,8 @@ export const en = {
   'status.proposing': 'Proposing…',
 
   'button.project': 'Project ▾',
-  'button.copyClipboard': 'Copy',
-  'button.copied': 'Copied',
+  'button.copyClipboard': 'Copy to clipboard',
+  'button.copied': 'Copied to clipboard',
   'button.export': 'Export',
   'button.newProject': 'New project',
   'button.importProject': 'Import',
@@ -31,7 +34,9 @@ export const en = {
   'tooltip.copyClipboard': 'Copy the annotated image to the clipboard',
   'tooltip.export': 'Export the annotated image',
   'tooltip.newProject': 'Create a new project from a screenshot',
-  'tooltip.importProjectFile': 'Import a ScreenDesc project file',
+  'tooltip.importProjectFile': 'Import a ScreenDesc project or bundle file',
+  'tooltip.replaceImage':
+    'Replace the screenshot. Different sizes are cropped or padded to match.',
   'tooltip.toolSelect': 'Select / move (V)',
   'tooltip.toolAddSection': 'Draw a region to propose one section (F)',
   'tooltip.toolAnnotate': 'Click a section to add an annotation (A)',
@@ -51,6 +56,7 @@ export const en = {
   'menu.projectStorage': 'Save / load (in browser)',
   'menu.exportProjectFile': 'Export (write to file)',
   'menu.importProjectFile': 'Import (read from file)',
+  'menu.replaceImage': 'Replace image…',
   'menu.undoCrop': 'Undo crop',
 
   'confirm.newProject': 'Discard the current project and start a new one?',
@@ -65,6 +71,12 @@ export const en = {
   'cropConfirm.overwriteHint': 'Replace the image in the current project (you can undo the crop once)',
   'cropConfirm.cancel': 'Cancel',
 
+  'replaceDetect.title': 'Run auto-detection again?',
+  'replaceDetect.body':
+    'The image was replaced. Detect UI regions again on the new image? Existing annotations will be cleared.',
+  'replaceDetect.run': 'Run detection',
+  'replaceDetect.keep': 'Keep current sections',
+
   'home.title': 'ScreenDesc',
   'home.description': 'Create a new annotation project, or open one saved in this browser.',
   'home.newTitle': 'New project',
@@ -75,6 +87,8 @@ export const en = {
   'home.galleryCount': '{count} saved',
   'home.galleryEmpty': 'No saved projects yet. Create one and use Project → Save / load.',
   'home.removeAria': 'Delete saved project',
+  'home.downloadBundle': 'Download all',
+  'home.downloadBundleTitle': 'Download all saved projects as one bundle file',
 
   'sidebar.workflowTitle': 'Workflow',
   'sidebar.workflow.step1': '1. Scan the full image on upload',
@@ -92,6 +106,7 @@ export const en = {
   'annotationList.dragTitle': 'Drag to reorder',
   'annotationList.emptyDescription': 'No description',
   'annotationList.removeTitle': 'Remove',
+  'annotationList.multiSelectHint': 'Shift-click to select multiple',
 
   'canvas.emptyHint':
     'Drag the region you want to annotate. One matching section will be proposed.',
@@ -111,7 +126,7 @@ export const en = {
   'projectStorage.defaultName': 'Project {stamp}',
   'projectStorage.title': 'Save / load in browser storage',
   'projectStorage.description':
-    'Save and manage multiple projects in this browser. To move work to another device, use Export.',
+    'Save and manage multiple projects in this browser. Use Download all for a single bundle file you can import elsewhere.',
   'projectStorage.autosaveHint':
     'Your current work is auto-saved in this browser as you edit.',
   'projectStorage.currentLabel': 'Current project',
@@ -132,11 +147,13 @@ export const en = {
   'projectStorage.overwriteTitle': 'Overwrite this save with the current project',
   'projectStorage.overwrite': 'Overwrite',
   'projectStorage.remove': 'Delete',
+  'projectStorage.downloadBundle': 'Download all',
+  'projectStorage.downloadBundleTitle': 'Download all saved projects as one bundle file',
   'projectStorage.close': 'Close',
 
   'style.calloutBorder.none': 'None',
   'style.projectSettingsTitle': 'Shared settings',
-  'style.presetsManage': 'Save / load',
+  'style.presetsManage': 'Presets',
   'style.section.number': 'Numbers',
   'style.section.stroke': 'Stroke',
   'style.section.anchor': 'Anchor',
@@ -158,6 +175,7 @@ export const en = {
   'style.lineHaloColor': 'Outline color',
   'style.calloutFontSize': 'Label font size',
   'style.calloutFill': 'Label background',
+  'style.pageBackground': 'Output background',
   'style.calloutFillColor': 'Background color',
   'style.calloutFillOpacity': 'Background opacity',
   'style.calloutBorder': 'Label border',
@@ -177,13 +195,22 @@ export const en = {
   'style.fontGroup.serif': 'Serif',
   'style.fontGroup.display': 'Display',
   'style.selectedAnnotationTitle': 'Selected annotation',
+  'style.selectedAnnotationsTitle': '{count} annotations selected',
+  'style.multiSelectionHint':
+    'Side, label position, and anchor offset apply to all selected annotations.',
+  'style.mixed': 'Mixed',
   'style.calloutSide': 'Label side',
   'style.calloutSide.auto': 'Auto',
   'style.calloutSide.left': 'Left',
   'style.calloutSide.right': 'Right',
+  'style.labelPositionX': 'Label X',
+  'style.labelPositionY': 'Label Y',
+  'style.labelPositionHint': 'Drag the label on the canvas, including over the image.',
+  'style.labelPositionReset': 'Reset label position',
   'style.description': 'Description',
   'style.descriptionPlaceholder': 'e.g. Click [Save]',
-  'style.noSelectionHint': 'Select an annotation to edit its style and description.',
+  'style.noSelectionHint':
+    'Select an annotation to edit its style and description. Shift-click to select multiple.',
 
   'commonSettings.defaultName': 'Settings {stamp}',
   'commonSettings.title': 'Shared settings presets',
@@ -214,10 +241,18 @@ export const en = {
 
   'callout.emptyDescription': 'Description',
 
+  'error.dismiss': 'Dismiss',
   'error.projectLoadFailed': 'Failed to load the project',
   'error.imageReadFailed': 'Failed to read the image',
+  'error.imageFitFailed': 'Failed to resize the image to match the project',
+  'error.imageReplaceNoProject': 'Open a project before replacing the image',
+  'error.imageReplaceFailed': 'Failed to replace the image',
   'error.projectFileInvalidJson': 'Invalid project file format (JSON parse error)',
   'error.projectFileUnsupported': 'Unsupported project file',
+  'error.projectBundleInvalid': 'Invalid project bundle file',
+  'error.projectBundleUnsupported': 'This is not a ScreenDesc project bundle',
+  'error.projectBundleEmpty': 'No saved projects to include in the bundle',
+  'error.projectBundleDownloadFailed': 'Failed to download the project bundle',
   'error.savedProjectNotFound': 'Saved project not found',
   'error.clipboardCopyFailed': 'Could not copy the image to the clipboard',
   'error.commonSettingsNotFound': 'Saved settings preset not found',

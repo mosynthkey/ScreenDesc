@@ -89,6 +89,19 @@ export function leaderAttachPoint(
   return style === 'chevron' ? geometry.tip : geometry.center
 }
 
+/** Leader leaves from the circle rim facing the label (same idea as the arrow base). */
+export function dotLeaderAttachPoint(
+  anchor: Point,
+  endX: number,
+  radius: number,
+): Point {
+  const leave = leaderLeaveUnit(anchor, endX)
+  return {
+    x: anchor.x + leave.x * radius,
+    y: anchor.y + leave.y * radius,
+  }
+}
+
 export function buildAnchorHeadPath(
   style: AnchorStyleId,
   geometry: AnchorArrowGeometry,

@@ -9,9 +9,10 @@ import ExportDialog from './components/ExportDialog.vue'
 import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
+import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
-import type { ExportOptions, Point, Rect } from './types/annotation'
+import type { Annotation, ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
 import type { CommonSettingsPresetMeta } from './utils/commonSettings'
 import { resolveCalloutBorderWidth } from './utils/commonSettings'
@@ -30,6 +31,8 @@ const {
   canUndoCrop,
   activeNamedProject,
   loadImageFile,
+  replaceImageFile,
+  rediscoverSectionsAfterReplace,
   clearCurrentProject,
   cropImage,
   undoCrop,
@@ -48,6 +51,7 @@ const {
   setCalloutBorderEnabled,
   setCalloutFillEnabled,
   setCalloutFillColor,
+  setPageBackgroundColor,
   setCalloutFillOpacity,
   setNumberStyle,
   toggleShowSections,
@@ -58,12 +62,15 @@ const {
   createAnnotationForSection,
   addAnnotationAtPoint,
   updateAnnotation,
+  updateAnnotations,
+  nudgeCalloutPositions,
   removeAnnotations,
   reorderAnnotations,
   exportProject,
   copyAnnotatedImageToClipboard,
   saveProjectToFile,
-  loadProjectFromFile,
+  downloadAllProjectsBundle,
+  openProjectFile,
   saveProjectAs,
   setProjectName,
   fetchSavedProjects,
@@ -80,8 +87,10 @@ const exportOpen = ref(false)
 const copyJustSucceeded = ref(false)
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined
 const projectFileInputRef = ref<HTMLInputElement | null>(null)
+const replaceImageInputRef = ref<HTMLInputElement | null>(null)
 const homeRef = ref<{ openFilePicker: () => void } | null>(null)
 const projectLoadError = ref<string | null>(null)
+let projectLoadErrorTimer: ReturnType<typeof setTimeout> | undefined
 const projectStorageOpen = ref(false)
 const savedProjects = ref<SavedProjectMeta[]>([])
 const projectStorageBusy = ref(false)
@@ -90,13 +99,14 @@ const commonSettingsPresets = ref<CommonSettingsPresetMeta[]>([])
 const commonSettingsBusy = ref(false)
 const cropConfirmOpen = ref(false)
 const pendingCropRect = ref<Rect | null>(null)
+const replaceDetectOpen = ref(false)
 const appPage = ref<AppPageId>('gallery')
 
-const selectedAnnotation = computed(() => {
-  const selectedId = state.selectedAnnotationIds[0]
-  if (!selectedId) return null
-  return state.annotations.find((item) => item.id === selectedId) ?? null
-})
+const selectedAnnotations = computed(() =>
+  state.selectedAnnotationIds
+    .map((annotationId) => state.annotations.find((item) => item.id === annotationId))
+    .filter((item): item is Annotation => Boolean(item)),
+)
 
 const effectiveCalloutBorderWidth = computed(() =>
   resolveCalloutBorderWidth(state.calloutBorderEnabled, state.lineWidth),
@@ -104,13 +114,32 @@ const effectiveCalloutBorderWidth = computed(() =>
 
 const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
 
+function clearProjectLoadError(): void {
+  projectLoadError.value = null
+  if (projectLoadErrorTimer) {
+    clearTimeout(projectLoadErrorTimer)
+    projectLoadErrorTimer = undefined
+  }
+}
+
+function showProjectLoadError(message: string): void {
+  clearProjectLoadError()
+  projectLoadError.value = message
+  projectLoadErrorTimer = setTimeout(() => {
+    projectLoadError.value = null
+    projectLoadErrorTimer = undefined
+  }, 5000)
+}
+
 function goToPage(page: AppPageId): void {
   if (page === 'edit' && !hasImage.value) return
+  clearProjectLoadError()
   appPage.value = page
   if (page === 'gallery') void refreshSavedProjects()
 }
 
 async function onFile(file: File): Promise<void> {
+  clearProjectLoadError()
   await loadImageFile(file)
   appPage.value = 'edit'
 }
@@ -126,7 +155,7 @@ async function onWindowPaste(event: ClipboardEvent): Promise<void> {
     event.preventDefault()
     if (hasImage.value) {
       if (!window.confirm(t('confirm.newProject'))) return
-      projectLoadError.value = null
+      clearProjectLoadError()
       await clearCurrentProject()
     }
     await onFile(file)
@@ -141,6 +170,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('paste', onWindowPaste)
   if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer)
+  clearProjectLoadError()
 })
 
 watch(
@@ -166,7 +196,7 @@ async function onNewProject(): Promise<void> {
     return
   }
   if (!window.confirm(t('confirm.newProject'))) return
-  projectLoadError.value = null
+  clearProjectLoadError()
   await clearCurrentProject()
   appPage.value = 'gallery'
   await refreshSavedProjects()
@@ -230,17 +260,66 @@ function onOpenImportProject(): void {
   projectFileInputRef.value?.click()
 }
 
+function onReplaceImage(): void {
+  replaceImageInputRef.value?.click()
+}
+
+async function onReplaceImageChange(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  clearProjectLoadError()
+  try {
+    await replaceImageFile(file)
+    replaceDetectOpen.value = true
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.imageReplaceFailed'))
+  }
+}
+
+async function onConfirmReplaceDetect(): Promise<void> {
+  replaceDetectOpen.value = false
+  try {
+    await rediscoverSectionsAfterReplace()
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.imageReplaceFailed'))
+  }
+}
+
 async function onProjectFileChange(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
-  projectLoadError.value = null
+  clearProjectLoadError()
+  projectStorageBusy.value = true
   try {
-    await loadProjectFromFile(file)
+    const result = await openProjectFile(file)
+    if (result.kind === 'bundle') {
+      await refreshSavedProjects()
+      appPage.value = 'gallery'
+      return
+    }
     appPage.value = 'edit'
   } catch (err) {
-    projectLoadError.value = err instanceof Error ? err.message : t('error.projectLoadFailed')
+    showProjectLoadError(err instanceof Error ? err.message : t('error.projectLoadFailed'))
+  } finally {
+    projectStorageBusy.value = false
+  }
+}
+
+async function onDownloadAllProjectsBundle(): Promise<void> {
+  clearProjectLoadError()
+  projectStorageBusy.value = true
+  try {
+    await downloadAllProjectsBundle()
+  } catch (err) {
+    showProjectLoadError(
+      err instanceof Error ? err.message : t('error.projectBundleDownloadFailed'),
+    )
+  } finally {
+    projectStorageBusy.value = false
   }
 }
 
@@ -277,13 +356,22 @@ async function onOverwriteSavedProject(id: string): Promise<void> {
 
 async function onLoadSavedProject(id: string): Promise<void> {
   projectStorageBusy.value = true
-  projectLoadError.value = null
+  clearProjectLoadError()
   try {
     await loadSavedProject(id)
     projectStorageOpen.value = false
     appPage.value = 'edit'
   } catch (err) {
-    projectLoadError.value = err instanceof Error ? err.message : t('error.projectLoadFailed')
+    const message = err instanceof Error ? err.message : t('error.projectLoadFailed')
+    showProjectLoadError(message)
+    if (message === t('error.savedProjectNotFound')) {
+      try {
+        await removeSavedProject(id)
+        await refreshSavedProjects()
+      } catch {
+        // Keep the toast; gallery refresh is best-effort.
+      }
+    }
   } finally {
     projectStorageBusy.value = false
   }
@@ -379,6 +467,43 @@ function onUpdateCalloutPosition(annotationId: string, point: Point): void {
   updateAnnotation(annotationId, { calloutPosition: point })
 }
 
+function onNudgeCalloutPositions(
+  moves: Array<{ annotationId: string; position: Point }>,
+): void {
+  nudgeCalloutPositions(moves)
+}
+
+const documentWidth = computed(
+  () => state.document.marginLeft + state.document.imageWidth + state.document.marginRight,
+)
+const documentHeight = computed(
+  () => state.document.marginTop + state.document.imageHeight + state.document.marginBottom,
+)
+const labelPositions = computed(() => {
+  const positions: Record<string, Point> = {}
+  for (const layout of state.calloutLayouts) {
+    positions[layout.annotationId] = { ...layout.labelPosition }
+  }
+  return positions
+})
+
+function onPatchSelectedAnnotations(
+  patch: Partial<{
+    calloutSide: 'auto' | 'left' | 'right'
+    description: string
+    anchorOffset: { x: number; y: number }
+    anchorOffsetX: number
+    anchorOffsetY: number
+    calloutPosition: Point | null
+    calloutPositionX: number
+    calloutPositionY: number
+  }>,
+): void {
+  const ids = state.selectedAnnotationIds
+  if (ids.length === 0) return
+  updateAnnotations([...ids], patch)
+}
+
 function onCommitDescription(annotationId: string, description: string): void {
   updateAnnotation(annotationId, { description })
 }
@@ -445,6 +570,7 @@ function onKeydown(event: KeyboardEvent): void {
         @undo-crop="onUndoCrop"
         @export-project-file="onExportProjectFile"
         @open-import-project="onOpenImportProject"
+        @replace-image="onReplaceImage"
         @open-project-storage="onOpenProjectStorage"
         @new-project="onNewProject"
         @rename-project="setProjectName"
@@ -457,7 +583,24 @@ function onKeydown(event: KeyboardEvent): void {
         hidden
         @change="onProjectFileChange"
       />
-      <p v-if="projectLoadError" class="project-load-error">{{ projectLoadError }}</p>
+      <input
+        ref="replaceImageInputRef"
+        type="file"
+        accept="image/*"
+        hidden
+        @change="onReplaceImageChange"
+      />
+      <div v-if="projectLoadError" class="project-load-error" role="alert">
+        <span>{{ projectLoadError }}</span>
+        <button
+          class="project-load-error-dismiss"
+          type="button"
+          :aria-label="t('error.dismiss')"
+          @click="clearProjectLoadError"
+        >
+          ×
+        </button>
+      </div>
 
       <main class="app-main" :class="{ 'is-gallery': appPage === 'gallery' }">
         <UploadZone
@@ -468,6 +611,7 @@ function onKeydown(event: KeyboardEvent): void {
           @file="onFile"
           @open="onLoadSavedProject"
           @remove="onRemoveSavedProject"
+          @download-bundle="onDownloadAllProjectsBundle"
         />
 
         <div v-else class="workspace">
@@ -485,7 +629,7 @@ function onKeydown(event: KeyboardEvent): void {
               <StylePanel
                 :show-project="false"
                 :show-annotation="true"
-                :annotation="selectedAnnotation"
+                :selected-annotations="selectedAnnotations"
                 :default-font-family="state.defaultFontFamily"
                 :line-style="state.lineStyle"
                 :line-width="state.lineWidth"
@@ -499,10 +643,14 @@ function onKeydown(event: KeyboardEvent): void {
                 :callout-fill-enabled="state.calloutFillEnabled"
                 :callout-fill-color="state.calloutFillColor"
                 :callout-fill-opacity="state.calloutFillOpacity"
+                :page-background-color="state.pageBackgroundColor"
                 :number-style="state.numberStyle"
                 :image-width="state.imageWidth"
                 :image-height="state.imageHeight"
-                @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
+                :document-width="documentWidth"
+                :document-height="documentHeight"
+                :label-positions="labelPositions"
+                @patch="onPatchSelectedAnnotations"
               />
             </div>
           </aside>
@@ -530,6 +678,7 @@ function onKeydown(event: KeyboardEvent): void {
             :callout-fill-enabled="state.calloutFillEnabled"
             :callout-fill-color="state.calloutFillColor"
             :callout-fill-opacity="state.calloutFillOpacity"
+            :page-background-color="state.pageBackgroundColor"
             :font-family="state.defaultFontFamily"
             :is-detecting="isDetecting"
             :empty-hint="state.sections.length === 0"
@@ -540,6 +689,7 @@ function onKeydown(event: KeyboardEvent): void {
             @add-annotation-at="onAddAnnotationAt"
             @update-section-rect="updateSectionRect"
             @update-callout-position="onUpdateCalloutPosition"
+            @nudge-callout-positions="onNudgeCalloutPositions"
             @add-section="onAddSection"
             @commit-description="onCommitDescription"
             @crop-image="onCropImage"
@@ -564,6 +714,7 @@ function onKeydown(event: KeyboardEvent): void {
                 :callout-fill-enabled="state.calloutFillEnabled"
                 :callout-fill-color="state.calloutFillColor"
                 :callout-fill-opacity="state.calloutFillOpacity"
+                :page-background-color="state.pageBackgroundColor"
                 :number-style="state.numberStyle"
                 :image-width="state.imageWidth"
                 :image-height="state.imageHeight"
@@ -580,6 +731,7 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:callout-fill-enabled="setCalloutFillEnabled"
                 @update:callout-fill-color="setCalloutFillColor"
                 @update:callout-fill-opacity="setCalloutFillOpacity"
+                @update:page-background-color="setPageBackgroundColor"
                 @update:number-style="setNumberStyle"
                 @open-presets="onOpenCommonSettings"
               />
@@ -601,6 +753,7 @@ function onKeydown(event: KeyboardEvent): void {
         @overwrite="onOverwriteSavedProject"
         @load="onLoadSavedProject"
         @remove="onRemoveSavedProject"
+        @download-bundle="onDownloadAllProjectsBundle"
       />
       <CommonSettingsDialog
         :open="commonSettingsOpen"
@@ -617,6 +770,11 @@ function onKeydown(event: KeyboardEvent): void {
         @close="closeCropConfirm"
         @as-new-project="confirmCropAsNewProject"
         @overwrite="confirmCropOverwrite"
+      />
+      <ReplaceDetectDialog
+        :open="replaceDetectOpen"
+        @close="replaceDetectOpen = false"
+        @confirm="onConfirmReplaceDetect"
       />
     </div>
   </div>
@@ -649,13 +807,34 @@ function onKeydown(event: KeyboardEvent): void {
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100vw - 32px));
   background: var(--danger-soft);
   color: var(--danger);
   border: 1px solid rgba(255, 59, 48, 0.3);
   border-radius: 10px;
-  padding: 8px 14px;
+  padding: 8px 10px 8px 14px;
   font-size: 0.82rem;
   font-weight: 590;
   box-shadow: var(--shadow);
+}
+
+.project-load-error-dismiss {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.project-load-error-dismiss:hover {
+  background: rgba(255, 59, 48, 0.12);
 }
 </style>
