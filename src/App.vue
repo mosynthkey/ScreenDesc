@@ -4,7 +4,8 @@ import Toolbar from './components/Toolbar.vue'
 import UploadZone from './components/UploadZone.vue'
 import AnnotationCanvas from './components/AnnotationCanvas.vue'
 import AnnotationList from './components/AnnotationList.vue'
-import StylePanel from './components/StylePanel.vue'
+import AnnotationStyleSettings from './components/AnnotationStyleSettings.vue'
+import ProjectStyleSettings from './components/ProjectStyleSettings.vue'
 import ExportDialog from './components/ExportDialog.vue'
 import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
@@ -626,25 +627,8 @@ function onKeydown(event: KeyboardEvent): void {
               />
             </div>
             <div class="panel-section panel-section-annotation">
-              <StylePanel
-                :show-project="false"
-                :show-annotation="true"
+              <AnnotationStyleSettings
                 :selected-annotations="selectedAnnotations"
-                :default-font-family="state.defaultFontFamily"
-                :line-style="state.lineStyle"
-                :line-width="state.lineWidth"
-                :line-color="state.lineColor"
-                :dot-radius="state.dotRadius"
-                :anchor-style="state.anchorStyle"
-                :line-halo-width="state.lineHaloWidth"
-                :line-halo-color="state.lineHaloColor"
-                :callout-font-size="state.calloutFontSize"
-                :callout-border-enabled="state.calloutBorderEnabled"
-                :callout-fill-enabled="state.calloutFillEnabled"
-                :callout-fill-color="state.calloutFillColor"
-                :callout-fill-opacity="state.calloutFillOpacity"
-                :page-background-color="state.pageBackgroundColor"
-                :number-style="state.numberStyle"
                 :image-width="state.imageWidth"
                 :image-height="state.imageHeight"
                 :document-width="documentWidth"
@@ -697,9 +681,7 @@ function onKeydown(event: KeyboardEvent): void {
 
           <aside class="panel">
             <div class="panel-section">
-              <StylePanel
-                :show-project="true"
-                :show-annotation="false"
+              <ProjectStyleSettings
                 :default-font-family="state.defaultFontFamily"
                 :line-style="state.lineStyle"
                 :line-width="state.lineWidth"
@@ -715,8 +697,6 @@ function onKeydown(event: KeyboardEvent): void {
                 :callout-fill-opacity="state.calloutFillOpacity"
                 :page-background-color="state.pageBackgroundColor"
                 :number-style="state.numberStyle"
-                :image-width="state.imageWidth"
-                :image-height="state.imageHeight"
                 @update:default-font-family="setDefaultFontFamily"
                 @update:line-style="setLineStyle"
                 @update:line-width="setLineWidth"
