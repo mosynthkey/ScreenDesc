@@ -26,6 +26,7 @@ export const pngExporter: Exporter = {
       lineStyle: scene.lineStyle,
       lineWidth: scene.lineWidth,
       lineColor: scene.lineColor,
+      lineOpacity: scene.lineOpacity,
       dotColor: scene.dotColor,
       dotRadius: scene.dotRadius,
       lineHalo: scene.lineHalo,

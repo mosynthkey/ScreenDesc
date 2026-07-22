@@ -116,6 +116,7 @@ export const en = {
   'style.lineStyle': 'Line pattern',
   'style.lineWidth': 'Line weight',
   'style.lineAndDotColor': 'Leader & anchor color',
+  'style.lineOpacity': 'Leader opacity',
   'style.lineColor': 'Line',
   'style.dotRadius': 'Anchor size',
   'style.lineHalo': 'Add a white halo to the line (helps on dark backgrounds)',

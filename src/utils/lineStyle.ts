@@ -12,6 +12,15 @@ export const DEFAULT_LINE_WIDTH = 4.5
 export const LINE_WIDTH_MIN = 1
 export const LINE_WIDTH_MAX = 18
 
+export const DEFAULT_LINE_OPACITY = 1
+export const LINE_OPACITY_MIN = 0.05
+export const LINE_OPACITY_MAX = 1
+
+export function normalizeLineOpacity(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_LINE_OPACITY
+  return Math.min(LINE_OPACITY_MAX, Math.max(LINE_OPACITY_MIN, value))
+}
+
 export function getLineStyleOptions(): Array<{ value: LineStyleId; label: string }> {
   return [
     { value: 'solid', label: t('lineStyle.solid') },

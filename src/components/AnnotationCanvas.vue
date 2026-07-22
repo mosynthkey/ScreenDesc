@@ -45,6 +45,7 @@ const props = defineProps<{
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
+  lineOpacity: number
   dotColor: string
   dotRadius: number
   lineHalo: boolean
@@ -751,7 +752,10 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
             v-if="lineHalo && lineStyle !== 'invert'"
             class="leader-halo"
             :d="leaderPathFor(layoutFor(annotation.id)!)"
-            :style="{ strokeWidth: activeLineStyle.strokeWidth + 3 }"
+            :style="{
+              strokeWidth: activeLineStyle.strokeWidth + 3,
+              strokeOpacity: lineOpacity,
+            }"
           />
           <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
             <path
@@ -761,6 +765,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                 stroke: effectiveLineColor,
                 strokeWidth: activeLineStyle.strokeWidth,
                 strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                strokeOpacity: lineOpacity,
               }"
             />
             <circle

@@ -118,6 +118,7 @@ export const ja: Record<MessageKey, string> = {
   'style.lineStyle': '線種',
   'style.lineWidth': '線の太さ',
   'style.lineAndDotColor': '引き出し線・アンカーの色',
+  'style.lineOpacity': '引き出し線の不透明度',
   'style.lineColor': '線',
   'style.dotRadius': 'アンカーの大きさ',
   'style.lineHalo': '線に白い縁取りを付ける(背景が濃い時に見やすくする)',

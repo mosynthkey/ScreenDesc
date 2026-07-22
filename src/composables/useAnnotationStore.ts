@@ -30,7 +30,12 @@ import {
   loadGoogleFont,
 } from '../utils/googleFonts'
 import { CALLOUT_FONT_SIZE } from '../utils/markerSize'
-import { DEFAULT_LINE_WIDTH, normalizeLineStyle } from '../utils/lineStyle'
+import {
+  DEFAULT_LINE_OPACITY,
+  DEFAULT_LINE_WIDTH,
+  normalizeLineOpacity,
+  normalizeLineStyle,
+} from '../utils/lineStyle'
 import { DEFAULT_LABEL_COLOR, normalizeTextStyle } from '../utils/textVisibility'
 import {
   clearAutosavedProject,
@@ -61,6 +66,7 @@ const state = reactive<ProjectState>({
   lineStyle: 'solid',
   lineWidth: DEFAULT_LINE_WIDTH,
   lineColor: '#ffd60a',
+  lineOpacity: DEFAULT_LINE_OPACITY,
   dotColor: '#ffd60a',
   dotRadius: 4.5,
   lineHalo: false,
@@ -234,6 +240,7 @@ interface RestorableFields {
   lineStyle: LineStyleId
   lineWidth?: number
   lineColor: string
+  lineOpacity?: number
   dotColor: string
   dotRadius: number
   lineHalo: boolean
@@ -269,6 +276,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
     state.lineWidth = normalizedLine.lineWidth
   }
   state.lineColor = fields.lineColor
+  state.lineOpacity = normalizeLineOpacity(fields.lineOpacity)
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
   state.lineHalo = fields.lineHalo
@@ -328,6 +336,7 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineStyle: state.lineStyle,
     lineWidth: state.lineWidth,
     lineColor: state.lineColor,
+    lineOpacity: state.lineOpacity,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,
     lineHalo: state.lineHalo,
@@ -400,6 +409,7 @@ watch(
     state.lineStyle,
     state.lineWidth,
     state.lineColor,
+    state.lineOpacity,
     state.dotColor,
     state.dotRadius,
     state.lineHalo,
@@ -594,6 +604,10 @@ export function useAnnotationStore() {
     state.dotColor = color
   }
 
+  function setLineOpacity(opacity: number): void {
+    state.lineOpacity = normalizeLineOpacity(opacity)
+  }
+
   function setLabelColor(color: string): void {
     state.labelColor = color
   }
@@ -777,6 +791,7 @@ export function useAnnotationStore() {
         lineStyle: state.lineStyle,
         lineWidth: state.lineWidth,
         lineColor: state.lineColor,
+        lineOpacity: state.lineOpacity,
         dotColor: state.lineColor,
         dotRadius: state.dotRadius,
         lineHalo: state.lineHalo,
@@ -893,6 +908,7 @@ export function useAnnotationStore() {
     setLineStyle,
     setLineWidth,
     setLineColor,
+    setLineOpacity,
     setDotRadius,
     setLineHalo,
     setCalloutFontSize,

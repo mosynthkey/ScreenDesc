@@ -74,6 +74,7 @@ function renderCallout(
   lineStyle: LineStyleId,
   lineWidth: number,
   lineColor: string,
+  lineOpacity: number,
   dotColor: string,
   dotRadius: number,
   lineHalo: boolean,
@@ -108,9 +109,10 @@ function renderCallout(
   const effectiveLineColor = isInvert ? '#ffffff' : lineColor
   const effectiveDotColor = isInvert ? '#ffffff' : dotColor
   const pathD = buildLeaderPath(anchorPoint, endX, elbowPoint.y)
+  const opacityAttr = lineOpacity < 1 ? ` stroke-opacity="${lineOpacity}"` : ''
   const haloPath =
     lineHalo && !isInvert
-      ? `<path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${spec.strokeWidth + 3}" />`
+      ? `<path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${spec.strokeWidth + 3}"${opacityAttr} />`
       : ''
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
   // Blend on the group so overlapping line+dot invert the backdrop once.
@@ -120,7 +122,7 @@ function renderCallout(
     <g data-callout="${annotation.id}">
       ${haloPath}
       <g${blendAttr}>
-        <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} />
+        <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${opacityAttr} />
         <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />
       </g>
       <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="#ffffff" stroke="#1f2933" stroke-width="${calloutBorderWidth}" />
@@ -140,6 +142,7 @@ export function buildSceneSvg(params: {
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
+  lineOpacity: number
   dotColor: string
   dotRadius: number
   lineHalo: boolean
@@ -162,6 +165,7 @@ export function buildSceneSvg(params: {
     lineStyle,
     lineWidth,
     lineColor,
+    lineOpacity,
     dotColor,
     dotRadius,
     lineHalo,
@@ -207,6 +211,7 @@ export function buildSceneSvg(params: {
               lineStyle,
               lineWidth,
               lineColor,
+              lineOpacity,
               dotColor,
               dotRadius,
               lineHalo,
