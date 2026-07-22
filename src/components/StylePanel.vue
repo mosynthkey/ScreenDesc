@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, watch } from 'vue'
 import type {
   Annotation,
   CalloutSide,
@@ -7,7 +7,12 @@ import type {
   NumberStyleId,
 } from '../types/annotation'
 import { useI18n, type MessageKey } from '../i18n'
-import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../utils/googleFonts'
+import {
+  fontsByGroup,
+  loadAllGoogleFonts,
+  loadGoogleFont,
+  type FontGroupId,
+} from '../utils/googleFonts'
 import {
   getLineStyleOptions,
   LINE_HALO_WIDTH_MAX,
@@ -28,7 +33,7 @@ import {
 } from '../utils/markerSize'
 import { numberStyleIds } from '../utils/circledNumbers'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     annotation: Annotation | null
     defaultFontFamily: string
@@ -86,11 +91,31 @@ const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
 )
 
-onMounted(() => {
-  for (const option of GOOGLE_FONT_OPTIONS) {
-    loadGoogleFont(option.family)
-  }
-})
+const FONT_GROUP_LABEL_KEYS: Record<FontGroupId, MessageKey> = {
+  japanese: 'style.fontGroup.japanese',
+  sans: 'style.fontGroup.sans',
+  serif: 'style.fontGroup.serif',
+  display: 'style.fontGroup.display',
+}
+
+const fontGroups = computed(() =>
+  fontsByGroup().map((entry) => ({
+    ...entry,
+    label: t(FONT_GROUP_LABEL_KEYS[entry.group]),
+  })),
+)
+
+watch(
+  () => props.defaultFontFamily,
+  (family) => {
+    loadGoogleFont(family)
+  },
+  { immediate: true },
+)
+
+function onFontPickerOpen(): void {
+  loadAllGoogleFonts()
+}
 </script>
 
 <template>
@@ -244,16 +269,19 @@ onMounted(() => {
         <label>{{ t('style.defaultFont') }}</label>
         <select
           :value="defaultFontFamily"
+          @focus="onFontPickerOpen"
           @change="emit('update:defaultFontFamily', ($event.target as HTMLSelectElement).value)"
         >
-          <option
-            v-for="option in GOOGLE_FONT_OPTIONS"
-            :key="option.family"
-            :value="option.family"
-            :style="{ fontFamily: `'${option.family}', sans-serif` }"
-          >
-            {{ option.label }}
-          </option>
+          <optgroup v-for="group in fontGroups" :key="group.group" :label="group.label">
+            <option
+              v-for="option in group.fonts"
+              :key="option.family"
+              :value="option.family"
+              :style="{ fontFamily: `'${option.family}', sans-serif` }"
+            >
+              {{ option.label }}
+            </option>
+          </optgroup>
         </select>
       </div>
     </div>

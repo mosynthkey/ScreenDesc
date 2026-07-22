@@ -1,24 +1,86 @@
+export type FontGroupId = 'japanese' | 'sans' | 'serif' | 'display'
+
 export interface GoogleFontOption {
   family: string
   label: string
   /** Weights requested from Google Fonts */
   weights: number[]
+  group: FontGroupId
 }
 
-/** Curated Google Fonts with Japanese coverage for manuals */
+/** Curated Google Fonts for manuals (JP-first, plus common Latin faces). */
 export const GOOGLE_FONT_OPTIONS: GoogleFontOption[] = [
-  { family: 'Noto Sans JP', label: 'Noto Sans JP', weights: [400, 700, 900] },
-  { family: 'Noto Serif JP', label: 'Noto Serif JP', weights: [400, 700, 900] },
-  { family: 'IBM Plex Sans JP', label: 'IBM Plex Sans JP', weights: [400, 700] },
-  { family: 'M PLUS 1', label: 'M PLUS 1', weights: [400, 700, 800] },
-  { family: 'M PLUS Rounded 1c', label: 'M PLUS Rounded 1c', weights: [400, 700, 800] },
-  { family: 'Zen Kaku Gothic New', label: 'Zen Kaku Gothic New', weights: [400, 700, 900] },
-  { family: 'Zen Maru Gothic', label: 'Zen Maru Gothic', weights: [400, 700, 900] },
-  { family: 'Kosugi Maru', label: 'Kosugi Maru', weights: [400] },
-  { family: 'Sawarabi Gothic', label: 'Sawarabi Gothic', weights: [400] },
-  { family: 'Shippori Mincho', label: 'Shippori Mincho', weights: [400, 700] },
-  { family: 'Dela Gothic One', label: 'Dela Gothic One', weights: [400] },
+  // Japanese — gothic / sans
+  { family: 'Noto Sans JP', label: 'Noto Sans JP', weights: [400, 700, 900], group: 'japanese' },
+  { family: 'IBM Plex Sans JP', label: 'IBM Plex Sans JP', weights: [400, 700], group: 'japanese' },
+  { family: 'M PLUS 1', label: 'M PLUS 1', weights: [400, 700, 800], group: 'japanese' },
+  { family: 'M PLUS 2', label: 'M PLUS 2', weights: [400, 700, 800], group: 'japanese' },
+  { family: 'M PLUS 1p', label: 'M PLUS 1p', weights: [400, 700, 800], group: 'japanese' },
+  { family: 'M PLUS Rounded 1c', label: 'M PLUS Rounded 1c', weights: [400, 700, 800], group: 'japanese' },
+  { family: 'Zen Kaku Gothic New', label: 'Zen Kaku Gothic New', weights: [400, 700, 900], group: 'japanese' },
+  { family: 'Zen Maru Gothic', label: 'Zen Maru Gothic', weights: [400, 700, 900], group: 'japanese' },
+  { family: 'BIZ UDPGothic', label: 'BIZ UDPGothic', weights: [400, 700], group: 'japanese' },
+  { family: 'BIZ UDGothic', label: 'BIZ UDGothic', weights: [400, 700], group: 'japanese' },
+  { family: 'Kosugi', label: 'Kosugi', weights: [400], group: 'japanese' },
+  { family: 'Kosugi Maru', label: 'Kosugi Maru', weights: [400], group: 'japanese' },
+  { family: 'Sawarabi Gothic', label: 'Sawarabi Gothic', weights: [400], group: 'japanese' },
+  { family: 'Kiwi Maru', label: 'Kiwi Maru', weights: [400, 500], group: 'japanese' },
+  { family: 'Klee One', label: 'Klee One', weights: [400, 600], group: 'japanese' },
+  // Japanese — mincho / serif
+  { family: 'Noto Serif JP', label: 'Noto Serif JP', weights: [400, 700, 900], group: 'japanese' },
+  { family: 'Shippori Mincho', label: 'Shippori Mincho', weights: [400, 700], group: 'japanese' },
+  { family: 'Shippori Antique', label: 'Shippori Antique', weights: [400], group: 'japanese' },
+  { family: 'Shippori Antique B1', label: 'Shippori Antique B1', weights: [400], group: 'japanese' },
+  { family: 'Sawarabi Mincho', label: 'Sawarabi Mincho', weights: [400], group: 'japanese' },
+  { family: 'BIZ UDPMincho', label: 'BIZ UDPMincho', weights: [400], group: 'japanese' },
+  { family: 'BIZ UDMincho', label: 'BIZ UDMincho', weights: [400], group: 'japanese' },
+  { family: 'Zen Old Mincho', label: 'Zen Old Mincho', weights: [400, 700, 900], group: 'japanese' },
+  { family: 'Zen Antique', label: 'Zen Antique', weights: [400], group: 'japanese' },
+  { family: 'Zen Antique Soft', label: 'Zen Antique Soft', weights: [400], group: 'japanese' },
+  { family: 'Kaisei Decol', label: 'Kaisei Decol', weights: [400, 700], group: 'japanese' },
+  { family: 'Kaisei Opti', label: 'Kaisei Opti', weights: [400, 700], group: 'japanese' },
+  { family: 'Kaisei Tokumin', label: 'Kaisei Tokumin', weights: [400, 700], group: 'japanese' },
+  { family: 'New Tegomin', label: 'New Tegomin', weights: [400], group: 'japanese' },
+  { family: 'Yuji Syuku', label: 'Yuji Syuku', weights: [400], group: 'japanese' },
+  { family: 'Yuji Mai', label: 'Yuji Mai', weights: [400], group: 'japanese' },
+  { family: 'Yuji Boku', label: 'Yuji Boku', weights: [400], group: 'japanese' },
+  // Japanese — display / decorative
+  { family: 'Dela Gothic One', label: 'Dela Gothic One', weights: [400], group: 'display' },
+  { family: 'RocknRoll One', label: 'RocknRoll One', weights: [400], group: 'display' },
+  { family: 'Reggae One', label: 'Reggae One', weights: [400], group: 'display' },
+  { family: 'Rampart One', label: 'Rampart One', weights: [400], group: 'display' },
+  { family: 'Train One', label: 'Train One', weights: [400], group: 'display' },
+  { family: 'Potta One', label: 'Potta One', weights: [400], group: 'display' },
+  { family: 'Hachi Maru Pop', label: 'Hachi Maru Pop', weights: [400], group: 'display' },
+  { family: 'Stick', label: 'Stick', weights: [400], group: 'display' },
+  { family: 'DotGothic16', label: 'DotGothic16', weights: [400], group: 'display' },
+  { family: 'Zen Kurenaido', label: 'Zen Kurenaido', weights: [400], group: 'display' },
+  // Latin — sans
+  { family: 'Inter', label: 'Inter', weights: [400, 700], group: 'sans' },
+  { family: 'Roboto', label: 'Roboto', weights: [400, 700], group: 'sans' },
+  { family: 'Open Sans', label: 'Open Sans', weights: [400, 700], group: 'sans' },
+  { family: 'Source Sans 3', label: 'Source Sans 3', weights: [400, 700], group: 'sans' },
+  { family: 'Nunito Sans', label: 'Nunito Sans', weights: [400, 700], group: 'sans' },
+  { family: 'Lato', label: 'Lato', weights: [400, 700], group: 'sans' },
+  { family: 'Montserrat', label: 'Montserrat', weights: [400, 700], group: 'sans' },
+  { family: 'Poppins', label: 'Poppins', weights: [400, 700], group: 'sans' },
+  { family: 'Work Sans', label: 'Work Sans', weights: [400, 700], group: 'sans' },
+  { family: 'IBM Plex Sans', label: 'IBM Plex Sans', weights: [400, 700], group: 'sans' },
+  { family: 'Noto Sans', label: 'Noto Sans', weights: [400, 700], group: 'sans' },
+  // Latin — serif
+  { family: 'Merriweather', label: 'Merriweather', weights: [400, 700], group: 'serif' },
+  { family: 'Libre Baskerville', label: 'Libre Baskerville', weights: [400, 700], group: 'serif' },
+  { family: 'Playfair Display', label: 'Playfair Display', weights: [400, 700], group: 'serif' },
+  { family: 'Lora', label: 'Lora', weights: [400, 700], group: 'serif' },
+  { family: 'Noto Serif', label: 'Noto Serif', weights: [400, 700], group: 'serif' },
+  { family: 'Source Serif 4', label: 'Source Serif 4', weights: [400, 700], group: 'serif' },
+  // Latin — display
+  { family: 'Oswald', label: 'Oswald', weights: [400, 700], group: 'display' },
+  { family: 'Bebas Neue', label: 'Bebas Neue', weights: [400], group: 'display' },
+  { family: 'Righteous', label: 'Righteous', weights: [400], group: 'display' },
 ]
+
+export const FONT_GROUP_ORDER: FontGroupId[] = ['japanese', 'sans', 'serif', 'display']
 
 export const DEFAULT_FONT_FAMILY = GOOGLE_FONT_OPTIONS[0]!.family
 
@@ -28,8 +90,17 @@ export function findGoogleFont(family: string): GoogleFontOption | undefined {
   return GOOGLE_FONT_OPTIONS.find((option) => option.family === family)
 }
 
+export function fontsByGroup(): Array<{ group: FontGroupId; fonts: GoogleFontOption[] }> {
+  return FONT_GROUP_ORDER.map((group) => ({
+    group,
+    fonts: GOOGLE_FONT_OPTIONS.filter((option) => option.group === group),
+  })).filter((entry) => entry.fonts.length > 0)
+}
+
 export function fontFamilyCss(family: string): string {
-  return `'${family}', 'Noto Sans JP', sans-serif`
+  const option = findGoogleFont(family)
+  const fallback = option?.group === 'serif' ? 'serif' : 'sans-serif'
+  return `'${family}', 'Noto Sans JP', ${fallback}`
 }
 
 export function googleFontsCssUrl(family: string, weights: number[]): string {
@@ -56,6 +127,13 @@ export function loadGoogleFont(family: string): void {
   link.href = googleFontsCssUrl(option.family, option.weights)
   document.head.appendChild(link)
   loadedFamilies.add(option.family)
+}
+
+/** Prefetch every curated face (e.g. when opening the font picker). */
+export function loadAllGoogleFonts(): void {
+  for (const option of GOOGLE_FONT_OPTIONS) {
+    loadGoogleFont(option.family)
+  }
 }
 
 export async function ensureGoogleFontsLoaded(families: string[]): Promise<void> {
@@ -107,11 +185,12 @@ export async function buildEmbeddedFontCss(families: string[]): Promise<string> 
       family,
       label: family,
       weights: [400, 700, 800],
+      group: 'sans' as const,
     }
     const cssUrl = googleFontsCssUrl(option.family, option.weights)
     const response = await fetch(cssUrl)
     if (!response.ok) {
-      console.warn(`[ImageDesc:fonts] CSS fetch failed for ${family}`)
+      console.warn(`[ScreenDesc:fonts] CSS fetch failed for ${family}`)
       continue
     }
 
@@ -127,7 +206,7 @@ export async function buildEmbeddedFontCss(families: string[]): Promise<string> 
           const absoluteUrl = new URL(rawUrl, cssUrl).href
           replacements.set(rawUrl, await fetchFontAsDataUri(absoluteUrl))
         } catch (error) {
-          console.warn(`[ImageDesc:fonts] embed failed for ${rawUrl}`, error)
+          console.warn(`[ScreenDesc:fonts] embed failed for ${rawUrl}`, error)
         }
       }),
     )
