@@ -64,7 +64,7 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.title': '注釈一覧',
   'annotationList.emptyHint': 'セクションをクリックして注釈を追加できます。',
   'annotationList.dragTitle': 'ドラッグで並び替え',
-  'annotationList.descriptionPlaceholder': '手順の説明',
+  'annotationList.emptyDescription': '説明なし',
   'annotationList.removeTitle': '削除',
 
   'canvas.emptyHint':

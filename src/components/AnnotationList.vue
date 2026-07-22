@@ -12,7 +12,6 @@ const emit = defineEmits<{
   select: [id: string, additive: boolean]
   reorder: [orderedIds: string[]]
   remove: [id: string]
-  editDescription: [id: string, value: string]
 }>()
 
 const { t } = useI18n()
@@ -119,14 +118,9 @@ function onDrop(event: DragEvent): void {
           >
             ⠿
           </button>
-          <input
-            class="desc-input"
-            type="text"
-            :value="annotation.description"
-            :placeholder="t('annotationList.descriptionPlaceholder')"
-            @click.stop
-            @input="emit('editDescription', annotation.id, ($event.target as HTMLInputElement).value)"
-          />
+          <span class="desc-text">
+            {{ annotation.description || t('annotationList.emptyDescription') }}
+          </span>
           <button
             class="icon-btn remove-btn"
             type="button"
@@ -228,34 +222,16 @@ function onDrop(event: DragEvent): void {
   cursor: grabbing;
 }
 
-.desc-input {
-  width: 100%;
+.desc-text {
   min-width: 0;
-  margin: 0;
-  border: 1px solid transparent;
-  border-radius: 8px;
   padding: 6px 8px;
   font-size: 0.86rem;
   font-weight: 500;
   line-height: 1.35;
   color: var(--ink);
-  background: transparent;
-  transition: border-color var(--spring), background var(--spring);
-}
-
-.desc-input::placeholder {
-  color: var(--ink-muted);
-  font-weight: 400;
-}
-
-.desc-input:hover {
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.desc-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .remove-btn {

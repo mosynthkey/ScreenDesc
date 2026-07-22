@@ -298,7 +298,6 @@ function onKeydown(event: KeyboardEvent): void {
               @select="selectAnnotation"
               @reorder="reorderAnnotations"
               @remove="(id) => removeAnnotations([id])"
-              @edit-description="(id, value) => updateAnnotation(id, { description: value })"
             />
           </div>
           <div class="panel-section panel-section-annotation">

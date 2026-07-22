@@ -62,7 +62,7 @@ export const en = {
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Click a section to add an annotation.',
   'annotationList.dragTitle': 'Drag to reorder',
-  'annotationList.descriptionPlaceholder': 'Step description',
+  'annotationList.emptyDescription': 'No description',
   'annotationList.removeTitle': 'Remove',
 
   'canvas.emptyHint':
