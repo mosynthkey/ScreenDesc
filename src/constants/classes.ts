@@ -56,5 +56,3 @@ export const CLASS_NAMES = [
   'Notification',
   'Logo',
 ] as const
-
-export type ClassName = (typeof CLASS_NAMES)[number]

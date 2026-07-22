@@ -10,5 +10,3 @@ export interface Detection {
 }
 
 export type ModelStatus = 'idle' | 'loading' | 'ready' | 'error'
-
-export type ExecutionProviderName = 'webgpu' | 'wasm'

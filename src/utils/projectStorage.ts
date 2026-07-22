@@ -32,8 +32,6 @@ export interface ProjectSnapshot {
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderEnabled: boolean
-  /** @deprecated Prefer `calloutBorderEnabled`. */
-  calloutBorderWidth?: number
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number

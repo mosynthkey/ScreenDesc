@@ -23,7 +23,6 @@ export function buildLeaderPath(start: Point, endX: number, endY: number): strin
   const direction = dx === 0 ? 1 : Math.sign(dx)
   const absDx = Math.abs(dx)
   const absDy = Math.abs(dy)
-  // Keep the horizontal run short enough that the bend stays gentle under wide strokes.
   const stub = Math.min(
     absDx * 0.55,
     48,
@@ -34,7 +33,6 @@ export function buildLeaderPath(start: Point, endX: number, endY: number): strin
   return `M ${start.x} ${start.y} C ${elbowX} ${start.y}, ${elbowX} ${endY}, ${endX} ${endY}`
 }
 
-/** Attach the leader to the label edge facing the anchor (works for side and on-image labels). */
 export function leaderAttachOnLabel(layout: CalloutLayoutItem): Point {
   const labelCenterX = layout.labelPosition.x + layout.labelWidth / 2
   const labelCenterY = layout.labelPosition.y + layout.labelHeight / 2
@@ -90,7 +88,6 @@ function labelVPadding(fontSize: number): number {
   return Math.max(14, Math.round(fontSize * 0.35))
 }
 
-/** Keep gaps readable as font size grows so neighboring labels do not touch. */
 function labelGapFor(fontSize: number): number {
   return Math.max(LABEL_GAP_MIN, Math.round(fontSize * 0.35))
 }
@@ -117,7 +114,6 @@ function verticalMarginsFor(imageHeight: number, maxStackHeight: number): {
   }
 }
 
-/** Single-line label sized to measured text; canvas margins grow to fit. */
 function estimateLabelSize(
   description: string,
   order: number,
@@ -345,35 +341,6 @@ function splitBySide(
   return { leftItems, rightItems }
 }
 
-/**
- * Place callout labels beside the image (auto) or at a free document position when set.
- */
-export function computeCalloutLayouts(
-  annotations: Annotation[],
-  sections: Section[],
-  document: DocumentLayout,
-  fontSize: number,
-  fontFamily: string,
-  numberStyle: NumberStyleId,
-): CalloutLayoutItem[] {
-  const callouts = [...annotations].sort((left, right) => left.order - right.order)
-  if (callouts.length === 0) return []
-
-  const gap = labelGapFor(fontSize)
-  const { leftItems, rightItems } = splitBySide(callouts, sections, document.imageWidth)
-  const leftSizes = leftItems.map((annotation) =>
-    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
-  )
-  const rightSizes = rightItems.map((annotation) =>
-    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
-  )
-
-  return [
-    ...packSide(leftItems, leftSizes, sections, document, 'left', gap),
-    ...packSide(rightItems, rightSizes, sections, document, 'right', gap),
-  ]
-}
-
 export function createDefaultDocumentLayout(
   imageWidth: number,
   imageHeight: number,
@@ -392,7 +359,6 @@ export function createDefaultDocumentLayout(
   }
 }
 
-/** Measure labels, size side/vertical margins to fit, then pack callout layouts. */
 export function layoutCalloutsForImage(
   annotations: Annotation[],
   sections: Section[],

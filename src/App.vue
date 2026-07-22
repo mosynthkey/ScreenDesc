@@ -700,7 +700,6 @@ function onKeydown(event: KeyboardEvent): void {
               <StylePanel
                 :show-project="true"
                 :show-annotation="false"
-                :annotation="null"
                 :default-font-family="state.defaultFontFamily"
                 :line-style="state.lineStyle"
                 :line-width="state.lineWidth"

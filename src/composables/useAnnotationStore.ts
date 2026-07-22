@@ -337,12 +337,8 @@ interface RestorableFields {
   anchorStyle?: AnchorStyleId
   lineHaloWidth?: number
   lineHaloColor?: string
-  /** @deprecated Prefer `lineHaloWidth`. */
-  lineHalo?: boolean
   calloutFontSize: number
   calloutBorderEnabled?: boolean
-  /** @deprecated Prefer `calloutBorderEnabled`. */
-  calloutBorderWidth?: number
   calloutFillEnabled?: boolean
   calloutFillColor?: string
   calloutFillOpacity?: number
@@ -373,13 +369,10 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
   state.anchorStyle = normalizeAnchorStyle(fields.anchorStyle)
-  state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
+  state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
   state.calloutFontSize = fields.calloutFontSize
-  state.calloutBorderEnabled = normalizeCalloutBorderEnabled(
-    fields.calloutBorderEnabled,
-    fields.calloutBorderWidth,
-  )
+  state.calloutBorderEnabled = normalizeCalloutBorderEnabled(fields.calloutBorderEnabled)
   state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
   state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
   state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
@@ -1340,10 +1333,6 @@ export function useAnnotationStore() {
     }
   }
 
-  async function loadProjectFromFile(file: File): Promise<void> {
-    await openProjectFile(file)
-  }
-
   function deleteSelection(): void {
     if (state.selectedAnnotationIds.length > 0) {
       removeAnnotations([...state.selectedAnnotationIds])
@@ -1415,7 +1404,6 @@ export function useAnnotationStore() {
     saveProjectToFile,
     downloadAllProjectsBundle,
     openProjectFile,
-    loadProjectFromFile,
     saveProjectAs,
     setProjectName,
     fetchSavedProjects,

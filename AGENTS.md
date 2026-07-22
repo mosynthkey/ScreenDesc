@@ -11,7 +11,7 @@
 
 - Do not hardcode user-facing strings in Vue templates or UI helpers.
 - Add English source text in `src/i18n/messages/en.ts`, and the Japanese translation in `src/i18n/messages/ja.ts`.
-- Read strings with `t('key')` / `useI18n()` (or helpers in `src/i18n/labels.ts`).
+- Read strings with `t('key')` / `useI18n()`.
 - Keep message keys stable; prefer dotted names (`button.export`, `error.projectLoadFailed`).
 
 ## Style notes

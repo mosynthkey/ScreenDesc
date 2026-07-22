@@ -136,24 +136,6 @@ function imageElementToImageData(image: HTMLImageElement): ImageData | null {
   return context.getImageData(0, 0, width, height)
 }
 
-/** Build an 8-bit grayscale ImageData from a float luminance buffer. */
-export function imageDataFromGray(
-  gray: Float32Array,
-  width: number,
-  height: number,
-): ImageData {
-  const rgba = new Uint8ClampedArray(width * height * 4)
-  for (let pixelIndex = 0; pixelIndex < width * height; pixelIndex += 1) {
-    const value = Math.max(0, Math.min(255, Math.round(gray[pixelIndex] ?? 0)))
-    const offset = pixelIndex * 4
-    rgba[offset] = value
-    rgba[offset + 1] = value
-    rgba[offset + 2] = value
-    rgba[offset + 3] = 255
-  }
-  return new ImageData(rgba, width, height)
-}
-
 async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunResult> {
   const empty: OcrRunResult = { lines: [], fullText: '' }
   if (imageData.width < 8 || imageData.height < 8) return empty
@@ -182,23 +164,10 @@ async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunR
   }
 }
 
-/**
- * Run tesseract-wasm on the original image pixels (full frame).
- * Returns word clusters in absolute image coordinates.
- */
 export async function recognizeTextFromImage(
   image: HTMLImageElement,
 ): Promise<OcrRunResult> {
   const imageData = imageElementToImageData(image)
   if (!imageData) return { lines: [], fullText: '' }
   return recognizeTextFromImageData(imageData)
-}
-
-/** OCR a contrast-enhanced (or other) grayscale buffer in local coordinates. */
-export async function recognizeTextFromGray(
-  gray: Float32Array,
-  width: number,
-  height: number,
-): Promise<OcrRunResult> {
-  return recognizeTextFromImageData(imageDataFromGray(gray, width, height))
 }

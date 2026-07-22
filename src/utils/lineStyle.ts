@@ -12,21 +12,15 @@ export const DEFAULT_LINE_WIDTH = 4.5
 export const LINE_WIDTH_MIN = 1
 export const LINE_WIDTH_MAX = 54
 
-/** Extra stroke width for the outline underlay (0 = off). Legacy `lineHalo: true` → 3. */
 export const DEFAULT_LINE_HALO_WIDTH = 0
-export const LEGACY_LINE_HALO_WIDTH = 3
 export const LINE_HALO_WIDTH_MIN = 0
 export const LINE_HALO_WIDTH_MAX = 36
 export const DEFAULT_LINE_HALO_COLOR = '#ffffff'
 
-export function normalizeLineHaloWidth(
-  width: unknown,
-  legacyEnabled?: unknown,
-): number {
+export function normalizeLineHaloWidth(width: unknown): number {
   if (typeof width === 'number' && Number.isFinite(width)) {
     return Math.min(LINE_HALO_WIDTH_MAX, Math.max(LINE_HALO_WIDTH_MIN, width))
   }
-  if (legacyEnabled === true) return LEGACY_LINE_HALO_WIDTH
   return DEFAULT_LINE_HALO_WIDTH
 }
 
@@ -56,7 +50,6 @@ export function getLineStyleSpec(id: LineStyleId, strokeWidth: number): LineStyl
   return { strokeWidth: width, dasharray: null }
 }
 
-/** Map legacy thin/thick ids from older project files. */
 export function normalizeLineStyle(
   style: unknown,
   lineWidth?: unknown,
@@ -64,19 +57,9 @@ export function normalizeLineStyle(
   const width =
     typeof lineWidth === 'number' && Number.isFinite(lineWidth)
       ? Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, lineWidth))
-      : undefined
+      : DEFAULT_LINE_WIDTH
 
-  if (style === 'dashed') {
-    return { lineStyle: 'dashed', lineWidth: width ?? DEFAULT_LINE_WIDTH }
-  }
-  if (style === 'invert') {
-    return { lineStyle: 'invert', lineWidth: width ?? DEFAULT_LINE_WIDTH }
-  }
-  if (style === 'thin') {
-    return { lineStyle: 'solid', lineWidth: width ?? 2 }
-  }
-  if (style === 'thick' || style === 'solid') {
-    return { lineStyle: 'solid', lineWidth: width ?? DEFAULT_LINE_WIDTH }
-  }
-  return { lineStyle: 'solid', lineWidth: width ?? DEFAULT_LINE_WIDTH }
+  if (style === 'dashed') return { lineStyle: 'dashed', lineWidth: width }
+  if (style === 'invert') return { lineStyle: 'invert', lineWidth: width }
+  return { lineStyle: 'solid', lineWidth: width }
 }

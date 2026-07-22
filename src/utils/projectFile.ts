@@ -47,8 +47,6 @@ export interface ProjectFileData {
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderEnabled: boolean
-  /** @deprecated Prefer `calloutBorderEnabled`. */
-  calloutBorderWidth?: number
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
@@ -186,20 +184,12 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   if (!isNumberStyleId(project.numberStyle)) {
     project.numberStyle = DEFAULT_NUMBER_STYLE
   }
-  const normalizedLine = normalizeLineStyle(project.lineStyle, (project as { lineWidth?: number }).lineWidth)
+  const normalizedLine = normalizeLineStyle(project.lineStyle, project.lineWidth)
   project.lineStyle = normalizedLine.lineStyle
   project.lineWidth = normalizedLine.lineWidth
-  project.lineHaloWidth = normalizeLineHaloWidth(
-    (project as { lineHaloWidth?: number }).lineHaloWidth,
-    (project as { lineHalo?: boolean }).lineHalo,
-  )
-  project.lineHaloColor = normalizeLineHaloColor(
-    (project as { lineHaloColor?: string }).lineHaloColor,
-  )
-  project.calloutBorderEnabled = normalizeCalloutBorderEnabled(
-    (project as { calloutBorderEnabled?: boolean }).calloutBorderEnabled,
-    (project as { calloutBorderWidth?: number }).calloutBorderWidth,
-  )
+  project.lineHaloWidth = normalizeLineHaloWidth(project.lineHaloWidth)
+  project.lineHaloColor = normalizeLineHaloColor(project.lineHaloColor)
+  project.calloutBorderEnabled = normalizeCalloutBorderEnabled(project.calloutBorderEnabled)
   project.calloutFillEnabled = normalizeCalloutFillEnabled(
     (project as { calloutFillEnabled?: unknown }).calloutFillEnabled,
   )
@@ -281,22 +271,6 @@ export async function parseScreenDescFile(file: File): Promise<ParsedScreenDescF
     return { kind: 'project', project: normalizeProjectFileData(data) }
   }
   throw new Error(t('error.projectFileUnsupported'))
-}
-
-export async function parseProjectFile(file: File): Promise<ProjectFileData> {
-  const parsed = await parseScreenDescFile(file)
-  if (parsed.kind !== 'project') {
-    throw new Error(t('error.projectFileUnsupported'))
-  }
-  return parsed.project
-}
-
-export async function parseProjectBundleFile(file: File): Promise<ProjectBundleFileData> {
-  const parsed = await parseScreenDescFile(file)
-  if (parsed.kind !== 'bundle') {
-    throw new Error(t('error.projectBundleUnsupported'))
-  }
-  return parsed.bundle
 }
 
 /** Strip session-only fields before writing a portable project file. */

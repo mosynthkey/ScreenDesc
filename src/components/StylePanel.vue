@@ -37,8 +37,6 @@ import { numberStyleIds } from '../utils/circledNumbers'
 
 const props = withDefaults(
   defineProps<{
-    /** @deprecated Prefer `selectedAnnotations`. */
-    annotation?: Annotation | null
     selectedAnnotations?: Annotation[]
     defaultFontFamily: string
     lineStyle: LineStyleId
@@ -57,16 +55,13 @@ const props = withDefaults(
     numberStyle: NumberStyleId
     imageWidth?: number
     imageHeight?: number
-    /** Document size for label coordinate editors (includes margins). */
     documentWidth?: number
     documentHeight?: number
-    /** Laid-out label top-left by annotation id (document coords). */
     labelPositions?: Record<string, Point>
     showProject?: boolean
     showAnnotation?: boolean
   }>(),
   {
-    annotation: null,
     selectedAnnotations: () => [],
     imageWidth: 0,
     imageHeight: 0,
@@ -125,10 +120,7 @@ const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
 )
 
-const activeAnnotations = computed(() => {
-  if (props.selectedAnnotations.length > 0) return props.selectedAnnotations
-  return props.annotation ? [props.annotation] : []
-})
+const activeAnnotations = computed(() => props.selectedAnnotations)
 const selectionCount = computed(() => activeAnnotations.value.length)
 const isMultiSelection = computed(() => selectionCount.value > 1)
 const primaryAnnotation = computed(() => activeAnnotations.value[0] ?? null)

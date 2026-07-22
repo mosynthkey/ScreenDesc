@@ -325,7 +325,6 @@ function clampToImage(point: Point): Point {
 }
 
 function findSectionAt(imagePoint: Point): Section | undefined {
-  // Prefer smallest containing section
   const hits = props.sections.filter((section) => pointInRect(imagePoint, section.rect))
   return hits.sort(
     (left, right) => left.rect.width * left.rect.height - right.rect.width * right.rect.height,
@@ -367,7 +366,6 @@ function onPointerDown(event: PointerEvent): void {
     if (!keepGroup) {
       emit('selectAnnotation', calloutId, additive)
     }
-    // Shift toggles multi-select without starting a drag.
     if (additive) return
 
     const movingIds = keepGroup ? [...props.selectedAnnotationIds] : [calloutId]
@@ -440,7 +438,6 @@ function onPointerDown(event: PointerEvent): void {
     return
   }
 
-  // Select mode empty click
   if (sectionId) {
     emit('selectSection', sectionId, event.shiftKey)
     return
@@ -580,7 +577,6 @@ async function beginEdit(annotationId: string): Promise<void> {
 }
 
 function onDblClick(event: MouseEvent): void {
-  // Backup path; primary edit trigger is pointerdown with detail >= 2.
   event.preventDefault()
   const target = event.target as Element
   const annotationId = target.closest('[data-callout-label]')?.getAttribute('data-callout-label')
@@ -770,15 +766,11 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
         :height="draftSection.height"
       />
 
-      <!-- Callouts -->
       <g v-for="annotation in annotations" :key="annotation.id">
         <template v-if="layoutFor(annotation.id)">
           <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
             <template v-if="isArrowAnchorStyle(anchorStyle)">
-              <!--
-                Keep head and leader as separate paths. Filling a combined path
-                paints the open cubic (implicit close) and looks like a twisted ribbon.
-              -->
+              <!-- Separate paths: a filled combined path paints the open cubic as a ribbon. -->
               <path
                 v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
                 class="leader-halo"

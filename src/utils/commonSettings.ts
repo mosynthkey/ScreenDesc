@@ -24,7 +24,6 @@ export const DEFAULT_CALLOUT_FILL_COLOR = '#ffffff'
 export const DEFAULT_CALLOUT_FILL_OPACITY = 1
 export const CALLOUT_FILL_OPACITY_MIN = 0
 export const CALLOUT_FILL_OPACITY_MAX = 1
-/** Page / export canvas color behind the screenshot and margins. */
 export const DEFAULT_PAGE_BACKGROUND_COLOR = '#ffffff'
 
 export interface CommonSettings {
@@ -83,18 +82,10 @@ export function resolveCalloutBorderWidth(
   return enabled ? lineWidth : 0
 }
 
-export function normalizeCalloutBorderEnabled(
-  enabled: unknown,
-  legacyWidth: unknown,
-): boolean {
-  if (typeof enabled === 'boolean') return enabled
-  if (typeof legacyWidth === 'number' && Number.isFinite(legacyWidth)) {
-    return legacyWidth > 0
-  }
-  return false
+export function normalizeCalloutBorderEnabled(enabled: unknown): boolean {
+  return typeof enabled === 'boolean' ? enabled : false
 }
 
-/** Legacy projects keep a white fill when the field is missing. */
 export function normalizeCalloutFillEnabled(value: unknown): boolean {
   return typeof value === 'boolean' ? value : true
 }
@@ -172,13 +163,10 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     lineColor,
     dotRadius,
     anchorStyle: normalizeAnchorStyle(raw.anchorStyle),
-    lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth, raw.lineHalo),
+    lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth),
     lineHaloColor: normalizeLineHaloColor(raw.lineHaloColor),
     calloutFontSize,
-    calloutBorderEnabled: normalizeCalloutBorderEnabled(
-      raw.calloutBorderEnabled,
-      raw.calloutBorderWidth,
-    ),
+    calloutBorderEnabled: normalizeCalloutBorderEnabled(raw.calloutBorderEnabled),
     calloutFillEnabled: normalizeCalloutFillEnabled(raw.calloutFillEnabled),
     calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),
     calloutFillOpacity: normalizeCalloutFillOpacity(raw.calloutFillOpacity),

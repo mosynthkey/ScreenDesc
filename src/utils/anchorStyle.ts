@@ -1,6 +1,5 @@
 import type { AnchorStyleId, Point } from '../types/annotation'
 import { t } from '../i18n'
-import { buildLeaderPath } from './calloutLayout'
 
 export type { AnchorStyleId }
 
@@ -28,7 +27,6 @@ export function getAnchorStyleOptions(): Array<{ value: AnchorStyleId; label: st
   ]
 }
 
-/** Initial leader tangent leaves the anchor toward the label (horizontal stub). */
 export function leaderLeaveUnit(anchor: Point, endX: number): Point {
   const deltaX = endX - anchor.x
   const direction = deltaX === 0 ? 1 : Math.sign(deltaX)
@@ -89,7 +87,6 @@ export function leaderAttachPoint(
   return style === 'chevron' ? geometry.tip : geometry.center
 }
 
-/** Leader leaves from the circle rim facing the label (same idea as the arrow base). */
 export function dotLeaderAttachPoint(
   anchor: Point,
   endX: number,
@@ -111,21 +108,4 @@ export function buildAnchorHeadPath(
     return `M ${left.x} ${left.y} L ${tip.x} ${tip.y} L ${right.x} ${right.y}`
   }
   return `M ${tip.x} ${tip.y} L ${left.x} ${left.y} L ${right.x} ${right.y} Z`
-}
-
-/**
- * Single path that includes the arrowhead and the leader curve, meant to be stroked.
- * Arrow: leader from base midline. Chevron: leader from tip.
- */
-export function buildAnchorLeaderPath(
-  style: AnchorStyleId,
-  anchor: Point,
-  endX: number,
-  endY: number,
-  radius: number,
-): string {
-  const geometry = buildAnchorArrowGeometry(anchor, endX, radius)
-  const head = buildAnchorHeadPath(style, geometry)
-  const leader = buildLeaderPath(leaderAttachPoint(style, geometry), endX, endY)
-  return `${head} ${leader}`
 }
