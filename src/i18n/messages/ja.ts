@@ -122,6 +122,8 @@ export const ja: Record<MessageKey, string> = {
   'style.numberStyle.plain': '1 2 3',
   'style.numberStyle.none': '番号なし',
   'style.defaultFont': 'フォント',
+  'style.fontSearchPlaceholder': 'フォント名で検索…',
+  'style.fontSearchEmpty': '一致するフォントがありません',
   'style.fontGroup.japanese': '日本語',
   'style.fontGroup.sans': 'サンセリフ',
   'style.fontGroup.serif': 'セリフ',

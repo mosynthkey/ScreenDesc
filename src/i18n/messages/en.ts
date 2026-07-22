@@ -120,6 +120,8 @@ export const en = {
   'style.numberStyle.plain': '1 2 3',
   'style.numberStyle.none': 'No number',
   'style.defaultFont': 'Font',
+  'style.fontSearchPlaceholder': 'Search fonts…',
+  'style.fontSearchEmpty': 'No matching fonts',
   'style.fontGroup.japanese': 'Japanese',
   'style.fontGroup.sans': 'Sans',
   'style.fontGroup.serif': 'Serif',

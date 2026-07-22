@@ -25,16 +25,11 @@ const FONT_GROUP_LABEL_KEYS: Record<FontGroupId, MessageKey> = {
   display: 'style.fontGroup.display',
 }
 
-const fontGroups = computed(() =>
-  fontsByGroup().map((entry) => ({
-    ...entry,
-    label: t(FONT_GROUP_LABEL_KEYS[entry.group]),
-  })),
-)
-
 const open = ref(false)
+const query = ref('')
 const rootRef = ref<HTMLElement | null>(null)
 const listRef = ref<HTMLElement | null>(null)
+const searchRef = ref<HTMLInputElement | null>(null)
 
 watch(
   () => props.modelValue,
@@ -43,6 +38,28 @@ watch(
   },
   { immediate: true },
 )
+
+const fontGroups = computed(() =>
+  fontsByGroup().map((entry) => ({
+    ...entry,
+    label: t(FONT_GROUP_LABEL_KEYS[entry.group]),
+  })),
+)
+
+const filteredGroups = computed(() => {
+  const needle = query.value.trim().toLowerCase()
+  if (!needle) return fontGroups.value
+  return fontGroups.value
+    .map((group) => ({
+      ...group,
+      fonts: group.fonts.filter(
+        (font) =>
+          font.family.toLowerCase().includes(needle) ||
+          font.label.toLowerCase().includes(needle),
+      ),
+    }))
+    .filter((group) => group.fonts.length > 0)
+})
 
 const selectedLabel = computed(() => {
   for (const group of fontGroups.value) {
@@ -54,32 +71,39 @@ const selectedLabel = computed(() => {
 
 async function toggleOpen(): Promise<void> {
   if (open.value) {
-    open.value = false
+    close()
     return
   }
   loadAllGoogleFonts()
+  query.value = ''
   open.value = true
   await nextTick()
+  searchRef.value?.focus({ preventScroll: true })
   const selected = listRef.value?.querySelector<HTMLElement>('[aria-selected="true"]')
   selected?.scrollIntoView({ block: 'nearest' })
 }
 
+function close(): void {
+  open.value = false
+  query.value = ''
+}
+
 function choose(family: string): void {
   emit('update:modelValue', family)
-  open.value = false
+  close()
 }
 
 function onDocumentPointerDown(event: PointerEvent): void {
   if (!open.value || !rootRef.value) return
   if (rootRef.value.contains(event.target as Node)) return
-  open.value = false
+  close()
 }
 
 function onKeydown(event: KeyboardEvent): void {
   if (!open.value) return
   if (event.key === 'Escape') {
     event.preventDefault()
-    open.value = false
+    close()
   }
 }
 
@@ -115,29 +139,44 @@ onBeforeUnmount(() => {
 
     <div
       v-if="open"
-      ref="listRef"
       class="font-picker-menu"
       role="listbox"
       :aria-label="t('style.defaultFont')"
     >
-      <div v-for="group in fontGroups" :key="group.group" class="font-picker-group">
-        <div class="font-picker-group-label">{{ group.label }}</div>
-        <button
-          v-for="option in group.fonts"
-          :key="option.family"
-          class="font-picker-option"
-          type="button"
-          role="option"
-          :aria-selected="option.family === modelValue"
-          :class="{ selected: option.family === modelValue }"
-          :style="{ fontFamily: `'${option.family}', sans-serif` }"
-          @click="choose(option.family)"
-        >
-          <span>{{ option.label }}</span>
-          <span v-if="group.group === 'japanese'" class="font-picker-sample" aria-hidden="true">
-            あア漢
-          </span>
-        </button>
+      <div class="font-picker-search" @pointerdown.stop>
+        <input
+          ref="searchRef"
+          v-model="query"
+          type="search"
+          :placeholder="t('style.fontSearchPlaceholder')"
+          :aria-label="t('style.fontSearchPlaceholder')"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div ref="listRef" class="font-picker-list">
+        <p v-if="filteredGroups.length === 0" class="font-picker-empty">
+          {{ t('style.fontSearchEmpty') }}
+        </p>
+        <div v-for="group in filteredGroups" :key="group.group" class="font-picker-group">
+          <div class="font-picker-group-label">{{ group.label }}</div>
+          <button
+            v-for="option in group.fonts"
+            :key="option.family"
+            class="font-picker-option"
+            type="button"
+            role="option"
+            :aria-selected="option.family === modelValue"
+            :class="{ selected: option.family === modelValue }"
+            :style="{ fontFamily: `'${option.family}', sans-serif` }"
+            @click="choose(option.family)"
+          >
+            <span>{{ option.label }}</span>
+            <span v-if="group.group === 'japanese'" class="font-picker-sample" aria-hidden="true">
+              あア漢
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -196,13 +235,53 @@ onBeforeUnmount(() => {
   top: calc(100% + 6px);
   left: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
   max-height: min(360px, 50vh);
-  overflow: auto;
+  overflow: hidden;
   padding: 6px;
   border: 1px solid var(--line-strong);
   border-radius: 12px;
   background: #fff;
   box-shadow: var(--shadow);
+}
+
+.font-picker-search {
+  flex: 0 0 auto;
+  padding: 2px 2px 6px;
+}
+
+.font-picker-search input {
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(120, 120, 128, 0.06);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.font-picker-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.14);
+}
+
+.font-picker-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.font-picker-empty {
+  margin: 0;
+  padding: 16px 10px;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  text-align: center;
 }
 
 .font-picker-group + .font-picker-group {
