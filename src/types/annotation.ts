@@ -105,8 +105,9 @@ export interface ProjectState {
   lineOpacity: number
   dotColor: string
   dotRadius: number
-  /** Extra white underlay width in px (0 = none). */
+  /** Extra outline underlay width in px (0 = none). */
   lineHaloWidth: number
+  lineHaloColor: string
   calloutFontSize: number
   /** Label box stroke width; 0 = no border. */
   calloutBorderWidth: number

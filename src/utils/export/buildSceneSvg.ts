@@ -78,6 +78,7 @@ function renderCallout(
   dotColor: string,
   dotRadius: number,
   lineHaloWidth: number,
+  lineHaloColor: string,
   calloutFontSize: number,
   calloutBorderWidth: number,
   fontFamily: string,
@@ -112,7 +113,7 @@ function renderCallout(
   const opacityAttr = lineOpacity < 1 ? ` stroke-opacity="${lineOpacity}"` : ''
   const haloPath =
     lineHaloWidth > 0 && !isInvert
-      ? `<path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${spec.strokeWidth + lineHaloWidth}"${opacityAttr} />`
+      ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}"${opacityAttr} />`
       : ''
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
   // Blend on the group so overlapping line+dot invert the backdrop once.
@@ -146,6 +147,7 @@ export function buildSceneSvg(params: {
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
+  lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
@@ -169,6 +171,7 @@ export function buildSceneSvg(params: {
     dotColor,
     dotRadius,
     lineHaloWidth,
+    lineHaloColor,
     calloutFontSize,
     calloutBorderWidth,
     numberStyle,
@@ -215,6 +218,7 @@ export function buildSceneSvg(params: {
               dotColor,
               dotRadius,
               lineHaloWidth,
+              lineHaloColor,
               calloutFontSize,
               calloutBorderWidth,
               fontFamily,

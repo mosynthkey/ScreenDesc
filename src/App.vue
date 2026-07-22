@@ -39,6 +39,7 @@ const {
   setLineOpacity,
   setDotRadius,
   setLineHaloWidth,
+  setLineHaloColor,
   setCalloutFontSize,
   setCalloutBorderWidth,
   setNumberStyle,
@@ -328,6 +329,7 @@ function onKeydown(event: KeyboardEvent): void {
               :line-opacity="state.lineOpacity"
               :dot-radius="state.dotRadius"
               :line-halo-width="state.lineHaloWidth"
+              :line-halo-color="state.lineHaloColor"
               :callout-font-size="state.calloutFontSize"
               :callout-border-width="state.calloutBorderWidth"
               :number-style="state.numberStyle"
@@ -355,6 +357,7 @@ function onKeydown(event: KeyboardEvent): void {
           :dot-color="state.lineColor"
           :dot-radius="state.dotRadius"
           :line-halo-width="state.lineHaloWidth"
+          :line-halo-color="state.lineHaloColor"
           :callout-font-size="state.calloutFontSize"
           :callout-border-width="state.calloutBorderWidth"
           :number-style="state.numberStyle"
@@ -390,6 +393,7 @@ function onKeydown(event: KeyboardEvent): void {
               :line-opacity="state.lineOpacity"
               :dot-radius="state.dotRadius"
               :line-halo-width="state.lineHaloWidth"
+              :line-halo-color="state.lineHaloColor"
               :callout-font-size="state.calloutFontSize"
               :callout-border-width="state.calloutBorderWidth"
               :number-style="state.numberStyle"
@@ -403,6 +407,7 @@ function onKeydown(event: KeyboardEvent): void {
               @update:line-opacity="setLineOpacity"
               @update:dot-radius="setDotRadius"
               @update:line-halo-width="setLineHaloWidth"
+              @update:line-halo-color="setLineHaloColor"
               @update:callout-font-size="setCalloutFontSize"
               @update:callout-border-width="setCalloutBorderWidth"
               @update:number-style="setNumberStyle"

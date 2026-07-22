@@ -21,11 +21,12 @@ export function normalizeLineOpacity(value: unknown): number {
   return Math.min(LINE_OPACITY_MAX, Math.max(LINE_OPACITY_MIN, value))
 }
 
-/** Extra stroke width for the white underlay (0 = off). Legacy `lineHalo: true` → 3. */
+/** Extra stroke width for the outline underlay (0 = off). Legacy `lineHalo: true` → 3. */
 export const DEFAULT_LINE_HALO_WIDTH = 0
 export const LEGACY_LINE_HALO_WIDTH = 3
 export const LINE_HALO_WIDTH_MIN = 0
 export const LINE_HALO_WIDTH_MAX = 12
+export const DEFAULT_LINE_HALO_COLOR = '#ffffff'
 
 export function normalizeLineHaloWidth(
   width: unknown,
@@ -36,6 +37,11 @@ export function normalizeLineHaloWidth(
   }
   if (legacyEnabled === true) return LEGACY_LINE_HALO_WIDTH
   return DEFAULT_LINE_HALO_WIDTH
+}
+
+export function normalizeLineHaloColor(value: unknown): string {
+  if (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) return value
+  return DEFAULT_LINE_HALO_COLOR
 }
 
 export function getLineStyleOptions(): Array<{ value: LineStyleId; label: string }> {

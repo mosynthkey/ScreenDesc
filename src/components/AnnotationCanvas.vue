@@ -49,6 +49,7 @@ const props = defineProps<{
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
+  lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
@@ -753,6 +754,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
             class="leader-halo"
             :d="leaderPathFor(layoutFor(annotation.id)!)"
             :style="{
+              stroke: lineHaloColor,
               strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
               strokeOpacity: lineOpacity,
             }"
@@ -1007,7 +1009,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 
 .leader-halo {
   fill: none;
-  stroke: #ffffff;
   pointer-events: none;
 }
 

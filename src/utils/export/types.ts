@@ -24,6 +24,7 @@ export interface ExportScene {
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
+  lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId

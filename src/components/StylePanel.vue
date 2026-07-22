@@ -40,6 +40,7 @@ withDefaults(
     lineOpacity: number
     dotRadius: number
     lineHaloWidth: number
+    lineHaloColor: string
     calloutFontSize: number
     calloutBorderWidth: number
     numberStyle: NumberStyleId
@@ -63,6 +64,7 @@ const emit = defineEmits<{
   'update:lineOpacity': [opacity: number]
   'update:dotRadius': [radius: number]
   'update:lineHaloWidth': [width: number]
+  'update:lineHaloColor': [color: string]
   'update:calloutFontSize': [size: number]
   'update:calloutBorderWidth': [width: number]
   'update:numberStyle': [style: NumberStyleId]
@@ -216,6 +218,16 @@ onMounted(() => {
           :value="lineHaloWidth"
           @input="emit('update:lineHaloWidth', Number(($event.target as HTMLInputElement).value))"
         />
+      </div>
+      <div v-if="defaultAnnotationMode === 'callout' && lineStyle !== 'invert'" class="field">
+        <label class="color-swatch color-swatch-inline">
+          {{ t('style.lineHaloColor') }}
+          <input
+            type="color"
+            :value="lineHaloColor"
+            @input="emit('update:lineHaloColor', ($event.target as HTMLInputElement).value)"
+          />
+        </label>
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
         <label class="slider-label">

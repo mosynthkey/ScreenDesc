@@ -11,6 +11,7 @@ import { t } from '../i18n'
 import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
 import {
   DEFAULT_LINE_OPACITY,
+  normalizeLineHaloColor,
   normalizeLineHaloWidth,
   normalizeLineOpacity,
   normalizeLineStyle,
@@ -38,6 +39,7 @@ export interface ProjectFileData {
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
+  lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
@@ -101,6 +103,9 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   project.lineHaloWidth = normalizeLineHaloWidth(
     (project as { lineHaloWidth?: number }).lineHaloWidth,
     (project as { lineHalo?: boolean }).lineHalo,
+  )
+  project.lineHaloColor = normalizeLineHaloColor(
+    (project as { lineHaloColor?: string }).lineHaloColor,
   )
   project.defaultTextStyle = normalizeTextStyle(project.defaultTextStyle)
   project.labelColor =

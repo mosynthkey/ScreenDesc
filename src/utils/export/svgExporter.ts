@@ -21,6 +21,7 @@ export const svgExporter: Exporter = {
       dotColor: scene.dotColor,
       dotRadius: scene.dotRadius,
       lineHaloWidth: scene.lineHaloWidth,
+      lineHaloColor: scene.lineHaloColor,
       calloutFontSize: scene.calloutFontSize,
       calloutBorderWidth: scene.calloutBorderWidth,
       numberStyle: scene.numberStyle,
