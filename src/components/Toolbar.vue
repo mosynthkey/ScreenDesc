@@ -156,21 +156,20 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 <template>
   <header class="app-header">
     <div class="header-title">
-      <template v-if="page === 'gallery'">
-        <h1 class="page-title">{{ t('header.galleryTitle') }}</h1>
-      </template>
-      <template v-else>
-        <input
-          ref="titleInputRef"
-          v-model="titleDraft"
-          class="page-title-input"
-          type="text"
-          :aria-label="t('header.projectNameAria')"
-          :placeholder="t('header.untitledProject')"
-          @keydown="onTitleKeydown"
-          @blur="commitTitle"
-        />
-      </template>
+      <h1 class="page-title">
+        {{ page === 'gallery' ? t('header.galleryTitle') : t('header.editTitle') }}
+      </h1>
+      <input
+        v-if="page === 'edit'"
+        ref="titleInputRef"
+        v-model="titleDraft"
+        class="project-name-input"
+        type="text"
+        :aria-label="t('header.projectNameAria')"
+        :placeholder="t('header.untitledProject')"
+        @keydown="onTitleKeydown"
+        @blur="commitTitle"
+      />
     </div>
 
     <div v-if="page === 'gallery'" class="header-actions">
@@ -612,25 +611,29 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 }
 
 .header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
   flex: 1 1 auto;
 }
 
 .page-title {
   margin: 0;
+  flex: 0 0 auto;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.page-title-input {
+.project-name-input {
   display: block;
-  width: 100%;
-  max-width: min(420px, 48vw);
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: min(360px, 42vw);
   margin: 0;
   padding: 4px 8px;
   border: 1px solid transparent;
@@ -645,19 +648,20 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   outline: none;
   transition:
     background var(--press),
-    border-color var(--press);
+    border-color var(--press),
+    box-shadow var(--press);
 }
 
-.page-title-input::placeholder {
+.project-name-input::placeholder {
   color: var(--ink-muted);
   font-weight: 650;
 }
 
-.page-title-input:hover {
+.project-name-input:hover {
   background: rgba(120, 120, 128, 0.08);
 }
 
-.page-title-input:focus {
+.project-name-input:focus {
   background: var(--bg-elevated);
   border-color: rgba(0, 122, 255, 0.35);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.14);

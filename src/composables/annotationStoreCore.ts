@@ -18,9 +18,13 @@ import {
   createDefaultDocumentLayout,
 } from '../utils/calloutLayout'
 import {
+  DEFAULT_CALLOUT_FONT_ITALIC,
+  DEFAULT_CALLOUT_FONT_WEIGHT,
   DEFAULT_FONT_FAMILY,
   ensureGoogleFontsLoaded,
   loadGoogleFont,
+  normalizeCalloutFontItalic,
+  normalizeCalloutFontWeight,
 } from '../utils/googleFonts'
 import {
   CALLOUT_FONT_SIZE,
@@ -64,6 +68,8 @@ export const state = reactive<ProjectState>({
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
   calloutFontSize: CALLOUT_FONT_SIZE,
+  calloutFontWeight: DEFAULT_CALLOUT_FONT_WEIGHT,
+  calloutFontItalic: DEFAULT_CALLOUT_FONT_ITALIC,
   calloutBorderEnabled: false,
   calloutFillEnabled: true,
   calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
@@ -151,6 +157,8 @@ export function refreshDocumentAndLayouts(): void {
     state.imageHeight,
     state.calloutFontSize,
     state.defaultFontFamily,
+    state.calloutFontWeight,
+    state.calloutFontItalic,
     state.numberStyle,
   )
   state.document = document
@@ -275,6 +283,9 @@ watch(
       state.imageWidth,
       state.imageHeight,
       state.calloutFontSize,
+      state.calloutFontWeight,
+      state.calloutFontItalic,
+      state.defaultFontFamily,
       state.numberStyle,
     ] as const,
   () => {
@@ -298,6 +309,8 @@ export interface RestorableFields {
   lineHaloWidth?: number
   lineHaloColor?: string
   calloutFontSize: number
+  calloutFontWeight?: number
+  calloutFontItalic?: boolean
   calloutBorderEnabled?: boolean
   calloutFillEnabled?: boolean
   calloutFillColor?: string
@@ -332,6 +345,11 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
   state.calloutFontSize = fields.calloutFontSize
+  state.calloutFontWeight = normalizeCalloutFontWeight(
+    fields.calloutFontWeight,
+    fields.defaultFontFamily,
+  )
+  state.calloutFontItalic = normalizeCalloutFontItalic(fields.calloutFontItalic)
   state.calloutBorderEnabled = normalizeCalloutBorderEnabled(fields.calloutBorderEnabled)
   state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
   state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
@@ -343,6 +361,8 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.selectedAnnotationIds = []
   ocrLines.value = fields.ocrLines
   clearEditUndoStack()
-  await ensureGoogleFontsLoaded([state.defaultFontFamily])
+  await ensureGoogleFontsLoaded([state.defaultFontFamily], {
+    italic: state.calloutFontItalic,
+  })
   refreshDocumentAndLayouts()
 }

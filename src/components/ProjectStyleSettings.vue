@@ -7,7 +7,11 @@ import type {
 } from '../types/annotation'
 import { useI18n, type MessageKey } from '../i18n'
 import FontFamilyPicker from './FontFamilyPicker.vue'
-import { loadGoogleFont } from '../utils/googleFonts'
+import {
+  availableFontWeights,
+  fontWeightLabelKey,
+  loadGoogleFont,
+} from '../utils/googleFonts'
 import { getAnchorStyleOptions } from '../utils/anchorStyle'
 import {
   getLineStyleOptions,
@@ -39,6 +43,8 @@ const props = defineProps<{
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -57,6 +63,8 @@ const emit = defineEmits<{
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
   'update:calloutFontSize': [size: number]
+  'update:calloutFontWeight': [weight: number]
+  'update:calloutFontItalic': [italic: boolean]
   'update:calloutBorderEnabled': [enabled: boolean]
   'update:calloutFillEnabled': [enabled: boolean]
   'update:calloutFillColor': [color: string]
@@ -80,6 +88,16 @@ const NUMBER_STYLE_LABEL_KEYS: Record<NumberStyleId, MessageKey> = {
 }
 const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
+)
+
+const fontWeightOptions = computed(() =>
+  availableFontWeights(props.defaultFontFamily).map((weight) => {
+    const labelKey = fontWeightLabelKey(weight)
+    return {
+      value: weight,
+      label: labelKey ? t(labelKey as MessageKey) : String(weight),
+    }
+  }),
 )
 
 function parseBoundedNumber(
@@ -384,7 +402,7 @@ watch(
               height="22"
               aria-hidden="true"
             >
-              <path d="M5 12 L19 5 L15 12 L19 19 Z" fill="currentColor" />
+              <path d="M4 12 L20 4 L14.5 12 L20 20 Z" fill="currentColor" />
             </svg>
             <svg
               v-else
@@ -439,6 +457,41 @@ watch(
           :model-value="defaultFontFamily"
           @update:model-value="emit('update:defaultFontFamily', $event)"
         />
+      </div>
+      <div class="font-style-row">
+        <div class="field font-weight-field">
+          <label>{{ t('style.fontWeight') }}</label>
+          <select
+            :value="calloutFontWeight"
+            @change="
+              emit(
+                'update:calloutFontWeight',
+                Number(($event.target as HTMLSelectElement).value),
+              )
+            "
+          >
+            <option
+              v-for="option in fontWeightOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        <label class="check font-italic-check">
+          <input
+            type="checkbox"
+            :checked="calloutFontItalic"
+            @change="
+              emit(
+                'update:calloutFontItalic',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
+          />
+          <span>{{ t('style.fontItalic') }}</span>
+        </label>
       </div>
       <div class="field">
         <label class="slider-label">
@@ -642,6 +695,23 @@ watch(
   height: 16px;
   margin: 0;
   accent-color: var(--accent);
+}
+
+.font-style-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.font-weight-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.font-italic-check {
+  flex: 0 0 auto;
+  padding-bottom: 10px;
 }
 
 .field-hint {

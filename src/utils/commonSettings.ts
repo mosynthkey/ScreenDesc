@@ -1,6 +1,6 @@
 import type { AnchorStyleId, LineStyleId, NumberStyleId } from '../types/annotation'
 import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from './anchorStyle'
-import { DEFAULT_FONT_FAMILY } from './googleFonts'
+import { DEFAULT_FONT_FAMILY, normalizeCalloutFontItalic, normalizeCalloutFontWeight, DEFAULT_CALLOUT_FONT_ITALIC, DEFAULT_CALLOUT_FONT_WEIGHT } from './googleFonts'
 import {
   DEFAULT_LINE_HALO_COLOR,
   DEFAULT_LINE_HALO_WIDTH,
@@ -36,6 +36,8 @@ export interface CommonSettings {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -66,6 +68,8 @@ export function createDefaultCommonSettings(): CommonSettings {
     lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
     lineHaloColor: DEFAULT_LINE_HALO_COLOR,
     calloutFontSize: CALLOUT_FONT_SIZE,
+    calloutFontWeight: DEFAULT_CALLOUT_FONT_WEIGHT,
+    calloutFontItalic: DEFAULT_CALLOUT_FONT_ITALIC,
     calloutBorderEnabled: false,
     calloutFillEnabled: true,
     calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
@@ -154,6 +158,8 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     typeof raw.calloutFontSize === 'number' && Number.isFinite(raw.calloutFontSize)
       ? Math.min(CALLOUT_FONT_SIZE_MAX, Math.max(CALLOUT_FONT_SIZE_MIN, raw.calloutFontSize))
       : defaults.calloutFontSize
+  const calloutFontWeight = normalizeCalloutFontWeight(raw.calloutFontWeight, fontFamily)
+  const calloutFontItalic = normalizeCalloutFontItalic(raw.calloutFontItalic)
   const numberStyle = isNumberStyleId(raw.numberStyle) ? raw.numberStyle : defaults.numberStyle
 
   return {
@@ -166,6 +172,8 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth),
     lineHaloColor: normalizeLineHaloColor(raw.lineHaloColor),
     calloutFontSize,
+    calloutFontWeight,
+    calloutFontItalic,
     calloutBorderEnabled: normalizeCalloutBorderEnabled(raw.calloutBorderEnabled),
     calloutFillEnabled: normalizeCalloutFillEnabled(raw.calloutFillEnabled),
     calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),

@@ -2,6 +2,8 @@ import { downloadBlob } from '../utils/export'
 import {
   buildProjectBundleFile,
   buildProjectFile,
+  contentHashFromSnapshot,
+  ensureProjectContentHash,
   parseScreenDescFile,
   projectFileFieldsFromSnapshot,
   suggestProjectBundleFileName,
@@ -13,11 +15,13 @@ import {
   listSavedProjects,
   loadAllNamedProjects,
   loadNamedProject,
+  patchSavedProjectMeta,
   renameNamedProject,
   saveNamedProject,
   type ProjectSnapshot,
   type SavedProjectMeta,
 } from '../utils/projectStorage'
+import { isContentHash } from '../utils/contentHash'
 import { t } from '../i18n'
 import {
   activeNamedProject,
@@ -72,19 +76,50 @@ export async function downloadAllProjectsBundle(): Promise<number> {
   return loaded.length
 }
 
-export async function openProjectFile(
-  file: File,
-): Promise<{ kind: 'project' } | { kind: 'bundle'; count: number }> {
+export type OpenProjectFileResult =
+  | { kind: 'project' }
+  | { kind: 'bundle'; imported: number; skipped: number }
+
+async function collectExistingContentHashes(): Promise<Set<string>> {
+  const metas = await listSavedProjects()
+  const hashes = new Set<string>()
+  for (const meta of metas) {
+    if (isContentHash(meta.contentHash)) {
+      hashes.add(meta.contentHash)
+      continue
+    }
+    const snapshot = await loadNamedProject(meta.id)
+    if (!snapshot) continue
+    const hash = await contentHashFromSnapshot(snapshot)
+    hashes.add(hash)
+    await patchSavedProjectMeta(meta.id, { contentHash: hash })
+  }
+  return hashes
+}
+
+export async function openProjectFile(file: File): Promise<OpenProjectFileResult> {
   const parsed = await parseScreenDescFile(file)
   if (parsed.kind === 'bundle') {
     if (parsed.bundle.projects.length === 0) {
       throw new Error(t('error.projectBundleEmpty'))
     }
+    const existingHashes = await collectExistingContentHashes()
+    let imported = 0
+    let skipped = 0
     for (const entry of parsed.bundle.projects) {
-      const snapshot = await snapshotFromProjectFile(entry.project)
-      await saveNamedProject(entry.name, snapshot)
+      const project = await ensureProjectContentHash(entry.project)
+      const hash = project.contentHash!
+      if (existingHashes.has(hash)) {
+        skipped += 1
+        continue
+      }
+      const name = entry.name.trim() || t('header.untitledProject')
+      const snapshot = await snapshotFromProjectFile(project)
+      await saveNamedProject(name, snapshot, undefined, hash)
+      existingHashes.add(hash)
+      imported += 1
     }
-    return { kind: 'bundle', count: parsed.bundle.projects.length }
+    return { kind: 'bundle', imported, skipped }
   }
 
   const snapshot = await snapshotFromProjectFile(parsed.project)
@@ -102,7 +137,8 @@ export async function openProjectFile(
 export async function saveProjectAs(name: string, overwriteId?: string): Promise<string | null> {
   const snapshot = await buildCurrentSnapshot()
   if (!snapshot) return null
-  const projectId = await saveNamedProject(name, snapshot, overwriteId)
+  const contentHash = await contentHashFromSnapshot(snapshot)
+  const projectId = await saveNamedProject(name, snapshot, overwriteId, contentHash)
   activeNamedProject.value = { id: projectId, name }
   markNamedSaveClean()
   await persistCurrentProject()

@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
 
 # ScreenParser(YOLO11)の重みファイル(97MB)。scripts/export_onnx.py で再生成する
 public/models/*.onnx

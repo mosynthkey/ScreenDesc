@@ -37,6 +37,11 @@ Keep new logic near its existing home; prefer extending these modules over growi
 - `AnnotationCanvas.vue` — pointer tools, SVG drawing, inline label edit.
 - `useCanvasViewport.ts` — fit-to-width zoom, wheel/pinch/Safari gesture handling.
 
+### Analytics
+
+- Cloudflare Web Analytics loads when `VITE_CF_BEACON_TOKEN` is set (`src/analytics/cloudflareWebAnalytics.ts`).
+- Copy `.env.example` → `.env` / `.env.production` and paste the site token from the Cloudflare dashboard.
+
 ## Style notes
 
 - Match existing patterns in nearby files.

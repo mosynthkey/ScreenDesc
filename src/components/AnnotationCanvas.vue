@@ -47,6 +47,8 @@ const props = defineProps<{
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderWidth: number
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -727,6 +729,8 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               class="callout-text"
               :x="layoutFor(annotation.id)!.labelPosition.x + Math.max(10, calloutFontSize * 0.28)"
               :font-size="calloutFontSize"
+              :font-weight="calloutFontWeight"
+              :font-style="calloutFontItalic ? 'italic' : 'normal'"
               :style="{ fontFamily: activeFontFamily }"
             >
               <tspan
@@ -752,6 +756,8 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           minHeight: `${editingCalloutLayout.labelHeight * screenScale}px`,
           fontFamily: activeFontFamily,
           fontSize: `${calloutFontSize * screenScale}px`,
+          fontWeight: calloutFontWeight,
+          fontStyle: calloutFontItalic ? 'italic' : 'normal',
         }"
         @pointerdown.stop
       >
@@ -804,7 +810,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
   outline: none;
   background: transparent;
   font: inherit;
-  font-weight: 700;
   color: #111;
   line-height: 1.375;
 }
@@ -878,7 +883,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 }
 
 .callout-text {
-  font-weight: 700;
   fill: #111;
   dominant-baseline: middle;
   pointer-events: none;

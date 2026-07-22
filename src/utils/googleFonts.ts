@@ -6,6 +6,27 @@ export interface GoogleFontOption {
   /** Weights requested from Google Fonts */
   weights: number[]
   group: FontGroupId
+  /** True when Google Fonts serves real italic faces (not synthetic). */
+  italics?: boolean
+}
+
+export const DEFAULT_CALLOUT_FONT_WEIGHT = 700
+export const DEFAULT_CALLOUT_FONT_ITALIC = false
+
+const FONT_WEIGHT_LABEL_KEYS = {
+  400: 'style.fontWeight.regular',
+  500: 'style.fontWeight.medium',
+  600: 'style.fontWeight.semibold',
+  700: 'style.fontWeight.bold',
+  800: 'style.fontWeight.extrabold',
+  900: 'style.fontWeight.black',
+} as const
+
+export type FontWeightLabelKey =
+  (typeof FONT_WEIGHT_LABEL_KEYS)[keyof typeof FONT_WEIGHT_LABEL_KEYS]
+
+export function fontWeightLabelKey(weight: number): FontWeightLabelKey | null {
+  return FONT_WEIGHT_LABEL_KEYS[weight as keyof typeof FONT_WEIGHT_LABEL_KEYS] ?? null
 }
 
 /** Curated Google Fonts for manuals (JP-first, plus common Latin faces). */
@@ -56,24 +77,24 @@ export const GOOGLE_FONT_OPTIONS: GoogleFontOption[] = [
   { family: 'DotGothic16', label: 'DotGothic16', weights: [400], group: 'display' },
   { family: 'Zen Kurenaido', label: 'Zen Kurenaido', weights: [400], group: 'display' },
   // Latin — sans
-  { family: 'Inter', label: 'Inter', weights: [400, 700], group: 'sans' },
-  { family: 'Roboto', label: 'Roboto', weights: [400, 700], group: 'sans' },
-  { family: 'Open Sans', label: 'Open Sans', weights: [400, 700], group: 'sans' },
-  { family: 'Source Sans 3', label: 'Source Sans 3', weights: [400, 700], group: 'sans' },
-  { family: 'Nunito Sans', label: 'Nunito Sans', weights: [400, 700], group: 'sans' },
-  { family: 'Lato', label: 'Lato', weights: [400, 700], group: 'sans' },
-  { family: 'Montserrat', label: 'Montserrat', weights: [400, 700], group: 'sans' },
-  { family: 'Poppins', label: 'Poppins', weights: [400, 700], group: 'sans' },
-  { family: 'Work Sans', label: 'Work Sans', weights: [400, 700], group: 'sans' },
-  { family: 'IBM Plex Sans', label: 'IBM Plex Sans', weights: [400, 700], group: 'sans' },
-  { family: 'Noto Sans', label: 'Noto Sans', weights: [400, 700], group: 'sans' },
+  { family: 'Inter', label: 'Inter', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Roboto', label: 'Roboto', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Open Sans', label: 'Open Sans', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Source Sans 3', label: 'Source Sans 3', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Nunito Sans', label: 'Nunito Sans', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Lato', label: 'Lato', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Montserrat', label: 'Montserrat', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Poppins', label: 'Poppins', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Work Sans', label: 'Work Sans', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'IBM Plex Sans', label: 'IBM Plex Sans', weights: [400, 700], group: 'sans', italics: true },
+  { family: 'Noto Sans', label: 'Noto Sans', weights: [400, 700], group: 'sans', italics: true },
   // Latin — serif
-  { family: 'Merriweather', label: 'Merriweather', weights: [400, 700], group: 'serif' },
-  { family: 'Libre Baskerville', label: 'Libre Baskerville', weights: [400, 700], group: 'serif' },
-  { family: 'Playfair Display', label: 'Playfair Display', weights: [400, 700], group: 'serif' },
-  { family: 'Lora', label: 'Lora', weights: [400, 700], group: 'serif' },
-  { family: 'Noto Serif', label: 'Noto Serif', weights: [400, 700], group: 'serif' },
-  { family: 'Source Serif 4', label: 'Source Serif 4', weights: [400, 700], group: 'serif' },
+  { family: 'Merriweather', label: 'Merriweather', weights: [400, 700], group: 'serif', italics: true },
+  { family: 'Libre Baskerville', label: 'Libre Baskerville', weights: [400, 700], group: 'serif', italics: true },
+  { family: 'Playfair Display', label: 'Playfair Display', weights: [400, 700], group: 'serif', italics: true },
+  { family: 'Lora', label: 'Lora', weights: [400, 700], group: 'serif', italics: true },
+  { family: 'Noto Serif', label: 'Noto Serif', weights: [400, 700], group: 'serif', italics: true },
+  { family: 'Source Serif 4', label: 'Source Serif 4', weights: [400, 700], group: 'serif', italics: true },
   // Latin — display
   { family: 'Oswald', label: 'Oswald', weights: [400, 700], group: 'display' },
   { family: 'Bebas Neue', label: 'Bebas Neue', weights: [400], group: 'display' },
@@ -103,9 +124,55 @@ export function fontFamilyCss(family: string): string {
   return `'${family}', 'Noto Sans JP', ${fallback}`
 }
 
-export function googleFontsCssUrl(family: string, weights: number[]): string {
+export function availableFontWeights(family: string): number[] {
+  return findGoogleFont(family)?.weights ?? [400, 700]
+}
+
+export function nearestFontWeight(family: string, desired: number): number {
+  const weights = availableFontWeights(family)
+  let best = weights[0]!
+  for (const weight of weights) {
+    if (Math.abs(weight - desired) < Math.abs(best - desired)) best = weight
+  }
+  return best
+}
+
+export function normalizeCalloutFontWeight(value: unknown, family: string): number {
+  const desired =
+    typeof value === 'number' && Number.isFinite(value)
+      ? Math.round(value)
+      : DEFAULT_CALLOUT_FONT_WEIGHT
+  return nearestFontWeight(family, desired)
+}
+
+export function normalizeCalloutFontItalic(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : DEFAULT_CALLOUT_FONT_ITALIC
+}
+
+/** Canvas / CSS font shorthand matching callout text style. */
+export function canvasFont(
+  weight: number,
+  italic: boolean,
+  sizePx: number,
+  familyCss: string,
+): string {
+  return `${italic ? 'italic' : 'normal'} ${weight} ${sizePx}px ${familyCss}`
+}
+
+export function googleFontsCssUrl(
+  family: string,
+  weights: number[],
+  options?: { italics?: boolean },
+): string {
   const familyParam = family.trim().replace(/\s+/g, '+')
-  const weightParam = [...new Set(weights)].sort((left, right) => left - right).join(';')
+  const uniqueWeights = [...new Set(weights)].sort((left, right) => left - right)
+  if (options?.italics) {
+    const pairs = uniqueWeights
+      .flatMap((weight) => [`0,${weight}`, `1,${weight}`])
+      .join(';')
+    return `https://fonts.googleapis.com/css2?family=${familyParam}:ital,wght@${pairs}&display=swap`
+  }
+  const weightParam = uniqueWeights.join(';')
   return `https://fonts.googleapis.com/css2?family=${familyParam}:wght@${weightParam}&display=swap`
 }
 
@@ -124,7 +191,9 @@ export function loadGoogleFont(family: string): void {
   const link = document.createElement('link')
   link.id = linkId
   link.rel = 'stylesheet'
-  link.href = googleFontsCssUrl(option.family, option.weights)
+  link.href = googleFontsCssUrl(option.family, option.weights, {
+    italics: option.italics === true,
+  })
   document.head.appendChild(link)
   loadedFamilies.add(option.family)
 }
@@ -136,7 +205,10 @@ export function loadAllGoogleFonts(): void {
   }
 }
 
-export async function ensureGoogleFontsLoaded(families: string[]): Promise<void> {
+export async function ensureGoogleFontsLoaded(
+  families: string[],
+  options?: { italic?: boolean },
+): Promise<void> {
   const unique = [...new Set(families.filter(Boolean))]
   for (const family of unique) {
     loadGoogleFont(family)
@@ -144,13 +216,19 @@ export async function ensureGoogleFontsLoaded(families: string[]): Promise<void>
 
   if (!('fonts' in document)) return
 
+  const italic = options?.italic === true
   await Promise.all(
     unique.map(async (family) => {
       const option = findGoogleFont(family)
       const weights = option?.weights ?? [400, 700]
+      const styles = italic && option?.italics ? (['normal', 'italic'] as const) : (['normal'] as const)
       await Promise.all(
-        weights.map((weight) =>
-          document.fonts.load(`${weight} 48px "${family}"`).catch(() => undefined),
+        styles.flatMap((style) =>
+          weights.map((weight) =>
+            document.fonts
+              .load(`${style} ${weight} 48px "${family}"`)
+              .catch(() => undefined),
+          ),
         ),
       )
     }),
@@ -186,8 +264,11 @@ export async function buildEmbeddedFontCss(families: string[]): Promise<string> 
       label: family,
       weights: [400, 700, 800],
       group: 'sans' as const,
+      italics: false,
     }
-    const cssUrl = googleFontsCssUrl(option.family, option.weights)
+    const cssUrl = googleFontsCssUrl(option.family, option.weights, {
+      italics: option.italics === true,
+    })
     const response = await fetch(cssUrl)
     if (!response.ok) {
       console.warn(`[ScreenDesc:fonts] CSS fetch failed for ${family}`)

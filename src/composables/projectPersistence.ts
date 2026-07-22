@@ -6,6 +6,7 @@ import {
   saveProject,
   type ProjectSnapshot,
 } from '../utils/projectStorage'
+import { contentHashFromSnapshot } from '../utils/projectFile'
 import {
   activeNamedProject,
   applyRestoredSnapshot,
@@ -42,6 +43,8 @@ export async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineHaloWidth: state.lineHaloWidth,
     lineHaloColor: state.lineHaloColor,
     calloutFontSize: state.calloutFontSize,
+    calloutFontWeight: state.calloutFontWeight,
+    calloutFontItalic: state.calloutFontItalic,
     calloutBorderEnabled: state.calloutBorderEnabled,
     calloutFillEnabled: state.calloutFillEnabled,
     calloutFillColor: state.calloutFillColor,
@@ -70,7 +73,8 @@ export async function persistActiveNamedProject(): Promise<void> {
   try {
     const snapshot = await buildCurrentSnapshot()
     if (!snapshot) return
-    await saveNamedProject(active.name, snapshot, active.id)
+    const contentHash = await contentHashFromSnapshot(snapshot)
+    await saveNamedProject(active.name, snapshot, active.id, contentHash)
     namedSaveDirty = false
   } catch (err) {
     console.warn('[ScreenDesc] failed to auto-overwrite named project', err)
@@ -162,6 +166,8 @@ watch(
     state.lineHaloWidth,
     state.lineHaloColor,
     state.calloutFontSize,
+    state.calloutFontWeight,
+    state.calloutFontItalic,
     state.calloutBorderEnabled,
     state.calloutFillEnabled,
     state.calloutFillColor,

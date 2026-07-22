@@ -96,6 +96,9 @@ export interface ProjectState {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  /** Numeric CSS font-weight for callout labels (clamped to the face’s available weights). */
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   /** When true, label box stroke uses `lineWidth`. */
   calloutBorderEnabled: boolean
   /** When true, label box uses `calloutFillColor` / `calloutFillOpacity`. */

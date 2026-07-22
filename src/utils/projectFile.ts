@@ -21,7 +21,9 @@ import {
   normalizeCalloutFillOpacity,
   normalizePageBackgroundColor,
 } from './commonSettings'
+import { normalizeCalloutFontItalic, normalizeCalloutFontWeight } from './googleFonts'
 import { clampAnchorOffsetAxis } from './markerSize'
+import { computeProjectContentHash, isContentHash } from './contentHash'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
@@ -46,6 +48,8 @@ export interface ProjectFileData {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -53,6 +57,8 @@ export interface ProjectFileData {
   pageBackgroundColor: string
   numberStyle: NumberStyleId
   showSections: boolean
+  /** SHA-256 hex of canonical project bytes (excluding this field). Written on export. */
+  contentHash?: string
 }
 
 export interface ProjectBundleEntry {
@@ -67,7 +73,7 @@ export interface ProjectBundleFileData {
   projects: ProjectBundleEntry[]
 }
 
-export type ProjectFileFields = Omit<ProjectFileData, 'version' | 'imageDataUrl'>
+export type ProjectFileFields = Omit<ProjectFileData, 'version' | 'imageDataUrl' | 'contentHash'>
 
 export type ParsedScreenDescFile =
   | { kind: 'project'; project: ProjectFileData }
@@ -125,14 +131,16 @@ async function buildProjectFileData(
   fields: ProjectFileFields,
 ): Promise<ProjectFileData> {
   const imageDataUrl = await blobToDataUrl(imageBlob)
-  return {
+  const withoutHash = {
     version: FILE_VERSION,
     imageDataUrl,
     ...fields,
     annotations: fields.annotations.map((annotation) =>
       sanitizeAnnotation(annotation, fields.imageWidth, fields.imageHeight),
     ),
-  }
+  } as const
+  const contentHash = await computeProjectContentHash(withoutHash)
+  return { ...withoutHash, contentHash }
 }
 
 export async function buildProjectFile(
@@ -141,6 +149,41 @@ export async function buildProjectFile(
 ): Promise<Blob> {
   const data = await buildProjectFileData(imageBlob, fields)
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
+}
+
+/** Content hash for a browser snapshot (same algorithm as exported .screendesc.json). */
+export async function contentHashFromSnapshot(snapshot: {
+  imageBlob: Blob
+  imageWidth: number
+  imageHeight: number
+  sections: Section[]
+  annotations: Annotation[]
+  ocrLines: OcrLineHit[]
+  defaultFontFamily: string
+  lineStyle: LineStyleId
+  lineWidth: number
+  lineColor: string
+  dotColor: string
+  dotRadius: number
+  anchorStyle: AnchorStyleId
+  lineHaloWidth: number
+  lineHaloColor: string
+  calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
+  calloutBorderEnabled: boolean
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  calloutFillOpacity: number
+  pageBackgroundColor: string
+  numberStyle: NumberStyleId
+  showSections: boolean
+}): Promise<string> {
+  const data = await buildProjectFileData(
+    snapshot.imageBlob,
+    projectFileFieldsFromSnapshot(snapshot),
+  )
+  return data.contentHash!
 }
 
 export async function buildProjectBundleFile(
@@ -205,10 +248,27 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   project.anchorStyle = normalizeAnchorStyle(
     (project as { anchorStyle?: unknown }).anchorStyle,
   )
+  project.calloutFontWeight = normalizeCalloutFontWeight(
+    (project as { calloutFontWeight?: unknown }).calloutFontWeight,
+    project.defaultFontFamily,
+  )
+  project.calloutFontItalic = normalizeCalloutFontItalic(
+    (project as { calloutFontItalic?: unknown }).calloutFontItalic,
+  )
   project.annotations = (project.annotations ?? []).map((annotation) =>
     sanitizeAnnotation(annotation, project.imageWidth, project.imageHeight),
   )
   return project
+}
+
+/** Resolve or recompute the content hash after normalize (old files may omit it). */
+export async function ensureProjectContentHash(
+  project: ProjectFileData,
+): Promise<ProjectFileData> {
+  if (isContentHash(project.contentHash)) return project
+  const { contentHash: _ignored, ...withoutHash } = project
+  const contentHash = await computeProjectContentHash(withoutHash)
+  return { ...project, contentHash }
 }
 
 function isProjectBundleData(data: unknown): data is ProjectBundleFileData {
@@ -291,6 +351,8 @@ export function projectFileFieldsFromSnapshot(
     lineHaloWidth: number
     lineHaloColor: string
     calloutFontSize: number
+    calloutFontWeight: number
+    calloutFontItalic: boolean
     calloutBorderEnabled: boolean
     calloutFillEnabled: boolean
     calloutFillColor: string
@@ -316,6 +378,8 @@ export function projectFileFieldsFromSnapshot(
     lineHaloWidth: snapshot.lineHaloWidth,
     lineHaloColor: snapshot.lineHaloColor,
     calloutFontSize: snapshot.calloutFontSize,
+    calloutFontWeight: snapshot.calloutFontWeight,
+    calloutFontItalic: snapshot.calloutFontItalic,
     calloutBorderEnabled: snapshot.calloutBorderEnabled,
     calloutFillEnabled: snapshot.calloutFillEnabled,
     calloutFillColor: snapshot.calloutFillColor,

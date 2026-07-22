@@ -49,6 +49,8 @@ const {
   setLineHaloWidth,
   setLineHaloColor,
   setCalloutFontSize,
+  setCalloutFontWeight,
+  setCalloutFontItalic,
   setCalloutBorderEnabled,
   setCalloutFillEnabled,
   setCalloutFillColor,
@@ -90,8 +92,8 @@ let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined
 const projectFileInputRef = ref<HTMLInputElement | null>(null)
 const replaceImageInputRef = ref<HTMLInputElement | null>(null)
 const homeRef = ref<{ openFilePicker: () => void } | null>(null)
-const projectLoadError = ref<string | null>(null)
-let projectLoadErrorTimer: ReturnType<typeof setTimeout> | undefined
+const appNotice = ref<{ message: string; tone: 'error' | 'info' } | null>(null)
+let appNoticeTimer: ReturnType<typeof setTimeout> | undefined
 const projectStorageOpen = ref(false)
 const savedProjects = ref<SavedProjectMeta[]>([])
 const projectStorageBusy = ref(false)
@@ -115,21 +117,29 @@ const effectiveCalloutBorderWidth = computed(() =>
 
 const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
 
-function clearProjectLoadError(): void {
-  projectLoadError.value = null
-  if (projectLoadErrorTimer) {
-    clearTimeout(projectLoadErrorTimer)
-    projectLoadErrorTimer = undefined
+function clearAppNotice(): void {
+  appNotice.value = null
+  if (appNoticeTimer) {
+    clearTimeout(appNoticeTimer)
+    appNoticeTimer = undefined
   }
 }
 
-function showProjectLoadError(message: string): void {
-  clearProjectLoadError()
-  projectLoadError.value = message
-  projectLoadErrorTimer = setTimeout(() => {
-    projectLoadError.value = null
-    projectLoadErrorTimer = undefined
+function showAppNotice(message: string, tone: 'error' | 'info' = 'error'): void {
+  clearAppNotice()
+  appNotice.value = { message, tone }
+  appNoticeTimer = setTimeout(() => {
+    appNotice.value = null
+    appNoticeTimer = undefined
   }, 5000)
+}
+
+function clearProjectLoadError(): void {
+  clearAppNotice()
+}
+
+function showProjectLoadError(message: string): void {
+  showAppNotice(message, 'error')
 }
 
 function goToPage(page: AppPageId): void {
@@ -171,7 +181,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('paste', onWindowPaste)
   if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer)
-  clearProjectLoadError()
+  clearAppNotice()
 })
 
 watch(
@@ -300,6 +310,22 @@ async function onProjectFileChange(event: Event): Promise<void> {
     if (result.kind === 'bundle') {
       await refreshSavedProjects()
       appPage.value = 'gallery'
+      if (result.skipped > 0 && result.imported > 0) {
+        showAppNotice(
+          t('status.bundleImportResult', {
+            imported: result.imported,
+            skipped: result.skipped,
+          }),
+          'info',
+        )
+      } else if (result.skipped > 0) {
+        showAppNotice(
+          t('status.bundleImportSkippedAll', { skipped: result.skipped }),
+          'info',
+        )
+      } else if (result.imported > 0) {
+        showAppNotice(t('status.bundleImportOk', { imported: result.imported }), 'info')
+      }
       return
     }
     appPage.value = 'edit'
@@ -591,13 +617,18 @@ function onKeydown(event: KeyboardEvent): void {
         hidden
         @change="onReplaceImageChange"
       />
-      <div v-if="projectLoadError" class="project-load-error" role="alert">
-        <span>{{ projectLoadError }}</span>
+      <div
+        v-if="appNotice"
+        class="app-notice"
+        :class="appNotice.tone === 'info' ? 'is-info' : 'is-error'"
+        :role="appNotice.tone === 'error' ? 'alert' : 'status'"
+      >
+        <span>{{ appNotice.message }}</span>
         <button
-          class="project-load-error-dismiss"
+          class="app-notice-dismiss"
           type="button"
           :aria-label="t('error.dismiss')"
-          @click="clearProjectLoadError"
+          @click="clearAppNotice"
         >
           ×
         </button>
@@ -658,6 +689,8 @@ function onKeydown(event: KeyboardEvent): void {
             :line-halo-width="state.lineHaloWidth"
             :line-halo-color="state.lineHaloColor"
             :callout-font-size="state.calloutFontSize"
+            :callout-font-weight="state.calloutFontWeight"
+            :callout-font-italic="state.calloutFontItalic"
             :callout-border-width="effectiveCalloutBorderWidth"
             :callout-fill-enabled="state.calloutFillEnabled"
             :callout-fill-color="state.calloutFillColor"
@@ -691,6 +724,8 @@ function onKeydown(event: KeyboardEvent): void {
                 :line-halo-width="state.lineHaloWidth"
                 :line-halo-color="state.lineHaloColor"
                 :callout-font-size="state.calloutFontSize"
+                :callout-font-weight="state.calloutFontWeight"
+                :callout-font-italic="state.calloutFontItalic"
                 :callout-border-enabled="state.calloutBorderEnabled"
                 :callout-fill-enabled="state.calloutFillEnabled"
                 :callout-fill-color="state.calloutFillColor"
@@ -706,6 +741,8 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:line-halo-width="setLineHaloWidth"
                 @update:line-halo-color="setLineHaloColor"
                 @update:callout-font-size="setCalloutFontSize"
+                @update:callout-font-weight="setCalloutFontWeight"
+                @update:callout-font-italic="setCalloutFontItalic"
                 @update:callout-border-enabled="setCalloutBorderEnabled"
                 @update:callout-fill-enabled="setCalloutFillEnabled"
                 @update:callout-fill-color="setCalloutFillColor"
@@ -780,7 +817,7 @@ function onKeydown(event: KeyboardEvent): void {
   border-top: 1px solid var(--line);
 }
 
-.project-load-error {
+.app-notice {
   position: fixed;
   top: 64px;
   left: 50%;
@@ -790,9 +827,6 @@ function onKeydown(event: KeyboardEvent): void {
   align-items: center;
   gap: 10px;
   max-width: min(520px, calc(100vw - 32px));
-  background: var(--danger-soft);
-  color: var(--danger);
-  border: 1px solid rgba(255, 59, 48, 0.3);
   border-radius: 10px;
   padding: 8px 10px 8px 14px;
   font-size: 0.82rem;
@@ -800,7 +834,19 @@ function onKeydown(event: KeyboardEvent): void {
   box-shadow: var(--shadow);
 }
 
-.project-load-error-dismiss {
+.app-notice.is-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+}
+
+.app-notice.is-info {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid rgba(0, 122, 255, 0.28);
+}
+
+.app-notice-dismiss {
   flex: 0 0 auto;
   margin: 0;
   padding: 0 6px;
@@ -813,7 +859,11 @@ function onKeydown(event: KeyboardEvent): void {
   cursor: pointer;
 }
 
-.project-load-error-dismiss:hover {
+.app-notice.is-error .app-notice-dismiss:hover {
   background: rgba(255, 59, 48, 0.12);
+}
+
+.app-notice.is-info .app-notice-dismiss:hover {
+  background: rgba(0, 122, 255, 0.12);
 }
 </style>

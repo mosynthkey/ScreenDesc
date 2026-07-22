@@ -38,6 +38,8 @@ function renderCallout(
   lineHaloWidth: number,
   lineHaloColor: string,
   calloutFontSize: number,
+  calloutFontWeight: number,
+  calloutFontItalic: boolean,
   calloutBorderWidth: number,
   calloutFillEnabled: boolean,
   calloutFillColor: string,
@@ -111,7 +113,7 @@ function renderCallout(
         ${body}
       </g>
       <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
-      <text dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${calloutFontSize}" font-weight="700" fill="#111111">${tspans}</text>
+      <text dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${calloutFontSize}" font-weight="${calloutFontWeight}" font-style="${calloutFontItalic ? 'italic' : 'normal'}" fill="#111111">${tspans}</text>
     </g>
   `
 }
@@ -132,6 +134,8 @@ export function buildSceneSvg(params: {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderWidth: number
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -157,6 +161,8 @@ export function buildSceneSvg(params: {
     lineHaloWidth,
     lineHaloColor,
     calloutFontSize,
+    calloutFontWeight,
+    calloutFontItalic,
     calloutBorderWidth,
     calloutFillEnabled,
     calloutFillColor,
@@ -193,6 +199,8 @@ export function buildSceneSvg(params: {
         lineHaloWidth,
         lineHaloColor,
         calloutFontSize,
+        calloutFontWeight,
+        calloutFontItalic,
         calloutBorderWidth,
         calloutFillEnabled,
         calloutFillColor,

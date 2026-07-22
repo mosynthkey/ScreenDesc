@@ -34,7 +34,7 @@ export function leaderLeaveUnit(anchor: Point, endX: number): Point {
 }
 
 export interface AnchorArrowGeometry {
-  /** Base midline (| of <|), facing the label. Used as leader start for filled arrows. */
+  /** Notch / base midline facing the label. Leader start for filled arrows. */
   center: Point
   tip: Point
   left: Point
@@ -42,8 +42,8 @@ export interface AnchorArrowGeometry {
 }
 
 /**
- * Arrow geometry centered on `anchor`.
- * Tip points at the annotated target; base faces the label.
+ * Arrowhead centered on `anchor`.
+ * Tip points at the annotated target; notched base faces the label.
  */
 export function buildAnchorArrowGeometry(
   anchor: Point,
@@ -53,20 +53,28 @@ export function buildAnchorArrowGeometry(
   const leave = leaderLeaveUnit(anchor, endX)
   const towardTargetX = -leave.x
   const towardTargetY = -leave.y
-  const halfLength = Math.max(5, radius * 1.45)
-  const halfWidth = Math.max(4, radius * 1.55)
-  const tip: Point = {
-    x: anchor.x + towardTargetX * halfLength,
-    y: anchor.y + towardTargetY * halfLength,
-  }
-  const baseMid: Point = {
-    x: anchor.x - towardTargetX * halfLength,
-    y: anchor.y - towardTargetY * halfLength,
-  }
   const perpX = -towardTargetY
   const perpY = towardTargetX
+
+  // Classic marker arrowhead: longer than wide, concave base (notch).
+  const length = Math.max(11, radius * 2.35)
+  const halfWidth = Math.max(4, radius * 1.05)
+  const notchDepth = length * 0.22
+
+  const tip: Point = {
+    x: anchor.x + towardTargetX * length * 0.55,
+    y: anchor.y + towardTargetY * length * 0.55,
+  }
+  const baseMid: Point = {
+    x: anchor.x - towardTargetX * length * 0.45,
+    y: anchor.y - towardTargetY * length * 0.45,
+  }
+  const notch: Point = {
+    x: baseMid.x + towardTargetX * notchDepth,
+    y: baseMid.y + towardTargetY * notchDepth,
+  }
   return {
-    center: baseMid,
+    center: notch,
     tip,
     left: {
       x: baseMid.x + perpX * halfWidth,
@@ -79,7 +87,7 @@ export function buildAnchorArrowGeometry(
   }
 }
 
-/** Filled arrow leaves from the base; chevron continues from the tip. */
+/** Filled arrow leaves from the notched base; chevron continues from the tip. */
 export function leaderAttachPoint(
   style: AnchorStyleId,
   geometry: AnchorArrowGeometry,
@@ -103,9 +111,9 @@ export function buildAnchorHeadPath(
   style: AnchorStyleId,
   geometry: AnchorArrowGeometry,
 ): string {
-  const { tip, left, right } = geometry
+  const { tip, left, right, center } = geometry
   if (style === 'chevron') {
     return `M ${left.x} ${left.y} L ${tip.x} ${tip.y} L ${right.x} ${right.y}`
   }
-  return `M ${tip.x} ${tip.y} L ${left.x} ${left.y} L ${right.x} ${right.y} Z`
+  return `M ${tip.x} ${tip.y} L ${left.x} ${left.y} L ${center.x} ${center.y} L ${right.x} ${right.y} Z`
 }

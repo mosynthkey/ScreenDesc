@@ -24,6 +24,8 @@ export interface ExportScene {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderWidth: number
   calloutFillEnabled: boolean
   calloutFillColor: string

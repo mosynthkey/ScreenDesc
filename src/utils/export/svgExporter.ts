@@ -24,6 +24,8 @@ export const svgExporter: Exporter = {
       lineHaloWidth: scene.lineHaloWidth,
       lineHaloColor: scene.lineHaloColor,
       calloutFontSize: scene.calloutFontSize,
+      calloutFontWeight: scene.calloutFontWeight,
+      calloutFontItalic: scene.calloutFontItalic,
       calloutBorderWidth: scene.calloutBorderWidth,
       calloutFillEnabled: scene.calloutFillEnabled,
       calloutFillColor: scene.calloutFillColor,

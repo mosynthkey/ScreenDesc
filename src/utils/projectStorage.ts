@@ -31,6 +31,8 @@ export interface ProjectSnapshot {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
+  calloutFontWeight: number
+  calloutFontItalic: boolean
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -47,6 +49,8 @@ export interface SavedProjectMeta {
   id: string
   name: string
   updatedAt: number
+  /** SHA-256 hex matching portable project contentHash. */
+  contentHash?: string
 }
 
 /** Strip Vue proxies so structured clone (IndexedDB) accepts the snapshot. */
@@ -117,6 +121,7 @@ export async function saveNamedProject(
   name: string,
   snapshot: ProjectSnapshot,
   id?: string,
+  contentHash?: string,
 ): Promise<string> {
   const projectId = id ?? crypto.randomUUID()
   const payload = toCloneableSnapshot(snapshot)
@@ -124,6 +129,7 @@ export async function saveNamedProject(
     id: projectId,
     name,
     updatedAt: Date.now(),
+    contentHash,
   }
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
@@ -135,6 +141,32 @@ export async function saveNamedProject(
   })
   db.close()
   return projectId
+}
+
+export async function patchSavedProjectMeta(
+  id: string,
+  patch: Partial<Pick<SavedProjectMeta, 'contentHash' | 'name'>>,
+): Promise<boolean> {
+  const db = await openDb()
+  const updated = await new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction(SAVED_META_STORE, 'readwrite')
+    const store = tx.objectStore(SAVED_META_STORE)
+    const request = store.get(id)
+    let found = false
+    request.onsuccess = () => {
+      const existing = request.result as SavedProjectMeta | undefined
+      if (!existing) return
+      found = true
+      store.put({
+        ...existing,
+        ...patch,
+      })
+    }
+    tx.oncomplete = () => resolve(found)
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+  return updated
 }
 
 export async function listSavedProjects(): Promise<SavedProjectMeta[]> {

@@ -29,6 +29,7 @@ export const ja: Record<MessageKey, string> = {
   'button.importProject': 'インポート',
 
   'header.galleryTitle': 'ギャラリー',
+  'header.editTitle': 'プロジェクト',
   'header.untitledProject': '名称未設定のプロジェクト',
   'header.projectNameAria': 'プロジェクト名',
 
@@ -157,6 +158,14 @@ export const ja: Record<MessageKey, string> = {
   'style.lineHalo': '縁取り',
   'style.lineHaloColor': '縁取りの色',
   'style.calloutFontSize': '説明の文字サイズ',
+  'style.fontWeight': '太さ',
+  'style.fontItalic': 'イタリック',
+  'style.fontWeight.regular': 'レギュラー',
+  'style.fontWeight.medium': 'ミディアム',
+  'style.fontWeight.semibold': 'セミボールド',
+  'style.fontWeight.bold': 'ボールド',
+  'style.fontWeight.extrabold': 'エクストラボールド',
+  'style.fontWeight.black': 'ブラック',
   'style.calloutFill': '説明の背景',
   'style.pageBackground': '制作画像の背景色',
   'style.calloutFillColor': '背景色',
@@ -229,6 +238,12 @@ export const ja: Record<MessageKey, string> = {
   'error.imageReplaceFailed': '画像の差し替えに失敗しました',
   'error.projectFileInvalidJson': 'プロジェクトファイルの形式が正しくありません(JSON解析エラー)',
   'error.projectFileUnsupported': '対応していないプロジェクトファイルです',
+  'status.bundleImportResult':
+    '{imported}件を取り込みました。内容が同一のため{skipped}件はスキップしました。',
+  'status.bundleImportSkippedAll':
+    '内容が同一のプロジェクトがギャラリーにあるため、{skipped}件すべてスキップしました。',
+  'status.bundleImportOk': '{imported}件のプロジェクトを取り込みました。',
+
   'error.projectBundleInvalid': 'プロジェクトバンドルの形式が正しくありません',
   'error.projectBundleEmpty': 'バンドルに含める保存済みプロジェクトがありません',
   'error.projectBundleDownloadFailed': 'プロジェクトバンドルのダウンロードに失敗しました',

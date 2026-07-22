@@ -16,7 +16,7 @@ import { normalizeRect, rectCenter } from '../utils/geometry'
 import { createManualSection } from '../utils/mlSectionDetection'
 import { downloadBlob, exportScene } from '../utils/export'
 import { blobToPngBlob } from '../utils/export/imageDataUrl'
-import { ensureGoogleFontsLoaded } from '../utils/googleFonts'
+import { ensureGoogleFontsLoaded, normalizeCalloutFontWeight } from '../utils/googleFonts'
 import {
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
@@ -121,6 +121,21 @@ export function useAnnotationStore() {
       CALLOUT_FONT_SIZE_MAX,
       Math.max(CALLOUT_FONT_SIZE_MIN, size),
     )
+    for (const annotation of state.annotations) {
+      annotation.calloutPosition = null
+    }
+  }
+
+  function setCalloutFontWeight(weight: number): void {
+    state.calloutFontWeight = normalizeCalloutFontWeight(weight, state.defaultFontFamily)
+    for (const annotation of state.annotations) {
+      annotation.calloutPosition = null
+    }
+  }
+
+  function setCalloutFontItalic(italic: boolean): void {
+    state.calloutFontItalic = italic
+    void ensureGoogleFontsLoaded([state.defaultFontFamily], { italic })
     for (const annotation of state.annotations) {
       annotation.calloutPosition = null
     }
@@ -263,7 +278,11 @@ export function useAnnotationStore() {
 
   async function setDefaultFontFamily(fontFamily: string): Promise<void> {
     state.defaultFontFamily = fontFamily
-    await ensureGoogleFontsLoaded([fontFamily])
+    state.calloutFontWeight = normalizeCalloutFontWeight(
+      state.calloutFontWeight,
+      fontFamily,
+    )
+    await ensureGoogleFontsLoaded([fontFamily], { italic: state.calloutFontItalic })
     for (const annotation of state.annotations) {
       annotation.calloutPosition = null
     }
@@ -281,6 +300,8 @@ export function useAnnotationStore() {
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
       calloutFontSize: state.calloutFontSize,
+      calloutFontWeight: state.calloutFontWeight,
+      calloutFontItalic: state.calloutFontItalic,
       calloutBorderEnabled: state.calloutBorderEnabled,
       calloutFillEnabled: state.calloutFillEnabled,
       calloutFillColor: state.calloutFillColor,
@@ -298,6 +319,8 @@ export function useAnnotationStore() {
     const layoutAffecting =
       fontChanged ||
       settings.calloutFontSize !== state.calloutFontSize ||
+      settings.calloutFontWeight !== state.calloutFontWeight ||
+      settings.calloutFontItalic !== state.calloutFontItalic ||
       settings.numberStyle !== state.numberStyle
 
     state.defaultFontFamily = settings.defaultFontFamily
@@ -310,6 +333,8 @@ export function useAnnotationStore() {
     state.lineHaloWidth = settings.lineHaloWidth
     state.lineHaloColor = settings.lineHaloColor
     state.calloutFontSize = settings.calloutFontSize
+    state.calloutFontWeight = settings.calloutFontWeight
+    state.calloutFontItalic = settings.calloutFontItalic
     state.calloutBorderEnabled = settings.calloutBorderEnabled
     state.calloutFillEnabled = settings.calloutFillEnabled
     state.calloutFillColor = settings.calloutFillColor
@@ -317,7 +342,9 @@ export function useAnnotationStore() {
     state.pageBackgroundColor = settings.pageBackgroundColor
     state.numberStyle = settings.numberStyle
 
-    await ensureGoogleFontsLoaded([state.defaultFontFamily])
+    await ensureGoogleFontsLoaded([state.defaultFontFamily], {
+      italic: state.calloutFontItalic,
+    })
     if (layoutAffecting) {
       for (const annotation of state.annotations) {
         annotation.calloutPosition = null
@@ -495,7 +522,9 @@ export function useAnnotationStore() {
   async function renderExportBlob(options: ExportOptions): Promise<Blob | null> {
     if (!imageElement.value) return null
     refreshDocumentAndLayouts()
-    await ensureGoogleFontsLoaded([state.defaultFontFamily])
+    await ensureGoogleFontsLoaded([state.defaultFontFamily], {
+      italic: state.calloutFontItalic,
+    })
     return exportScene({
       image: imageElement.value,
       sections: state.sections,
@@ -512,6 +541,8 @@ export function useAnnotationStore() {
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
       calloutFontSize: state.calloutFontSize,
+      calloutFontWeight: state.calloutFontWeight,
+      calloutFontItalic: state.calloutFontItalic,
       calloutBorderWidth: resolveCalloutBorderWidth(
         state.calloutBorderEnabled,
         state.lineWidth,
@@ -617,6 +648,8 @@ export function useAnnotationStore() {
     setLineHaloWidth,
     setLineHaloColor,
     setCalloutFontSize,
+    setCalloutFontWeight,
+    setCalloutFontItalic,
     setCalloutBorderEnabled,
     setCalloutFillEnabled,
     setCalloutFillColor,

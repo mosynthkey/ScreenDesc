@@ -119,6 +119,8 @@ function estimateLabelSize(
   order: number,
   fontFamily: string,
   fontSize: number,
+  fontWeight: number,
+  fontItalic: boolean,
   numberStyle: NumberStyleId,
 ): { width: number; height: number; lines: string[] } {
   const numberLabel = formatStepNumber(order, numberStyle)
@@ -126,7 +128,9 @@ function estimateLabelSize(
   const text = `${prefix}${description || t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
-  const textWidth = measureTextWidth(text, fontSize, fontCss) + labelHPadding(fontSize)
+  const textWidth =
+    measureTextWidth(text, fontSize, fontCss, fontWeight, fontItalic) +
+    labelHPadding(fontSize)
   return {
     width: Math.max(MIN_LABEL_WIDTH, Math.ceil(textWidth)),
     height: Math.max(lineHeight + labelVPadding(fontSize), Math.round(fontSize * 1.5)),
@@ -366,6 +370,8 @@ export function layoutCalloutsForImage(
   imageHeight: number,
   fontSize: number,
   fontFamily: string,
+  fontWeight: number,
+  fontItalic: boolean,
   numberStyle: NumberStyleId,
 ): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
@@ -379,10 +385,26 @@ export function layoutCalloutsForImage(
   const gap = labelGapFor(fontSize)
   const { leftItems, rightItems } = splitBySide(callouts, sections, imageWidth)
   const leftSizes = leftItems.map((annotation) =>
-    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
+    estimateLabelSize(
+      annotation.description,
+      annotation.order,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      fontItalic,
+      numberStyle,
+    ),
   )
   const rightSizes = rightItems.map((annotation) =>
-    estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
+    estimateLabelSize(
+      annotation.description,
+      annotation.order,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      fontItalic,
+      numberStyle,
+    ),
   )
 
   const leftMax = leftSizes.reduce(

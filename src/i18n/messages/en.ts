@@ -27,6 +27,7 @@ export const en = {
   'button.importProject': 'Import',
 
   'header.galleryTitle': 'Gallery',
+  'header.editTitle': 'Project',
   'header.untitledProject': 'Untitled project',
   'header.projectNameAria': 'Project name',
 
@@ -153,6 +154,14 @@ export const en = {
   'style.lineHalo': 'Outline',
   'style.lineHaloColor': 'Outline color',
   'style.calloutFontSize': 'Label font size',
+  'style.fontWeight': 'Weight',
+  'style.fontItalic': 'Italic',
+  'style.fontWeight.regular': 'Regular',
+  'style.fontWeight.medium': 'Medium',
+  'style.fontWeight.semibold': 'Semibold',
+  'style.fontWeight.bold': 'Bold',
+  'style.fontWeight.extrabold': 'Extra bold',
+  'style.fontWeight.black': 'Black',
   'style.calloutFill': 'Label background',
   'style.pageBackground': 'Output background',
   'style.calloutFillColor': 'Background color',
@@ -225,6 +234,12 @@ export const en = {
   'error.imageReplaceFailed': 'Failed to replace the image',
   'error.projectFileInvalidJson': 'Invalid project file format (JSON parse error)',
   'error.projectFileUnsupported': 'Unsupported project file',
+  'status.bundleImportResult':
+    'Imported {imported}. Skipped {skipped} identical projects already in the gallery.',
+  'status.bundleImportSkippedAll':
+    'Skipped {skipped} projects — identical content already exists in the gallery.',
+  'status.bundleImportOk': 'Imported {imported} projects.',
+
   'error.projectBundleInvalid': 'Invalid project bundle file',
   'error.projectBundleEmpty': 'No saved projects to include in the bundle',
   'error.projectBundleDownloadFailed': 'Failed to download the project bundle',
