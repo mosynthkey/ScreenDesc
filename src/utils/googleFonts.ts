@@ -13,22 +13,6 @@ export interface GoogleFontOption {
 export const DEFAULT_CALLOUT_FONT_WEIGHT = 700
 export const DEFAULT_CALLOUT_FONT_ITALIC = false
 
-const FONT_WEIGHT_LABEL_KEYS = {
-  400: 'style.fontWeight.regular',
-  500: 'style.fontWeight.medium',
-  600: 'style.fontWeight.semibold',
-  700: 'style.fontWeight.bold',
-  800: 'style.fontWeight.extrabold',
-  900: 'style.fontWeight.black',
-} as const
-
-export type FontWeightLabelKey =
-  (typeof FONT_WEIGHT_LABEL_KEYS)[keyof typeof FONT_WEIGHT_LABEL_KEYS]
-
-export function fontWeightLabelKey(weight: number): FontWeightLabelKey | null {
-  return FONT_WEIGHT_LABEL_KEYS[weight as keyof typeof FONT_WEIGHT_LABEL_KEYS] ?? null
-}
-
 /** Curated Google Fonts for manuals (JP-first, plus common Latin faces). */
 export const GOOGLE_FONT_OPTIONS: GoogleFontOption[] = [
   // Japanese — gothic / sans
@@ -147,6 +131,36 @@ export function normalizeCalloutFontWeight(value: unknown, family: string): numb
 
 export function normalizeCalloutFontItalic(value: unknown): boolean {
   return typeof value === 'boolean' ? value : DEFAULT_CALLOUT_FONT_ITALIC
+}
+
+/** Bold toggle maps to the closest available regular (≤500) / bold (≥600) weight. */
+export function isCalloutFontBold(weight: number): boolean {
+  return weight >= 600
+}
+
+export function calloutFontWeightForBold(family: string, bold: boolean): number {
+  const weights = availableFontWeights(family)
+  if (bold) {
+    const preferred = weights.filter((weight) => weight >= 600)
+    if (preferred.length > 0) {
+      return preferred.includes(700)
+        ? 700
+        : preferred.reduce((best, weight) =>
+            Math.abs(weight - 700) < Math.abs(best - 700) ? weight : best,
+          )
+    }
+    return weights[weights.length - 1]!
+  }
+
+  const preferred = weights.filter((weight) => weight <= 500)
+  if (preferred.length > 0) {
+    return preferred.includes(400)
+      ? 400
+      : preferred.reduce((best, weight) =>
+          Math.abs(weight - 400) < Math.abs(best - 400) ? weight : best,
+        )
+  }
+  return weights[0]!
 }
 
 /** Canvas / CSS font shorthand matching callout text style. */

@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const aboutOpen = ref(false)
+const baseUrl = import.meta.env.BASE_URL
 
 function openAbout(): void {
   aboutOpen.value = true
@@ -134,7 +135,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
         :title="t('about.openAria')"
         @click="openAbout"
       >
-        <span class="brand-mark" aria-hidden="true" />
+        <img
+          class="brand-mark"
+          :src="`${baseUrl}icon.png`"
+          alt=""
+          width="36"
+          height="36"
+          decoding="async"
+        />
       </button>
     </div>
   </nav>
@@ -151,7 +159,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
         aria-modal="true"
         :aria-label="t('about.title')"
       >
-        <div class="about-mark" aria-hidden="true" />
+        <img
+          class="about-mark"
+          :src="`${baseUrl}icon.png`"
+          alt=""
+          width="72"
+          height="72"
+          decoding="async"
+        />
         <h2 class="about-name">{{ APP_NAME }}</h2>
         <p class="about-tagline">{{ t('brand.tagline') }}</p>
         <p class="about-version">{{ t('about.version', { version: APP_VERSION }) }}</p>
@@ -276,7 +291,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 44px;
+  height: 52px;
   padding: 0;
   border: none;
   border-radius: 12px;
@@ -291,11 +306,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
 
 .brand-mark {
   display: block;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(145deg, #5ac8fa 0%, #007aff 55%, #5856d6 100%);
-  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.35);
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  object-fit: cover;
 }
 
 .about-modal {
@@ -306,14 +320,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
 }
 
 .about-mark {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 12px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #5ac8fa 0%, #007aff 55%, #5856d6 100%);
-  box-shadow:
-    0 8px 20px rgba(0, 122, 255, 0.28),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.4);
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .about-name {

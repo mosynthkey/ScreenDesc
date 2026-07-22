@@ -8,8 +8,8 @@ import type {
 import { useI18n, type MessageKey } from '../i18n'
 import FontFamilyPicker from './FontFamilyPicker.vue'
 import {
-  availableFontWeights,
-  fontWeightLabelKey,
+  calloutFontWeightForBold,
+  isCalloutFontBold,
   loadGoogleFont,
 } from '../utils/googleFonts'
 import { getAnchorStyleOptions } from '../utils/anchorStyle'
@@ -90,15 +90,15 @@ const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
 )
 
-const fontWeightOptions = computed(() =>
-  availableFontWeights(props.defaultFontFamily).map((weight) => {
-    const labelKey = fontWeightLabelKey(weight)
-    return {
-      value: weight,
-      label: labelKey ? t(labelKey as MessageKey) : String(weight),
-    }
-  }),
-)
+const calloutFontBold = computed(() => isCalloutFontBold(props.calloutFontWeight))
+
+function onCalloutFontBoldChange(event: Event): void {
+  const checked = (event.target as HTMLInputElement).checked
+  emit(
+    'update:calloutFontWeight',
+    calloutFontWeightForBold(props.defaultFontFamily, checked),
+  )
+}
 
 function parseBoundedNumber(
   raw: string,
@@ -459,27 +459,15 @@ watch(
         />
       </div>
       <div class="font-style-row">
-        <div class="field font-weight-field">
-          <label>{{ t('style.fontWeight') }}</label>
-          <select
-            :value="calloutFontWeight"
-            @change="
-              emit(
-                'update:calloutFontWeight',
-                Number(($event.target as HTMLSelectElement).value),
-              )
-            "
-          >
-            <option
-              v-for="option in fontWeightOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
-        </div>
-        <label class="check font-italic-check">
+        <label class="check">
+          <input
+            type="checkbox"
+            :checked="calloutFontBold"
+            @change="onCalloutFontBoldChange"
+          />
+          <span>{{ t('style.fontBold') }}</span>
+        </label>
+        <label class="check">
           <input
             type="checkbox"
             :checked="calloutFontItalic"
@@ -699,19 +687,9 @@ watch(
 
 .font-style-row {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.font-weight-field {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin-bottom: 0;
-}
-
-.font-italic-check {
-  flex: 0 0 auto;
-  padding-bottom: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
 }
 
 .field-hint {

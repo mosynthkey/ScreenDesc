@@ -16,7 +16,12 @@ import { normalizeRect, rectCenter } from '../utils/geometry'
 import { createManualSection } from '../utils/mlSectionDetection'
 import { downloadBlob, exportScene } from '../utils/export'
 import { blobToPngBlob } from '../utils/export/imageDataUrl'
-import { ensureGoogleFontsLoaded, normalizeCalloutFontWeight } from '../utils/googleFonts'
+import {
+  calloutFontWeightForBold,
+  ensureGoogleFontsLoaded,
+  isCalloutFontBold,
+  normalizeCalloutFontWeight,
+} from '../utils/googleFonts'
 import {
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
@@ -278,9 +283,9 @@ export function useAnnotationStore() {
 
   async function setDefaultFontFamily(fontFamily: string): Promise<void> {
     state.defaultFontFamily = fontFamily
-    state.calloutFontWeight = normalizeCalloutFontWeight(
-      state.calloutFontWeight,
+    state.calloutFontWeight = calloutFontWeightForBold(
       fontFamily,
+      isCalloutFontBold(state.calloutFontWeight),
     )
     await ensureGoogleFontsLoaded([fontFamily], { italic: state.calloutFontItalic })
     for (const annotation of state.annotations) {
