@@ -116,14 +116,61 @@ watch(
       </div>
       <div class="field">
         <label>{{ t('style.lineStyle') }}</label>
-        <select
-          :value="lineStyle"
-          @change="emit('update:lineStyle', ($event.target as HTMLSelectElement).value as LineStyleId)"
-        >
-          <option v-for="option in lineStyleOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+        <div class="line-style-buttons" role="group" :aria-label="t('style.lineStyle')">
+          <button
+            v-for="option in lineStyleOptions"
+            :key="option.value"
+            class="line-style-btn"
+            type="button"
+            :class="{ active: lineStyle === option.value }"
+            :title="option.value === 'invert' ? t('lineStyle.invertHint') : undefined"
+            :aria-pressed="lineStyle === option.value"
+            @click="emit('update:lineStyle', option.value)"
+          >
+            <svg
+              class="line-style-icon"
+              viewBox="0 0 40 12"
+              width="40"
+              height="12"
+              aria-hidden="true"
+            >
+              <line
+                v-if="option.value === 'solid'"
+                x1="2"
+                y1="6"
+                x2="38"
+                y2="6"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+              <line
+                v-else-if="option.value === 'dashed'"
+                x1="2"
+                y1="6"
+                x2="38"
+                y2="6"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-dasharray="5 4"
+              />
+              <g v-else>
+                <rect x="1" y="1" width="38" height="10" rx="2" fill="currentColor" opacity="0.18" />
+                <line
+                  x1="2"
+                  y1="6"
+                  x2="38"
+                  y2="6"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                />
+              </g>
+            </svg>
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
       </div>
       <div class="field">
         <label class="slider-label">
@@ -398,5 +445,46 @@ watch(
 .size-slider:focus {
   outline: none;
   box-shadow: none;
+}
+
+.line-style-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.line-style-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.line-style-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.line-style-btn.active {
+  border-color: rgba(0, 122, 255, 0.45);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
+}
+
+.line-style-icon {
+  display: block;
+  flex: 0 0 auto;
 }
 </style>

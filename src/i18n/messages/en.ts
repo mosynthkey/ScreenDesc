@@ -140,7 +140,8 @@ export const en = {
 
   'lineStyle.solid': 'Solid',
   'lineStyle.dashed': 'Dashed',
-  'lineStyle.invert': 'Invert surroundings (visible on any background)',
+  'lineStyle.invert': 'Invert',
+  'lineStyle.invertHint': 'Visible on any background',
 
   'callout.emptyDescription': 'Description',
 

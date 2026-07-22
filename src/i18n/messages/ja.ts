@@ -142,7 +142,8 @@ export const ja: Record<MessageKey, string> = {
 
   'lineStyle.solid': '実線',
   'lineStyle.dashed': '破線',
-  'lineStyle.invert': '周囲反転（背景を問わず見える）',
+  'lineStyle.invert': '反転',
+  'lineStyle.invertHint': '背景を問わず見える',
 
   'callout.emptyDescription': '説明',
 
