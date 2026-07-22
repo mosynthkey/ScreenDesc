@@ -8,7 +8,7 @@ import type {
   NumberStyleId,
   TextStylePreset,
 } from '../types/annotation'
-import { textStyleLabel, textStyleOptions } from '../i18n/labels'
+import { textStyleOptions } from '../i18n/labels'
 import { useI18n, type MessageKey } from '../i18n'
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../utils/googleFonts'
 import { getLineStyleOptions, LINE_WIDTH_MAX, LINE_WIDTH_MIN } from '../utils/lineStyle'
@@ -51,7 +51,6 @@ const emit = defineEmits<{
   'update:labelColor': [color: string]
   patch: [
     patch: Partial<{
-      textStyle: TextStylePreset
       calloutSide: CalloutSide
       description: string
     }>,
@@ -246,27 +245,6 @@ onMounted(() => {
         <span class="title-icon" aria-hidden="true">✎</span>
         {{ t('style.selectedAnnotationTitle') }}
       </h3>
-      <div class="field">
-        <label>{{ t('style.textStyle') }}</label>
-        <select
-          :value="annotation.textStyle"
-          @change="emit('patch', { textStyle: ($event.target as HTMLSelectElement).value as TextStylePreset })"
-        >
-          <option v-for="option in styleOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-      <div v-if="annotation.textStyle === 'label' || annotation.resolvedStyle === 'label'" class="field">
-        <label class="color-swatch color-swatch-inline">
-          {{ t('style.labelColor') }}
-          <input
-            type="color"
-            :value="labelColor"
-            @input="emit('update:labelColor', ($event.target as HTMLInputElement).value)"
-          />
-        </label>
-      </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
         <label>{{ t('style.calloutSide') }}</label>
         <select
@@ -286,10 +264,6 @@ onMounted(() => {
           @input="emit('patch', { description: ($event.target as HTMLTextAreaElement).value })"
         />
       </div>
-      <p class="hint" style="margin-top: 10px; margin-bottom: 0">
-        {{ t('style.resolvedStylePrefix') }}
-        <strong>{{ textStyleLabel(annotation.resolvedStyle) }}</strong>
-      </p>
     </div>
     <p v-else class="hint">{{ t('style.noSelectionHint') }}</p>
   </div>

@@ -304,15 +304,6 @@ function onKeydown(event: KeyboardEvent): void {
       <template v-if="hasImage">
         <aside class="panel">
           <div class="panel-section">
-            <h3 class="panel-title">{{ t('sidebar.workflowTitle') }}</h3>
-            <p class="hint">
-              {{ t('sidebar.workflow.step1') }}<br />
-              {{ t('sidebar.workflow.step2') }}<br />
-              {{ t('sidebar.workflow.step3') }}<br />
-              {{ t('sidebar.workflow.step4') }}
-            </p>
-          </div>
-          <div class="panel-section">
             <AnnotationList
               :annotations="sortedAnnotations"
               :selected-ids="[...state.selectedAnnotationIds]"
@@ -391,16 +382,6 @@ function onKeydown(event: KeyboardEvent): void {
               @update:label-color="setLabelColor"
               @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
             />
-          </div>
-          <div class="panel-section">
-            <h3 class="panel-title">{{ t('sidebar.shortcutsTitle') }}</h3>
-            <p class="hint">
-              {{ t('sidebar.shortcuts.line1') }}<br />
-              {{ t('sidebar.shortcuts.line2') }}<br />
-              {{ t('sidebar.shortcuts.line3') }}<br />
-              {{ t('sidebar.shortcuts.line4') }}<br />
-              {{ t('sidebar.shortcuts.line5') }}
-            </p>
           </div>
         </aside>
       </template>

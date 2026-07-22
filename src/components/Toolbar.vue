@@ -88,7 +88,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
       <div class="brand-mark" aria-hidden="true" />
       <div class="brand-text">
         <div class="brand-name">ScreenDesc</div>
-        <div class="brand-tag">{{ t('brand.tagline') }}</div>
       </div>
     </div>
 
@@ -340,12 +339,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.1;
-}
-
-.brand-tag {
-  font-size: 0.68rem;
-  color: var(--ink-muted);
-  letter-spacing: 0;
 }
 
 .header-actions {

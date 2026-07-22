@@ -575,6 +575,10 @@ export function useAnnotationStore() {
 
   function setDefaultTextStyle(style: TextStylePreset): void {
     state.defaultTextStyle = style
+    for (const annotation of state.annotations) {
+      annotation.textStyle = style
+    }
+    refreshResolvedStyles()
   }
 
   function setLineStyle(style: LineStyleId): void {
