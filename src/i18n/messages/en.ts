@@ -98,6 +98,9 @@ export const en = {
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Click a section to add an annotation.',
   'annotationList.dragTitle': 'Drag to reorder',
+  'annotationList.sortByXY': 'Sort by X/Y',
+  'annotationList.sortByXYTitle':
+    'Reorder by placement side and position so leader lines stay clearer',
   'annotationList.emptyDescription': 'No description',
   'annotationList.removeTitle': 'Remove',
   'annotationList.multiSelectHint': 'Shift-click to select multiple',
@@ -128,9 +131,9 @@ export const en = {
   'projectStorage.currentNamedHint':
     'This named project receives automatic overwrites while you keep editing.',
   'projectStorage.currentUntitledHint':
-    'Still untitled — use Save as below to keep a named copy in the gallery.',
+    'Untitled work is saved automatically with a date-based name.',
   'projectStorage.saveAsLabel': 'Save as',
-  'projectStorage.saveAsHint': 'Creates another named copy in the gallery (or names this project if untitled).',
+  'projectStorage.saveAsHint': 'Creates another named copy in the gallery.',
   'projectStorage.namePlaceholder': 'Project name',
   'projectStorage.save': 'Save',
   'projectStorage.needImageHint': 'Open an image before saving.',
@@ -187,10 +190,13 @@ export const en = {
   'style.multiSelectionHint':
     'Side, label position, and anchor offset apply to all selected annotations.',
   'style.mixed': 'Mixed',
-  'style.calloutSide': 'Label side',
+  'style.calloutSide': 'Label placement',
   'style.calloutSide.auto': 'Auto',
+  'style.calloutSide.autoTitle': 'Nearest edge',
   'style.calloutSide.left': 'Left',
   'style.calloutSide.right': 'Right',
+  'style.calloutSide.top': 'Top',
+  'style.calloutSide.bottom': 'Bottom',
   'style.labelPositionX': 'Label X',
   'style.labelPositionY': 'Label Y',
   'style.labelPositionHint': 'Drag the label on the canvas, including over the image.',

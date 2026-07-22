@@ -76,7 +76,7 @@ function renderCallout(
   let body: string
   if (isArrowAnchorStyle(anchorStyle)) {
     // Head and leader must be separate: filling a combined path paints the open cubic.
-    const geometry = buildAnchorArrowGeometry(anchorPoint, leaderEnd.x, dotRadius)
+    const geometry = buildAnchorArrowGeometry(anchorPoint, leaderEnd, dotRadius)
     const head = buildAnchorHeadPath(anchorStyle, geometry)
     const leader = buildLeaderPath(
       leaderAttachPoint(anchorStyle, geometry),
@@ -94,17 +94,22 @@ function renderCallout(
       <path d="${head}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />
       <path d="${leader}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
   } else {
-    const leaderStart = dotLeaderAttachPoint(anchorPoint, leaderEnd.x, dotRadius)
+    const leaderStart = dotLeaderAttachPoint(anchorPoint)
     const pathD = buildLeaderPath(leaderStart, leaderEnd.x, leaderEnd.y)
     const haloWidth = spec.strokeWidth + lineHaloWidth
-    const halo =
+    const haloLeader =
       lineHaloWidth > 0 && !isInvert
-        ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" ${strokeJoin} />
-      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" />`
+        ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" ${strokeJoin} />`
         : ''
-    body = `${halo}
-      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" />
-      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
+    const haloCircle =
+      lineHaloWidth > 0 && !isInvert
+        ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" />`
+        : ''
+    // Leader under the filled circle so the stroke appears to leave from the center.
+    body = `${haloLeader}
+      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />
+      ${haloCircle}
+      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" />`
   }
 
   return `

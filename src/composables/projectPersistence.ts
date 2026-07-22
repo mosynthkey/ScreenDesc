@@ -7,6 +7,7 @@ import {
   type ProjectSnapshot,
 } from '../utils/projectStorage'
 import { contentHashFromSnapshot } from '../utils/projectFile'
+import { defaultProjectName } from '../utils/projectName'
 import {
   activeNamedProject,
   applyRestoredSnapshot,
@@ -81,18 +82,45 @@ export async function persistActiveNamedProject(): Promise<void> {
   }
 }
 
+let ensuringNamedProject = false
+
+/** Give untitled work a date-based gallery name so it is kept with other saves. */
+export async function ensureActiveNamedProject(): Promise<void> {
+  if (!state.imageUrl || activeNamedProject.value || ensuringNamedProject) return
+  ensuringNamedProject = true
+  try {
+    const snapshot = await buildCurrentSnapshot()
+    if (!snapshot || activeNamedProject.value) return
+    const name = defaultProjectName()
+    const contentHash = await contentHashFromSnapshot(snapshot)
+    const projectId = await saveNamedProject(name, snapshot, undefined, contentHash)
+    activeNamedProject.value = { id: projectId, name }
+    namedSaveDirty = false
+    await persistCurrentProject()
+  } catch (err) {
+    console.warn('[ScreenDesc] failed to auto-name untitled project', err)
+  } finally {
+    ensuringNamedProject = false
+  }
+}
+
 export function scheduleSave(): void {
   if (!restored || !state.imageUrl) return
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
-    void persistCurrentProject()
+    void (async () => {
+      await ensureActiveNamedProject()
+      await persistCurrentProject()
+    })()
   }, SESSION_SAVE_DEBOUNCE_MS)
 
-  if (!activeNamedProject.value) return
   namedSaveDirty = true
   if (namedSaveTimer) clearTimeout(namedSaveTimer)
   namedSaveTimer = setTimeout(() => {
-    void persistActiveNamedProject()
+    void (async () => {
+      await ensureActiveNamedProject()
+      await persistActiveNamedProject()
+    })()
   }, NAMED_SAVE_DEBOUNCE_MS)
 }
 
@@ -146,6 +174,7 @@ async function restorePersistedProject(): Promise<void> {
     console.warn('[ScreenDesc] failed to restore persisted project', err)
   } finally {
     restored = true
+    if (state.imageUrl) scheduleSave()
   }
 }
 
@@ -182,7 +211,10 @@ watch(
 
 if (typeof window !== 'undefined') {
   window.setInterval(() => {
-    if (!namedSaveDirty || !activeNamedProject.value || !state.imageUrl) return
-    void persistActiveNamedProject()
+    if (!namedSaveDirty || !state.imageUrl) return
+    void (async () => {
+      await ensureActiveNamedProject()
+      await persistActiveNamedProject()
+    })()
   }, NAMED_SAVE_INTERVAL_MS)
 }

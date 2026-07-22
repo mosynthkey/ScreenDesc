@@ -100,6 +100,9 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.title': '注釈一覧',
   'annotationList.emptyHint': 'セクションをクリックして注釈を追加できます。',
   'annotationList.dragTitle': 'ドラッグで並び替え',
+  'annotationList.sortByXY': 'X・Y順に並べ替え',
+  'annotationList.sortByXYTitle':
+    '配置辺と位置に合わせて並べ替え、引き出し線が交差しないようにします',
   'annotationList.emptyDescription': '説明なし',
   'annotationList.removeTitle': '削除',
   'annotationList.multiSelectHint': 'Shift+クリックで複数選択',
@@ -130,10 +133,9 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.currentNamedHint':
     '名前付きプロジェクトは、編集を続けると自動で上書き保存されます。',
   'projectStorage.currentUntitledHint':
-    'まだ名前がありません。下の「名前を付けて保存」でギャラリーに残せます。',
+    '名称未設定の作業は、日時付きの名前で自動保存されます。',
   'projectStorage.saveAsLabel': '名前を付けて保存',
-  'projectStorage.saveAsHint':
-    'ギャラリーに別名でコピーを作ります（未設定ならこのプロジェクトに名前を付けます）。',
+  'projectStorage.saveAsHint': 'ギャラリーに別名のコピーを作ります。',
   'projectStorage.namePlaceholder': 'プロジェクト名',
   'projectStorage.save': '保存',
   'projectStorage.needImageHint': '画像を開いてから保存できます。',
@@ -193,8 +195,11 @@ export const ja: Record<MessageKey, string> = {
   'style.mixed': '混在',
   'style.calloutSide': '説明の配置',
   'style.calloutSide.auto': '自動',
+  'style.calloutSide.autoTitle': '一番近い辺に配置',
   'style.calloutSide.left': '左',
   'style.calloutSide.right': '右',
+  'style.calloutSide.top': '上',
+  'style.calloutSide.bottom': '下',
   'style.labelPositionX': 'ラベル X',
   'style.labelPositionY': 'ラベル Y',
   'style.labelPositionHint': 'キャンバス上でラベルをドラッグできます（画像の上にも配置可）。',

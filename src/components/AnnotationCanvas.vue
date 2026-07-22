@@ -485,10 +485,10 @@ function leaderStartFor(layout: CalloutLayoutItem): Point {
   if (isArrowAnchorStyle(props.anchorStyle)) {
     return leaderAttachPoint(
       props.anchorStyle,
-      buildAnchorArrowGeometry(layout.anchorPoint, end.x, props.dotRadius),
+      buildAnchorArrowGeometry(layout.anchorPoint, end, props.dotRadius),
     )
   }
-  return dotLeaderAttachPoint(layout.anchorPoint, end.x, props.dotRadius)
+  return dotLeaderAttachPoint(layout.anchorPoint)
 }
 
 function leaderPathFor(layout: CalloutLayoutItem): string {
@@ -499,7 +499,7 @@ function leaderPathFor(layout: CalloutLayoutItem): string {
 function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   if (!isArrowAnchorStyle(props.anchorStyle)) return ''
   const end = leaderEnd(layout)
-  const geometry = buildAnchorArrowGeometry(layout.anchorPoint, end.x, props.dotRadius)
+  const geometry = buildAnchorArrowGeometry(layout.anchorPoint, end, props.dotRadius)
   return buildAnchorHeadPath(props.anchorStyle, geometry)
 }
 
@@ -665,6 +665,18 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                   strokeLinejoin: 'round',
                 }"
               />
+              <path
+                class="leader"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
+              />
               <circle
                 v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
                 class="anchor-dot-halo"
@@ -686,18 +698,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                   fill: effectiveDotColor,
                   stroke: effectiveLineColor,
                   strokeWidth: activeLineStyle.strokeWidth,
-                }"
-              />
-              <path
-                class="leader"
-                :d="leaderPathFor(layoutFor(annotation.id)!)"
-                fill="none"
-                :style="{
-                  stroke: effectiveLineColor,
-                  strokeWidth: activeLineStyle.strokeWidth,
-                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
-                  strokeLinecap: 'round',
-                  strokeLinejoin: 'round',
                 }"
               />
             </template>

@@ -73,6 +73,7 @@ const {
   nudgeCalloutPositions,
   removeAnnotations,
   reorderAnnotations,
+  sortAnnotationsByXY,
   exportProject,
   copyAnnotatedImageToClipboard,
   saveProjectToFile,
@@ -535,7 +536,7 @@ const labelPositions = computed(() => {
 
 function onPatchSelectedAnnotations(
   patch: Partial<{
-    calloutSide: 'auto' | 'left' | 'right'
+    calloutSide: 'auto' | 'left' | 'right' | 'top' | 'bottom'
     description: string
     anchorOffset: { x: number; y: number }
     anchorOffsetX: number
@@ -679,6 +680,7 @@ function onKeydown(event: KeyboardEvent): void {
                 :selected-ids="[...state.selectedAnnotationIds]"
                 @select="selectAnnotation"
                 @reorder="reorderAnnotations"
+                @sort-by-xy="sortAnnotationsByXY"
                 @remove="(id) => removeAnnotations([id])"
               />
             </div>

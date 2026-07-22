@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { SavedProjectMeta } from '../utils/projectStorage'
 import { locale, useI18n } from '../i18n'
+import { defaultProjectName } from '../utils/projectName'
 
 const props = defineProps<{
   open: boolean
@@ -41,22 +42,12 @@ watch(
   (open) => {
     if (!open) return
     const current = props.activeProjectName?.trim()
-    nameInput.value = current || defaultName()
+    nameInput.value = current || defaultProjectName()
   },
 )
 
 function dateLocale(): string {
   return locale.value === 'ja' ? 'ja-JP' : 'en-US'
-}
-
-function defaultName(): string {
-  const stamp = new Date().toLocaleString(dateLocale(), {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-  return t('projectStorage.defaultName', { stamp })
 }
 
 function formatDate(ts: number): string {

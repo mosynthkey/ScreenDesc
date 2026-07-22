@@ -10,7 +10,7 @@ export interface Rect {
   height: number
 }
 
-export type CalloutSide = 'left' | 'right' | 'auto'
+export type CalloutSide = 'left' | 'right' | 'top' | 'bottom' | 'auto'
 
 export type ToolMode = 'select' | 'add-section' | 'annotate' | 'crop'
 
@@ -54,7 +54,7 @@ export interface Annotation {
 
 export interface CalloutLayoutItem {
   annotationId: string
-  side: 'left' | 'right'
+  side: 'left' | 'right' | 'top' | 'bottom'
   labelPosition: Point
   anchorPoint: Point
   elbowPoint: Point

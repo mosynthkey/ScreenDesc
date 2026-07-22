@@ -61,6 +61,39 @@ const sharedCalloutSide = computed<CalloutSide | null>(() => {
     : null
 })
 
+const calloutSideOptions = computed(() => [
+  {
+    value: 'top' as const,
+    label: t('style.calloutSide.top'),
+    title: t('style.calloutSide.top'),
+    area: 'top' as const,
+  },
+  {
+    value: 'left' as const,
+    label: t('style.calloutSide.left'),
+    title: t('style.calloutSide.left'),
+    area: 'left' as const,
+  },
+  {
+    value: 'auto' as const,
+    label: t('style.calloutSide.auto'),
+    title: t('style.calloutSide.autoTitle'),
+    area: 'auto' as const,
+  },
+  {
+    value: 'right' as const,
+    label: t('style.calloutSide.right'),
+    title: t('style.calloutSide.right'),
+    area: 'right' as const,
+  },
+  {
+    value: 'bottom' as const,
+    label: t('style.calloutSide.bottom'),
+    title: t('style.calloutSide.bottom'),
+    area: 'bottom' as const,
+  },
+])
+
 const sharedAnchorOffsetX = computed<number | null>(() => {
   const first = activeAnnotations.value[0]
   if (!first) return null
@@ -272,21 +305,28 @@ function resetLabelPosition(): void {
         <h4 class="section-title">{{ t('style.section.placement') }}</h4>
         <div class="field">
           <label>{{ t('style.calloutSide') }}</label>
-          <select
-            :value="sharedCalloutSide ?? ''"
-            @change="
-              emit('patch', {
-                calloutSide: ($event.target as HTMLSelectElement).value as CalloutSide,
-              })
-            "
+          <div
+            class="callout-side-buttons"
+            role="group"
+            :aria-label="t('style.calloutSide')"
           >
-            <option v-if="sharedCalloutSide === null" value="" disabled>
-              {{ t('style.mixed') }}
-            </option>
-            <option value="auto">{{ t('style.calloutSide.auto') }}</option>
-            <option value="left">{{ t('style.calloutSide.left') }}</option>
-            <option value="right">{{ t('style.calloutSide.right') }}</option>
-          </select>
+            <button
+              v-for="option in calloutSideOptions"
+              :key="option.value"
+              class="callout-side-btn"
+              type="button"
+              :class="[
+                `callout-side-${option.area}`,
+                { active: sharedCalloutSide === option.value },
+              ]"
+              :aria-label="option.title"
+              :aria-pressed="sharedCalloutSide === option.value"
+              :title="option.title"
+              @click="emit('patch', { calloutSide: option.value })"
+            >
+              {{ option.label }}
+            </button>
+          </div>
         </div>
         <div class="field">
           <label class="slider-label">
@@ -535,5 +575,63 @@ function resetLabelPosition(): void {
 .size-slider:focus {
   outline: none;
   box-shadow: none;
+}
+
+.callout-side-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    '. top .'
+    'left auto right'
+    '. bottom .';
+  gap: 6px;
+}
+
+.callout-side-top {
+  grid-area: top;
+}
+
+.callout-side-left {
+  grid-area: left;
+}
+
+.callout-side-auto {
+  grid-area: auto;
+}
+
+.callout-side-right {
+  grid-area: right;
+}
+
+.callout-side-bottom {
+  grid-area: bottom;
+}
+
+.callout-side-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 8px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.callout-side-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.callout-side-btn.active {
+  border-color: rgba(0, 122, 255, 0.45);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
 }
 </style>

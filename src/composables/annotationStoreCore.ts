@@ -16,6 +16,7 @@ import { useScreenParser } from './useScreenParser'
 import {
   layoutCalloutsForImage,
   createDefaultDocumentLayout,
+  normalizeCalloutSide,
 } from '../utils/calloutLayout'
 import {
   DEFAULT_CALLOUT_FONT_ITALIC,
@@ -134,7 +135,7 @@ export function sanitizeAnnotation(raw: Annotation): Annotation {
     order: raw.order,
     description: raw.description,
     markerPosition: { ...raw.markerPosition },
-    calloutSide: raw.calloutSide,
+    calloutSide: normalizeCalloutSide(raw.calloutSide),
     calloutPosition: raw.calloutPosition
       ? { ...raw.calloutPosition }
       : null,

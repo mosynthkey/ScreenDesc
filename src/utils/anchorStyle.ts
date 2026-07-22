@@ -27,10 +27,13 @@ export function getAnchorStyleOptions(): Array<{ value: AnchorStyleId; label: st
   ]
 }
 
-export function leaderLeaveUnit(anchor: Point, endX: number): Point {
-  const deltaX = endX - anchor.x
-  const direction = deltaX === 0 ? 1 : Math.sign(deltaX)
-  return { x: direction, y: 0 }
+export function leaderLeaveUnit(anchor: Point, end: Point): Point {
+  const deltaX = end.x - anchor.x
+  const deltaY = end.y - anchor.y
+  if (Math.abs(deltaY) > Math.abs(deltaX)) {
+    return { x: 0, y: deltaY === 0 ? 1 : Math.sign(deltaY) }
+  }
+  return { x: deltaX === 0 ? 1 : Math.sign(deltaX), y: 0 }
 }
 
 export interface AnchorArrowGeometry {
@@ -47,10 +50,10 @@ export interface AnchorArrowGeometry {
  */
 export function buildAnchorArrowGeometry(
   anchor: Point,
-  endX: number,
+  end: Point,
   radius: number,
 ): AnchorArrowGeometry {
-  const leave = leaderLeaveUnit(anchor, endX)
+  const leave = leaderLeaveUnit(anchor, end)
   const towardTargetX = -leave.x
   const towardTargetY = -leave.y
   const perpX = -towardTargetY
@@ -95,16 +98,9 @@ export function leaderAttachPoint(
   return style === 'chevron' ? geometry.tip : geometry.center
 }
 
-export function dotLeaderAttachPoint(
-  anchor: Point,
-  endX: number,
-  radius: number,
-): Point {
-  const leave = leaderLeaveUnit(anchor, endX)
-  return {
-    x: anchor.x + leave.x * radius,
-    y: anchor.y + leave.y * radius,
-  }
+/** Dot anchors: leader leaves from the circle center (paint the circle above the stroke). */
+export function dotLeaderAttachPoint(anchor: Point): Point {
+  return { x: anchor.x, y: anchor.y }
 }
 
 export function buildAnchorHeadPath(

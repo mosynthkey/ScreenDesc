@@ -9,6 +9,7 @@ import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
 import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
 import { normalizeAnchorStyle } from './anchorStyle'
+import { normalizeCalloutSide } from './calloutLayout'
 import {
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
@@ -116,7 +117,7 @@ function sanitizeAnnotation(
     order: raw.order,
     description: raw.description,
     markerPosition: raw.markerPosition,
-    calloutSide: raw.calloutSide,
+    calloutSide: normalizeCalloutSide(raw.calloutSide),
     calloutPosition: raw.calloutPosition,
     anchorOffset: sanitizeAnchorOffset(
       (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,

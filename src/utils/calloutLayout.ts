@@ -1,6 +1,7 @@
 import type {
   Annotation,
   CalloutLayoutItem,
+  CalloutSide,
   DocumentLayout,
   NumberStyleId,
   Point,
@@ -12,17 +13,41 @@ import { measureTextWidth } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
 import { t } from '../i18n'
 
+export type ResolvedCalloutSide = Exclude<CalloutSide, 'auto'>
+
+const CALLOUT_SIDES: readonly CalloutSide[] = ['left', 'right', 'top', 'bottom', 'auto']
+
+export function isCalloutSide(value: unknown): value is CalloutSide {
+  return typeof value === 'string' && (CALLOUT_SIDES as readonly string[]).includes(value)
+}
+
+export function normalizeCalloutSide(value: unknown): CalloutSide {
+  return isCalloutSide(value) ? value : 'auto'
+}
+
 /**
- * Cubic leader with a single bend (C-curve): leave horizontally from the start,
- * then curve into the label. Avoids the S-twist of opposing horizontal stubs.
- * Stub length is capped against |dy| so thick strokes do not self-intersect at the bend.
+ * Cubic leader with a single bend (C-curve). Leaves along the dominant axis
+ * toward the label, then curves into the attachment point.
  */
 export function buildLeaderPath(start: Point, endX: number, endY: number): string {
   const dx = endX - start.x
   const dy = endY - start.y
-  const direction = dx === 0 ? 1 : Math.sign(dx)
   const absDx = Math.abs(dx)
   const absDy = Math.abs(dy)
+
+  if (absDy > absDx) {
+    const direction = dy === 0 ? 1 : Math.sign(dy)
+    const stub = Math.min(
+      absDy * 0.55,
+      48,
+      Math.max(8, absDy * 0.35),
+      absDx > 0 ? absDx * 0.45 + 10 : absDy,
+    )
+    const elbowY = start.y + direction * stub
+    return `M ${start.x} ${start.y} C ${start.x} ${elbowY}, ${endX} ${elbowY}, ${endX} ${endY}`
+  }
+
+  const direction = dx === 0 ? 1 : Math.sign(dx)
   const stub = Math.min(
     absDx * 0.55,
     48,
@@ -36,6 +61,18 @@ export function buildLeaderPath(start: Point, endX: number, endY: number): strin
 export function leaderAttachOnLabel(layout: CalloutLayoutItem): Point {
   const labelCenterX = layout.labelPosition.x + layout.labelWidth / 2
   const labelCenterY = layout.labelPosition.y + layout.labelHeight / 2
+  if (layout.side === 'top') {
+    return {
+      x: labelCenterX,
+      y: layout.labelPosition.y + layout.labelHeight,
+    }
+  }
+  if (layout.side === 'bottom') {
+    return {
+      x: labelCenterX,
+      y: layout.labelPosition.y,
+    }
+  }
   return {
     x:
       layout.anchorPoint.x < labelCenterX
@@ -96,10 +133,14 @@ function sideMarginFor(maxLabelWidth: number): number {
   return maxLabelWidth + IMAGE_GUTTER + PAGE_PAD
 }
 
-function stackHeight(heights: number[], gap: number): number {
-  if (heights.length === 0) return 0
-  const heightsSum = heights.reduce((sum, height) => sum + height, 0)
-  return heightsSum + Math.max(0, heights.length - 1) * gap
+function bandMarginFor(maxLabelHeight: number): number {
+  return maxLabelHeight + IMAGE_GUTTER + PAGE_PAD
+}
+
+function stackExtent(sizes: number[], gap: number): number {
+  if (sizes.length === 0) return 0
+  const sizesSum = sizes.reduce((sum, size) => sum + size, 0)
+  return sizesSum + Math.max(0, sizes.length - 1) * gap
 }
 
 function verticalMarginsFor(imageHeight: number, maxStackHeight: number): {
@@ -149,7 +190,7 @@ function getSectionForAnnotation(
 function anchorForAnnotation(
   annotation: Annotation,
   sections: Section[],
-  side: 'left' | 'right',
+  side: ResolvedCalloutSide,
   imageWidth: number,
   imageHeight: number,
 ): Point {
@@ -158,11 +199,19 @@ function anchorForAnnotation(
   let baseX: number
   let baseY: number
   if (section) {
-    baseX =
-      side === 'left'
-        ? section.rect.x + LINE_INSET
-        : section.rect.x + section.rect.width - LINE_INSET
-    baseY = rectCenter(section.rect).y
+    if (side === 'left') {
+      baseX = section.rect.x + LINE_INSET
+      baseY = rectCenter(section.rect).y
+    } else if (side === 'right') {
+      baseX = section.rect.x + section.rect.width - LINE_INSET
+      baseY = rectCenter(section.rect).y
+    } else if (side === 'top') {
+      baseX = rectCenter(section.rect).x
+      baseY = section.rect.y + LINE_INSET
+    } else {
+      baseX = rectCenter(section.rect).x
+      baseY = section.rect.y + section.rect.height - LINE_INSET
+    }
   } else {
     baseX = annotation.markerPosition.x
     baseY = annotation.markerPosition.y
@@ -173,59 +222,125 @@ function anchorForAnnotation(
   }
 }
 
-function preferredSide(
+function referencePointForAnnotation(
+  annotation: Annotation,
+  sections: Section[],
+): Point {
+  const section = getSectionForAnnotation(annotation, sections)
+  return section ? rectCenter(section.rect) : { ...annotation.markerPosition }
+}
+
+/** Pick the image edge closest to the marker (ties keep left → right → top → bottom). */
+export function preferredSide(
   annotation: Annotation,
   sections: Section[],
   imageWidth: number,
-): 'left' | 'right' {
-  if (annotation.calloutSide === 'left' || annotation.calloutSide === 'right') {
+  imageHeight: number,
+): ResolvedCalloutSide {
+  if (
+    annotation.calloutSide === 'left' ||
+    annotation.calloutSide === 'right' ||
+    annotation.calloutSide === 'top' ||
+    annotation.calloutSide === 'bottom'
+  ) {
     return annotation.calloutSide
   }
-  const section = getSectionForAnnotation(annotation, sections)
-  const x = section ? rectCenter(section.rect).x : annotation.markerPosition.x
-  return x < imageWidth / 2 ? 'left' : 'right'
+  const point = referencePointForAnnotation(annotation, sections)
+  const candidates: Array<{ side: ResolvedCalloutSide; distance: number }> = [
+    { side: 'left', distance: point.x },
+    { side: 'right', distance: imageWidth - point.x },
+    { side: 'top', distance: point.y },
+    { side: 'bottom', distance: imageHeight - point.y },
+  ]
+  let best = candidates[0]!
+  for (let candidateIndex = 1; candidateIndex < candidates.length; candidateIndex += 1) {
+    const candidate = candidates[candidateIndex]!
+    if (candidate.distance < best.distance) best = candidate
+  }
+  return best.side
 }
 
 /**
- * Place labels as close as possible to each preferred Y, stacked top-to-bottom
- * in input order (= annotation.order) so numbers read sequentially down the side.
- * Caller must size vertical margins so the stack fits; gaps are never compressed.
+ * Order annotations so packing on each side follows position (fewer crossed leaders):
+ * top/bottom by X then Y; left/right by Y then X. Sides: top → left → right → bottom.
  */
-function packLabelYs(
+export function orderedAnnotationsForClearLeaders(
+  annotations: Annotation[],
+  sections: Section[],
+  imageWidth: number,
+  imageHeight: number,
+): Annotation[] {
+  const groups: Record<ResolvedCalloutSide, Annotation[]> = {
+    left: [],
+    right: [],
+    top: [],
+    bottom: [],
+  }
+  for (const annotation of annotations) {
+    groups[preferredSide(annotation, sections, imageWidth, imageHeight)].push(annotation)
+  }
+
+  const compareByYX = (left: Annotation, right: Annotation): number => {
+    const leftPoint = referencePointForAnnotation(left, sections)
+    const rightPoint = referencePointForAnnotation(right, sections)
+    const yDelta = leftPoint.y - rightPoint.y
+    if (yDelta !== 0) return yDelta
+    return leftPoint.x - rightPoint.x
+  }
+  const compareByXY = (left: Annotation, right: Annotation): number => {
+    const leftPoint = referencePointForAnnotation(left, sections)
+    const rightPoint = referencePointForAnnotation(right, sections)
+    const xDelta = leftPoint.x - rightPoint.x
+    if (xDelta !== 0) return xDelta
+    return leftPoint.y - rightPoint.y
+  }
+
+  groups.top.sort(compareByXY)
+  groups.left.sort(compareByYX)
+  groups.right.sort(compareByYX)
+  groups.bottom.sort(compareByXY)
+
+  return [...groups.top, ...groups.left, ...groups.right, ...groups.bottom]
+}
+
+/**
+ * Place items as close as possible to each preferred center, stacked in input
+ * order so numbers read sequentially. Gaps are never compressed.
+ */
+function packAlongAxis(
   preferredCenters: number[],
-  heights: number[],
-  minY: number,
-  maxY: number,
+  extents: number[],
+  minPos: number,
+  maxPos: number,
   gap: number,
 ): number[] {
   const count = preferredCenters.length
   if (count === 0) return []
 
-  const preferredTops = preferredCenters.map((center, itemIndex) => {
-    const height = heights[itemIndex]!
-    return clamp(center - height / 2, minY, Math.max(minY, maxY - height))
+  const preferredStarts = preferredCenters.map((center, itemIndex) => {
+    const extent = extents[itemIndex]!
+    return clamp(center - extent / 2, minPos, Math.max(minPos, maxPos - extent))
   })
 
-  const packed = [...preferredTops]
+  const packed = [...preferredStarts]
   for (let itemIndex = 1; itemIndex < count; itemIndex += 1) {
-    const minTop = packed[itemIndex - 1]! + heights[itemIndex - 1]! + gap
-    packed[itemIndex] = Math.max(packed[itemIndex]!, minTop)
+    const minStart = packed[itemIndex - 1]! + extents[itemIndex - 1]! + gap
+    packed[itemIndex] = Math.max(packed[itemIndex]!, minStart)
   }
 
-  const stackBottom = packed[count - 1]! + heights[count - 1]!
-  if (stackBottom > maxY) {
-    const shift = stackBottom - maxY
+  const stackEnd = packed[count - 1]! + extents[count - 1]!
+  if (stackEnd > maxPos) {
+    const shift = stackEnd - maxPos
     for (let itemIndex = 0; itemIndex < count; itemIndex += 1) {
       packed[itemIndex] = packed[itemIndex]! - shift
     }
   }
 
-  // If still above the band (undersized document), stack from minY with full gaps.
-  if (packed[0]! < minY) {
-    let cursorY = minY
+  if (packed[0]! < minPos) {
+    let cursor = minPos
     for (let itemIndex = 0; itemIndex < count; itemIndex += 1) {
-      packed[itemIndex] = cursorY
-      cursorY += heights[itemIndex]! + gap
+      packed[itemIndex] = cursor
+      cursor += extents[itemIndex]! + gap
     }
   }
 
@@ -257,13 +372,12 @@ function packSide(
   const minY = PAGE_PAD
   const maxY = documentHeight - PAGE_PAD
 
-  // Manual (dragged/edited) labels keep free XY; only auto labels are stacked.
   const autoIndices: number[] = []
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
     if (!items[itemIndex]!.calloutPosition) autoIndices.push(itemIndex)
   }
 
-  const packedAutoTops = packLabelYs(
+  const packedAutoTops = packAlongAxis(
     autoIndices.map((itemIndex) => document.marginTop + anchors[itemIndex]!.y),
     autoIndices.map((itemIndex) => sizes[itemIndex]!.height),
     minY,
@@ -330,19 +444,141 @@ function packSide(
   return layouts
 }
 
+function packBand(
+  items: Annotation[],
+  sizes: Array<{ width: number; height: number; lines: string[] }>,
+  sections: Section[],
+  document: DocumentLayout,
+  side: 'top' | 'bottom',
+  gap: number,
+): CalloutLayoutItem[] {
+  if (items.length === 0) return []
+
+  const anchors = items.map((annotation) =>
+    anchorForAnnotation(
+      annotation,
+      sections,
+      side,
+      document.imageWidth,
+      document.imageHeight,
+    ),
+  )
+
+  const documentWidth =
+    document.marginLeft + document.imageWidth + document.marginRight
+  const minX = PAGE_PAD
+  const maxX = documentWidth - PAGE_PAD
+
+  const autoIndices: number[] = []
+  for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+    if (!items[itemIndex]!.calloutPosition) autoIndices.push(itemIndex)
+  }
+
+  const packedAutoLefts = packAlongAxis(
+    autoIndices.map((itemIndex) => document.marginLeft + anchors[itemIndex]!.x),
+    autoIndices.map((itemIndex) => sizes[itemIndex]!.width),
+    minX,
+    maxX,
+    gap,
+  )
+  const autoLeftByIndex = new Map<number, number>()
+  autoIndices.forEach((itemIndex, autoIndex) => {
+    autoLeftByIndex.set(itemIndex, packedAutoLefts[autoIndex]!)
+  })
+
+  const layouts: CalloutLayoutItem[] = []
+  const imageTop = document.marginTop
+  const imageBottom = document.marginTop + document.imageHeight
+
+  for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+    const annotation = items[itemIndex]!
+    const size = sizes[itemIndex]!
+    const anchor = anchors[itemIndex]!
+
+    const autoLabelY =
+      side === 'top'
+        ? imageTop - size.height - IMAGE_GUTTER
+        : imageBottom + IMAGE_GUTTER
+
+    let labelX = autoLeftByIndex.get(itemIndex) ?? minX
+    let labelY = autoLabelY
+
+    if (annotation.calloutPosition) {
+      const clamped = clampLabelTopLeft(
+        annotation.calloutPosition,
+        size.width,
+        size.height,
+        document,
+      )
+      labelX = clamped.x
+      labelY = clamped.y
+    }
+
+    const labelCenterX = labelX + size.width / 2
+    const elbowY =
+      side === 'top'
+        ? document.marginTop - ELBOW_INSET
+        : document.marginTop + document.imageHeight + ELBOW_INSET
+
+    layouts.push({
+      annotationId: annotation.id,
+      side,
+      labelPosition: { x: labelX, y: labelY },
+      anchorPoint: {
+        x: document.marginLeft + anchor.x,
+        y: document.marginTop + anchor.y,
+      },
+      elbowPoint: {
+        x: labelCenterX,
+        y: elbowY,
+      },
+      labelWidth: size.width,
+      labelHeight: size.height,
+      lines: size.lines,
+    })
+  }
+
+  return layouts
+}
+
 function splitBySide(
   annotations: Annotation[],
   sections: Section[],
   imageWidth: number,
-): { leftItems: Annotation[]; rightItems: Annotation[] } {
-  const leftItems: Annotation[] = []
-  const rightItems: Annotation[] = []
-  for (const annotation of annotations) {
-    const side = preferredSide(annotation, sections, imageWidth)
-    if (side === 'left') leftItems.push(annotation)
-    else rightItems.push(annotation)
+  imageHeight: number,
+): Record<ResolvedCalloutSide, Annotation[]> {
+  const groups: Record<ResolvedCalloutSide, Annotation[]> = {
+    left: [],
+    right: [],
+    top: [],
+    bottom: [],
   }
-  return { leftItems, rightItems }
+  for (const annotation of annotations) {
+    const side = preferredSide(annotation, sections, imageWidth, imageHeight)
+    groups[side].push(annotation)
+  }
+  return groups
+}
+
+function sizesFor(
+  items: Annotation[],
+  fontFamily: string,
+  fontSize: number,
+  fontWeight: number,
+  fontItalic: boolean,
+  numberStyle: NumberStyleId,
+): Array<{ width: number; height: number; lines: string[] }> {
+  return items.map((annotation) =>
+    estimateLabelSize(
+      annotation.description,
+      annotation.order,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      fontItalic,
+      numberStyle,
+    ),
+  )
 }
 
 export function createDefaultDocumentLayout(
@@ -383,28 +619,38 @@ export function layoutCalloutsForImage(
   }
 
   const gap = labelGapFor(fontSize)
-  const { leftItems, rightItems } = splitBySide(callouts, sections, imageWidth)
-  const leftSizes = leftItems.map((annotation) =>
-    estimateLabelSize(
-      annotation.description,
-      annotation.order,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      fontItalic,
-      numberStyle,
-    ),
+  const groups = splitBySide(callouts, sections, imageWidth, imageHeight)
+  const leftSizes = sizesFor(
+    groups.left,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    fontItalic,
+    numberStyle,
   )
-  const rightSizes = rightItems.map((annotation) =>
-    estimateLabelSize(
-      annotation.description,
-      annotation.order,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      fontItalic,
-      numberStyle,
-    ),
+  const rightSizes = sizesFor(
+    groups.right,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    fontItalic,
+    numberStyle,
+  )
+  const topSizes = sizesFor(
+    groups.top,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    fontItalic,
+    numberStyle,
+  )
+  const bottomSizes = sizesFor(
+    groups.bottom,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    fontItalic,
+    numberStyle,
   )
 
   const leftMax = leftSizes.reduce(
@@ -415,32 +661,67 @@ export function layoutCalloutsForImage(
     (maxWidth, size) => Math.max(maxWidth, size.width),
     MIN_LABEL_WIDTH,
   )
-  const maxStack = Math.max(
-    stackHeight(
+  const topMaxHeight = topSizes.reduce(
+    (maxHeight, size) => Math.max(maxHeight, size.height),
+    0,
+  )
+  const bottomMaxHeight = bottomSizes.reduce(
+    (maxHeight, size) => Math.max(maxHeight, size.height),
+    0,
+  )
+
+  const maxSideStack = Math.max(
+    stackExtent(
       leftSizes.map((size) => size.height),
       gap,
     ),
-    stackHeight(
+    stackExtent(
       rightSizes.map((size) => size.height),
       gap,
     ),
   )
-  const { marginTop, marginBottom } = verticalMarginsFor(imageHeight, maxStack)
+  const { marginTop: stackMarginTop, marginBottom: stackMarginBottom } =
+    verticalMarginsFor(imageHeight, maxSideStack)
+  const bandTop =
+    groups.top.length > 0 ? bandMarginFor(topMaxHeight) : MIN_VERTICAL_MARGIN
+  const bandBottom =
+    groups.bottom.length > 0 ? bandMarginFor(bottomMaxHeight) : MIN_VERTICAL_MARGIN
+
+  const baseLeft =
+    groups.left.length > 0 ? sideMarginFor(leftMax) : EMPTY_SIDE_MARGIN
+  const baseRight =
+    groups.right.length > 0 ? sideMarginFor(rightMax) : EMPTY_SIDE_MARGIN
+
+  const maxBandRow = Math.max(
+    stackExtent(
+      topSizes.map((size) => size.width),
+      gap,
+    ),
+    stackExtent(
+      bottomSizes.map((size) => size.width),
+      gap,
+    ),
+  )
+  const minDocWidth = maxBandRow + 2 * PAGE_PAD
+  const baseDocWidth = baseLeft + imageWidth + baseRight
+  const horizontalGrow = Math.max(0, minDocWidth - baseDocWidth)
 
   const document: DocumentLayout = {
     imageWidth,
     imageHeight,
-    marginLeft: leftItems.length > 0 ? sideMarginFor(leftMax) : EMPTY_SIDE_MARGIN,
-    marginRight: rightItems.length > 0 ? sideMarginFor(rightMax) : EMPTY_SIDE_MARGIN,
-    marginTop,
-    marginBottom,
+    marginLeft: baseLeft + Math.ceil(horizontalGrow / 2),
+    marginRight: baseRight + Math.floor(horizontalGrow / 2),
+    marginTop: Math.max(stackMarginTop, bandTop),
+    marginBottom: Math.max(stackMarginBottom, bandBottom),
   }
 
   return {
     document,
     layouts: [
-      ...packSide(leftItems, leftSizes, sections, document, 'left', gap),
-      ...packSide(rightItems, rightSizes, sections, document, 'right', gap),
+      ...packSide(groups.left, leftSizes, sections, document, 'left', gap),
+      ...packSide(groups.right, rightSizes, sections, document, 'right', gap),
+      ...packBand(groups.top, topSizes, sections, document, 'top', gap),
+      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap),
     ],
   }
 }

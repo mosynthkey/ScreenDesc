@@ -12,6 +12,7 @@ import type {
 } from '../types/annotation'
 import { createId } from '../utils/id'
 import { sortByOrder } from '../utils/circledNumbers'
+import { orderedAnnotationsForClearLeaders } from '../utils/calloutLayout'
 import { normalizeRect, rectCenter } from '../utils/geometry'
 import { createManualSection } from '../utils/mlSectionDetection'
 import { downloadBlob, exportScene } from '../utils/export'
@@ -514,6 +515,25 @@ export function useAnnotationStore() {
     })
   }
 
+  /** Reorder by side + X/Y so leaders stay clearer; one undo step for the whole sort. */
+  function sortAnnotationsByXY(): void {
+    if (state.annotations.length < 2) return
+    const ordered = orderedAnnotationsForClearLeaders(
+      state.annotations,
+      state.sections,
+      state.imageWidth,
+      state.imageHeight,
+    )
+    const alreadySorted = ordered.every(
+      (annotation, annotationIndex) => annotation.order === annotationIndex + 1,
+    )
+    if (alreadySorted) return
+    pushEditUndo()
+    ordered.forEach((annotation, annotationIndex) => {
+      annotation.order = annotationIndex + 1
+    })
+  }
+
   function undoEdit(): boolean {
     const snapshot = editUndoStack.value.pop()
     if (!snapshot) return false
@@ -678,6 +698,7 @@ export function useAnnotationStore() {
     nudgeCalloutPositions,
     removeAnnotations,
     reorderAnnotations,
+    sortAnnotationsByXY,
     exportProject,
     copyAnnotatedImageToClipboard,
     saveProjectToFile,

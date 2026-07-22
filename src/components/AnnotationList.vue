@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [id: string, additive: boolean]
   reorder: [orderedIds: string[]]
+  sortByXY: []
   remove: [id: string]
 }>()
 
@@ -78,7 +79,18 @@ function onDrop(event: DragEvent): void {
 
 <template>
   <div class="annotation-list">
-    <h3 class="panel-title">{{ t('annotationList.title') }}</h3>
+    <div class="list-header">
+      <h3 class="panel-title">{{ t('annotationList.title') }}</h3>
+      <button
+        v-if="annotations.length > 1"
+        class="sort-by-xy-btn"
+        type="button"
+        :title="t('annotationList.sortByXYTitle')"
+        @click="emit('sortByXY')"
+      >
+        {{ t('annotationList.sortByXY') }}
+      </button>
+    </div>
     <p v-if="annotations.length === 0" class="hint">
       {{ t('annotationList.emptyHint') }}
     </p>
@@ -144,6 +156,41 @@ function onDrop(event: DragEvent): void {
 </template>
 
 <style scoped>
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.list-header .panel-title {
+  margin-bottom: 0;
+}
+
+.sort-by-xy-btn {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background var(--spring),
+    border-color var(--spring),
+    color var(--spring);
+}
+
+.sort-by-xy-btn:hover {
+  border-color: var(--line-strong);
+  background: #fff;
+  color: var(--ink);
+}
+
 .multi-hint {
   margin: -2px 0 10px;
 }
