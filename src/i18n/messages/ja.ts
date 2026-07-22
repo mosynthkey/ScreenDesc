@@ -9,6 +9,7 @@ export const ja: Record<MessageKey, string> = {
   'about.openAria': 'ScreenDesc について',
   'about.version': 'バージョン {version}',
   'about.appLicense': '{license} ライセンス',
+  'about.copyright': 'Copyright (C) 2026 Masaki Ono / Melissa Audio',
   'about.librariesTitle': '使用ライブラリとライセンス',
   'about.licenseLabel': '{license} ライセンス',
   'about.close': '閉じる',

@@ -7,6 +7,7 @@ export const en = {
   'about.openAria': 'About ScreenDesc',
   'about.version': 'Version {version}',
   'about.appLicense': 'Licensed under {license}',
+  'about.copyright': 'Copyright (C) 2026 Masaki Ono / Melissa Audio',
   'about.librariesTitle': 'Libraries & licenses',
   'about.licenseLabel': '{license} license',
   'about.close': 'Close',

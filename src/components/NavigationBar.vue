@@ -180,6 +180,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
             {{ t('about.appLicense', { license: APP_LICENSE }) }}
           </a>
         </p>
+        <p class="about-copyright">{{ t('about.copyright') }}</p>
 
         <section class="about-libraries" :aria-label="t('about.librariesTitle')">
           <h3 class="about-libraries-title">{{ t('about.librariesTitle') }}</h3>
@@ -364,6 +365,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
 .about-app-license-link:hover {
   color: var(--accent-strong);
   text-decoration: underline;
+}
+
+.about-copyright {
+  margin: 8px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 .about-libraries {
