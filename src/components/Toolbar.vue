@@ -20,7 +20,6 @@ const emit = defineEmits<{
   'update:toolMode': [mode: ToolMode]
   toggleSections: []
   export: []
-  propose: []
   undoCrop: []
   exportProjectFile: []
   openImportProject: []
@@ -258,46 +257,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               stroke="currentColor"
               stroke-width="1.8"
               stroke-dasharray="3 2"
-            />
-          </svg>
-        </button>
-
-        <button
-          class="tool-btn"
-          type="button"
-          :data-tooltip="t('tooltip.rescan')"
-          :aria-label="t('aria.rescan')"
-          :disabled="isDetecting"
-          @click="emit('propose')"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path
-              d="M6.5 8.5A6 6 0 0 1 18 10"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-            <path
-              d="M18 6.5v3.5h-3.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-            <path
-              d="M17.5 15.5A6 6 0 0 1 6 14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-            <path
-              d="M6 17.5V14h3.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
             />
           </svg>
         </button>

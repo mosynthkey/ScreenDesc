@@ -18,7 +18,6 @@ export const en = {
   'tooltip.toolCrop': 'Draw a region to crop the image (X)',
   'tooltip.cropMenu': 'Crop menu',
   'tooltip.toggleSections': 'Show / hide section outlines',
-  'tooltip.rescan': 'Rescan the full screen',
 
   'aria.editToolbar': 'Editing tools',
   'aria.toolSelect': 'Select / move',
@@ -27,7 +26,6 @@ export const en = {
   'aria.toolCrop': 'Crop',
   'aria.cropMenu': 'Open crop menu',
   'aria.toggleSections': 'Section visibility',
-  'aria.rescan': 'Full scan',
 
   'menu.newProject': 'New project',
   'menu.projectStorage': 'Save / load (in browser)',

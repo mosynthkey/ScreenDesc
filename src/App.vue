@@ -27,7 +27,6 @@ const {
   clearCurrentProject,
   cropImage,
   undoCrop,
-  runSectionDetection,
   addSection,
   setToolMode,
   setDefaultFontFamily,
@@ -214,10 +213,10 @@ async function onRemoveSavedProject(id: string): Promise<void> {
   }
 }
 
-async function onPropose(): Promise<void> {
-  await runSectionDetection()
+async function onExport(options: ExportOptions): Promise<void> {
+  await exportProject(options)
+  exportOpen.value = false
 }
-
 
 function onUpdateCalloutPosition(annotationId: string, point: Point): void {
   updateAnnotation(annotationId, { calloutPosition: point })
@@ -225,11 +224,6 @@ function onUpdateCalloutPosition(annotationId: string, point: Point): void {
 
 function onCommitDescription(annotationId: string, description: string): void {
   updateAnnotation(annotationId, { description })
-}
-
-async function onExport(options: ExportOptions): Promise<void> {
-  await exportProject(options)
-  exportOpen.value = false
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -271,7 +265,6 @@ function onKeydown(event: KeyboardEvent): void {
       @update:tool-mode="setToolMode"
       @toggle-sections="toggleShowSections"
       @export="exportOpen = true"
-      @propose="onPropose"
       @undo-crop="onUndoCrop"
       @export-project-file="onExportProjectFile"
       @open-import-project="onOpenImportProject"

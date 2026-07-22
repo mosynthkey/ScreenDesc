@@ -20,7 +20,6 @@ export const ja: Record<MessageKey, string> = {
   'tooltip.toolCrop': '範囲を描いて画像を切り抜く (X)',
   'tooltip.cropMenu': '切り抜きメニュー',
   'tooltip.toggleSections': 'セクション枠の表示 / 非表示',
-  'tooltip.rescan': '画面全体を再スキャン',
 
   'aria.editToolbar': '編集ツール',
   'aria.toolSelect': '選択・移動',
@@ -29,7 +28,6 @@ export const ja: Record<MessageKey, string> = {
   'aria.toolCrop': '切り抜き',
   'aria.cropMenu': '切り抜きメニューを開く',
   'aria.toggleSections': 'セクション表示',
-  'aria.rescan': '全体スキャン',
 
   'menu.newProject': '新規作成',
   'menu.projectStorage': '保存 / 読み込み(ブラウザ内)',
