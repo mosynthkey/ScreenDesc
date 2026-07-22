@@ -30,7 +30,7 @@ npm run dev
 
 ## GitHub Pages デプロイ
 
-`main` への push で Actions がビルド・公開します（`.github/workflows/deploy-pages.yml`）。
+`v*` タグ（例: `v0.1.0`）を push したとき、または workflow を手動実行したときに Actions がビルド・公開します（`.github/workflows/deploy-pages.yml`）。
 
 1. GitHub にリポジトリを作成して push
 2. モデルを Release に置く（一度だけでよい）:

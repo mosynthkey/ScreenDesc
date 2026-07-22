@@ -20,12 +20,14 @@ const props = withDefaults(
     /** When false, hide the floating edit dock (e.g. gallery while a project remains open). */
     showToolDock?: boolean
     modelStatus: ModelStatus
+    modelDownloadProgress?: number
     canUndoCrop: boolean
   }>(),
   {
     projectTitle: null,
     copyJustSucceeded: false,
     showToolDock: true,
+    modelDownloadProgress: 0,
   },
 )
 
@@ -233,7 +235,11 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
     <div v-else class="header-actions">
       <span v-if="modelStatus !== 'ready'" class="status-chip">
-        {{ modelStatus === 'error' ? t('status.modelLoadFailed') : t('status.modelLoading') }}
+        <template v-if="modelStatus === 'error'">{{ t('status.modelLoadFailed') }}</template>
+        <template v-else-if="modelStatus === 'downloading'">
+          {{ t('status.modelDownloading', { percent: Math.round(modelDownloadProgress * 100) }) }}
+        </template>
+        <template v-else>{{ t('status.modelPreparing') }}</template>
       </span>
       <span v-if="isDetecting" class="status-chip">{{ t('status.proposing') }}</span>
 

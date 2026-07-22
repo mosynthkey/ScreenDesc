@@ -16,10 +16,14 @@ export const ja: Record<MessageKey, string> = {
   'nav.aria': 'メインナビゲーション',
   'nav.gallery': 'ギャラリー',
   'nav.edit': '編集',
-  'nav.editDisabledHint': '先にプロジェクトを開くか作成してください',
+  'nav.editDisabledHint': 'モデル準備後に、プロジェクトを開くか作成してください',
 
   'status.modelLoadFailed': 'モデル読み込み失敗',
   'status.modelLoading': 'モデル読み込み中…',
+  'status.modelDownloading': 'モデルをダウンロード中… {percent}%',
+  'status.modelPreparing': 'モデルを準備中…',
+  'status.modelEditBlocked': 'モデルの準備が終わるまで編集ページには進めません。',
+  'status.modelRetry': '再試行',
   'status.proposing': '提案中…',
 
   'button.project': 'プロジェクト ▾',

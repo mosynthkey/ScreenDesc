@@ -11,6 +11,7 @@ import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
 import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
+import ModelLoadBanner from './components/ModelLoadBanner.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
 import type { Annotation, ExportOptions, Point, Rect } from './types/annotation'
@@ -27,6 +28,9 @@ const {
   isDetecting,
   isExporting,
   modelStatus,
+  modelDownloadProgress,
+  modelError,
+  loadModel,
   hasImage,
   sortedAnnotations,
   canUndoCrop,
@@ -116,6 +120,8 @@ const effectiveCalloutBorderWidth = computed(() =>
 )
 
 const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
+const modelReady = computed(() => modelStatus.value === 'ready')
+const canOpenEdit = computed(() => hasImage.value && modelReady.value)
 
 function clearAppNotice(): void {
   appNotice.value = null
@@ -143,7 +149,13 @@ function showProjectLoadError(message: string): void {
 }
 
 function goToPage(page: AppPageId): void {
-  if (page === 'edit' && !hasImage.value) return
+  if (page === 'edit') {
+    if (!hasImage.value) return
+    if (!modelReady.value) {
+      showAppNotice(t('status.modelEditBlocked'), 'info')
+      return
+    }
+  }
   clearProjectLoadError()
   appPage.value = page
   if (page === 'gallery') void refreshSavedProjects()
@@ -152,7 +164,7 @@ function goToPage(page: AppPageId): void {
 async function onFile(file: File): Promise<void> {
   clearProjectLoadError()
   await loadImageFile(file)
-  appPage.value = 'edit'
+  if (modelReady.value) appPage.value = 'edit'
 }
 
 async function onWindowPaste(event: ClipboardEvent): Promise<void> {
@@ -185,19 +197,26 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  hasImage,
-  (open, previouslyOpen) => {
+  [hasImage, modelReady],
+  ([open, ready], previous) => {
     if (!open) {
       void refreshSavedProjects()
-      if (previouslyOpen) appPage.value = 'gallery'
+      const wasOpen = Array.isArray(previous) ? previous[0] : previous
+      if (wasOpen) appPage.value = 'gallery'
       return
     }
-    if (previouslyOpen === false || previouslyOpen === undefined) {
-      appPage.value = 'edit'
-    }
+    if (ready) appPage.value = 'edit'
   },
   { immediate: true },
 )
+
+async function onRetryModelLoad(): Promise<void> {
+  try {
+    await loadModel()
+  } catch {
+    showAppNotice(t('status.modelLoadFailed'), 'error')
+  }
+}
 
 async function onNewProject(): Promise<void> {
   if (!hasImage.value) {
@@ -328,7 +347,7 @@ async function onProjectFileChange(event: Event): Promise<void> {
       }
       return
     }
-    appPage.value = 'edit'
+    appPage.value = modelReady.value ? 'edit' : 'gallery'
   } catch (err) {
     showProjectLoadError(err instanceof Error ? err.message : t('error.projectLoadFailed'))
   } finally {
@@ -387,7 +406,7 @@ async function onLoadSavedProject(id: string): Promise<void> {
   try {
     await loadSavedProject(id)
     projectStorageOpen.value = false
-    appPage.value = 'edit'
+    appPage.value = modelReady.value ? 'edit' : 'gallery'
   } catch (err) {
     const message = err instanceof Error ? err.message : t('error.projectLoadFailed')
     showProjectLoadError(message)
@@ -573,11 +592,17 @@ function onKeydown(event: KeyboardEvent): void {
   <div class="app-shell" tabindex="0" @keydown="onKeydown">
     <NavigationBar
       :active="appPage"
-      :edit-available="hasImage"
+      :edit-available="canOpenEdit"
       @navigate="goToPage"
     />
 
     <div class="app-column">
+      <ModelLoadBanner
+        :status="modelStatus"
+        :progress="modelDownloadProgress"
+        :error-message="modelError"
+        @retry="onRetryModelLoad"
+      />
       <Toolbar
         :page="appPage"
         :project-title="activeNamedProject?.name ?? null"
@@ -589,6 +614,7 @@ function onKeydown(event: KeyboardEvent): void {
         :has-image="hasImage"
         :show-tool-dock="showToolDock"
         :model-status="modelStatus"
+        :model-download-progress="modelDownloadProgress"
         :can-undo-crop="canUndoCrop"
         @update:tool-mode="setToolMode"
         @toggle-sections="toggleShowSections"

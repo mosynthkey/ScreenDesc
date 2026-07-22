@@ -9,4 +9,4 @@ export interface Detection {
   height: number
 }
 
-export type ModelStatus = 'idle' | 'loading' | 'ready' | 'error'
+export type ModelStatus = 'idle' | 'downloading' | 'loading' | 'ready' | 'error'

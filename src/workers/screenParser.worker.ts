@@ -22,7 +22,7 @@ self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   const msg = event.data
 
   if (msg.type === 'LOAD_MODEL') {
-    await handleLoadModel(msg.modelUrl)
+    await handleLoadModel(msg.modelData)
     return
   }
 
@@ -31,13 +31,13 @@ self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   }
 })
 
-async function handleLoadModel(modelUrl: string) {
+async function handleLoadModel(modelData: ArrayBuffer) {
   const providerAttempts: Array<'webgpu' | 'wasm'> = 'gpu' in self.navigator ? ['webgpu', 'wasm'] : ['wasm']
 
   let lastError: unknown = null
   for (const provider of providerAttempts) {
     try {
-      const newSession = await ort.InferenceSession.create(modelUrl, {
+      const newSession = await ort.InferenceSession.create(modelData, {
         executionProviders: [provider],
         graphOptimizationLevel: 'all',
       })

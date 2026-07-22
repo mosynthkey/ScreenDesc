@@ -62,6 +62,7 @@ const { t } = useI18n()
   width: 100%;
   margin: 0;
   padding: 12px 14px;
+  border-radius: 12px;
   text-align: left;
   line-height: 1.35;
   white-space: normal;

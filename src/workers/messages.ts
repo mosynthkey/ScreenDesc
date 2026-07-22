@@ -1,7 +1,7 @@
 import type { Detection } from '../types/detection'
 
 export type WorkerRequest =
-  | { type: 'LOAD_MODEL'; modelUrl: string }
+  | { type: 'LOAD_MODEL'; modelData: ArrayBuffer }
   | { type: 'DETECT'; requestId: number; bitmap: ImageBitmap; confThreshold: number; iouThreshold: number }
 
 export interface ModelLoadedMessage {

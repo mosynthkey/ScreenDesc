@@ -9,9 +9,49 @@ export interface DetectOptions {
   iouThreshold?: number
 }
 
+async function fetchModelWithProgress(
+  url: string,
+  onProgress: (ratio: number) => void,
+): Promise<ArrayBuffer> {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Model download failed (${response.status})`)
+  }
+
+  const total = Number(response.headers.get('content-length')) || 0
+  if (!response.body) {
+    const buffer = await response.arrayBuffer()
+    onProgress(1)
+    return buffer
+  }
+
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let received = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+    chunks.push(value)
+    received += value.byteLength
+    if (total > 0) onProgress(Math.min(1, received / total))
+  }
+
+  const merged = new Uint8Array(received)
+  let offset = 0
+  for (const chunk of chunks) {
+    merged.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  onProgress(1)
+  return merged.buffer
+}
+
 export function useScreenParser() {
   const status = ref<ModelStatus>('idle')
   const error = ref<string | null>(null)
+  const downloadProgress = ref(0)
   const executionProvider = ref<string | null>(null)
   const inferenceMs = ref<number | null>(null)
 
@@ -31,6 +71,7 @@ export function useScreenParser() {
       if (msg.type === 'MODEL_LOADED') {
         executionProvider.value = msg.provider
         status.value = 'ready'
+        downloadProgress.value = 1
         for (const { resolve } of modelWaiters) resolve()
         modelWaiters.length = 0
       } else if (msg.type === 'MODEL_ERROR') {
@@ -57,13 +98,33 @@ export function useScreenParser() {
     if (status.value === 'ready') return Promise.resolve()
     if (loadPromise) return loadPromise
 
-    status.value = 'loading'
+    status.value = 'downloading'
     error.value = null
-    loadPromise = new Promise<void>((resolve, reject) => {
-      modelWaiters.push({ resolve, reject })
-    })
-    const req: WorkerRequest = { type: 'LOAD_MODEL', modelUrl: MODEL_URL }
-    ensureWorker().postMessage(req)
+    downloadProgress.value = 0
+
+    loadPromise = (async () => {
+      const waitForWorker = new Promise<void>((resolve, reject) => {
+        modelWaiters.push({ resolve, reject })
+      })
+
+      try {
+        const modelData = await fetchModelWithProgress(MODEL_URL, (ratio) => {
+          downloadProgress.value = ratio
+        })
+        status.value = 'loading'
+        const req: WorkerRequest = { type: 'LOAD_MODEL', modelData }
+        ensureWorker().postMessage(req, [modelData])
+        await waitForWorker
+      } catch (err) {
+        status.value = 'error'
+        error.value = err instanceof Error ? err.message : String(err)
+        loadPromise = null
+        for (const { reject } of modelWaiters) reject(err)
+        modelWaiters.length = 0
+        throw err
+      }
+    })()
+
     return loadPromise
   }
 
@@ -92,6 +153,7 @@ export function useScreenParser() {
     worker?.terminate()
     worker = null
     status.value = 'idle'
+    downloadProgress.value = 0
     pending.clear()
     loadPromise = null
   }
@@ -99,6 +161,7 @@ export function useScreenParser() {
   return {
     status,
     error,
+    downloadProgress,
     executionProvider,
     inferenceMs,
     loadModel,
