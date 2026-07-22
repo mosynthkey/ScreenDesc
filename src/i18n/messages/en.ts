@@ -52,7 +52,7 @@ export const en = {
   'sidebar.workflow.step1': '1. Scan the full image on upload',
   'sidebar.workflow.step2': '2. Optionally draw regions to add sections',
   'sidebar.workflow.step3': '3. Click a section to add an annotation',
-  'sidebar.workflow.step4': '4. Export as PNG / SVG / PDF',
+  'sidebar.workflow.step4': '4. Export as PNG / SVG',
   'sidebar.shortcutsTitle': 'Shortcuts',
   'sidebar.shortcuts.line1': 'F add section · V select · A annotate · X crop',
   'sidebar.shortcuts.line3': 'Pinch → zoom image only',
@@ -74,11 +74,9 @@ export const en = {
   'export.title': 'Export',
   'export.format': 'Format',
   'export.filename': 'Filename',
-  'export.scale': 'Resolution (PNG / PDF)',
+  'export.scale': 'Resolution (PNG)',
   'export.includeSectionGuides': 'Include section outlines',
   'export.includeOriginal': 'Also export the original image (no annotations)',
-  'export.pdfHint':
-    'PDF embeds the annotated page as an image. The exporter interface can later swap to a vector PDF backend.',
   'export.cancel': 'Cancel',
   'export.download': 'Download',
 

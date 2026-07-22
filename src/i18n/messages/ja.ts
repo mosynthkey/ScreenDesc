@@ -54,7 +54,7 @@ export const ja: Record<MessageKey, string> = {
   'sidebar.workflow.step1': '1. アップロード時に全体をスキャン',
   'sidebar.workflow.step2': '2. 必要なら範囲を手描きでセクション追加',
   'sidebar.workflow.step3': '3. セクションをクリックして注釈を追加',
-  'sidebar.workflow.step4': '4. PNG / SVG / PDF で書き出し',
+  'sidebar.workflow.step4': '4. PNG / SVG で書き出し',
   'sidebar.shortcutsTitle': 'ショートカット',
   'sidebar.shortcuts.line1': 'F セクション追加 · V 選択 · A 注釈 · X 切り抜き',
   'sidebar.shortcuts.line3': 'ピンチ → 画像のみ拡大縮小',
@@ -76,11 +76,9 @@ export const ja: Record<MessageKey, string> = {
   'export.title': '書き出し',
   'export.format': '形式',
   'export.filename': 'ファイル名',
-  'export.scale': '解像度（PNG / PDF）',
+  'export.scale': '解像度（PNG）',
   'export.includeSectionGuides': 'セクション枠も含める',
   'export.includeOriginal': '元の画像(注釈なし)も一緒に書き出す',
-  'export.pdfHint':
-    'PDF は注釈済みページを画像として埋め込みます。将来はベクトル PDF バックエンドに差し替え可能な設計です。',
   'export.cancel': 'キャンセル',
   'export.download': 'ダウンロード',
 

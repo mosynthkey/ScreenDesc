@@ -2,12 +2,10 @@ import type { ExportFormat, ExportOptions } from '../../types/annotation'
 import type { ExportScene, Exporter } from './types'
 import { pngExporter } from './pngExporter'
 import { svgExporter } from './svgExporter'
-import { pdfExporter } from './pdfExporter'
 
 const exporters: Record<ExportFormat, Exporter> = {
   png: pngExporter,
   svg: svgExporter,
-  pdf: pdfExporter,
 }
 
 export async function exportScene(

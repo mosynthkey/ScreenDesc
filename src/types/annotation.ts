@@ -101,7 +101,7 @@ export interface ProjectState {
   document: DocumentLayout
 }
 
-export type ExportFormat = 'png' | 'svg' | 'pdf'
+export type ExportFormat = 'png' | 'svg'
 
 export interface ExportOptions {
   format: ExportFormat

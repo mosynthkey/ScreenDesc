@@ -17,7 +17,7 @@ const { t } = useI18n()
 const form = reactive({
   format: 'png' as ExportFormat,
   includeSectionGuides: false,
-  includeOriginal: false,
+  includeOriginal: true,
   scale: 2,
   filename: t('export.defaultFilename'),
 })
@@ -36,14 +36,13 @@ function submit(): void {
         <select v-model="form.format">
           <option value="png">PNG</option>
           <option value="svg">SVG</option>
-          <option value="pdf">PDF</option>
         </select>
       </div>
       <div class="field">
         <label>{{ t('export.filename') }}</label>
         <input v-model="form.filename" type="text" />
       </div>
-      <div class="field">
+      <div v-if="form.format === 'png'" class="field">
         <label>{{ t('export.scale') }}</label>
         <select v-model.number="form.scale">
           <option :value="1">1×</option>
@@ -59,9 +58,6 @@ function submit(): void {
         <input v-model="form.includeOriginal" type="checkbox" />
         {{ t('export.includeOriginal') }}
       </label>
-      <p class="hint" style="margin-top: 10px">
-        {{ t('export.pdfHint') }}
-      </p>
       <div class="modal-actions">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('export.cancel') }}
