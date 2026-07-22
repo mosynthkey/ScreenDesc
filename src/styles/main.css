@@ -28,6 +28,7 @@
   --spring: 400ms cubic-bezier(0.32, 0.72, 0, 1);
   --press: 100ms ease-out;
   --blur: blur(24px) saturate(180%);
+  --nav-rail-width: 72px;
 }
 
 *,
@@ -89,9 +90,18 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: var(--nav-rail-width) minmax(0, 1fr);
   height: 100%;
   min-height: 100vh;
+}
+
+.app-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  position: relative;
 }
 
 .workspace {
@@ -100,6 +110,16 @@ button {
   min-height: 0;
   height: 100%;
   gap: 0;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-main.is-gallery {
+  overflow: auto;
 }
 
 .panel {

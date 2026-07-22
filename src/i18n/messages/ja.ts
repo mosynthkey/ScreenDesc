@@ -5,6 +5,15 @@ export const ja: Record<MessageKey, string> = {
 
   'brand.tagline': '取扱説明書注釈',
 
+  'about.title': 'ScreenDesc について',
+  'about.openAria': 'ScreenDesc について',
+  'about.version': 'バージョン {version}',
+
+  'nav.aria': 'メインナビゲーション',
+  'nav.gallery': 'ギャラリー',
+  'nav.edit': '編集',
+  'nav.editDisabledHint': '先にプロジェクトを開くか作成してください',
+
   'status.modelLoadFailed': 'モデル読み込み失敗',
   'status.modelLoading': 'モデル読み込み中…',
   'status.proposing': '提案中…',
@@ -13,10 +22,18 @@ export const ja: Record<MessageKey, string> = {
   'button.copyClipboard': 'コピー',
   'button.copied': 'コピー済み',
   'button.export': '書き出し',
+  'button.newProject': '新規作成',
+  'button.importProject': 'インポート',
+
+  'header.galleryTitle': 'ギャラリー',
+  'header.untitledProject': '名称未設定のプロジェクト',
+  'header.projectNameAria': 'プロジェクト名',
 
   'tooltip.projectMenu': 'プロジェクトの保存・読み込み',
   'tooltip.copyClipboard': '注釈付き画像をクリップボードにコピーします',
   'tooltip.export': '注釈付き画像を書き出します',
+  'tooltip.newProject': 'スクリーンショットから新規プロジェクトを作成します',
+  'tooltip.importProjectFile': 'ScreenDesc プロジェクトファイルを読み込みます',
   'tooltip.toolSelect': '選択・移動 (V)',
   'tooltip.toolAddSection': '範囲を描いてセクションを1件提案 (F)',
   'tooltip.toolAnnotate': 'セクションをクリックして注釈を追加 (A)',
@@ -39,6 +56,7 @@ export const ja: Record<MessageKey, string> = {
   'menu.undoCrop': '切り抜きを元に戻す',
 
   'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
+  'confirm.deleteSavedProject': '「{name}」を削除しますか？この操作は取り消せません。',
 
   'cropConfirm.title': '切り抜いて作り直しますか？',
   'cropConfirm.body':
@@ -69,7 +87,7 @@ export const ja: Record<MessageKey, string> = {
   'sidebar.shortcuts.line1': 'F セクション追加 · V 選択 · A 注釈 · X 切り抜き',
   'sidebar.shortcuts.line3': 'ピンチ → 画像のみ拡大縮小',
   'sidebar.shortcuts.line4': '範囲ドラッグ → セクションを手描き追加',
-  'sidebar.shortcuts.line5': 'Delete → 削除 · Esc → 選択解除',
+  'sidebar.shortcuts.line5': 'Delete → 削除 · Esc → 選択解除 · ⌘Z/Ctrl+Z → 戻す',
 
   'annotationList.title': '注釈一覧',
   'annotationList.emptyHint': 'セクションをクリックして注釈を追加できます。',
@@ -96,12 +114,23 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.title': 'ブラウザ内ストレージに保存 / 読み込み',
   'projectStorage.description':
     'この端末のブラウザ内に複数のプロジェクトを保存・管理できます。他の端末に持ち出す場合は「エクスポート」を使ってください。',
+  'projectStorage.autosaveHint':
+    '編集中の内容は、このブラウザに自動保存されます。',
+  'projectStorage.currentLabel': 'いまのプロジェクト',
+  'projectStorage.currentBadge': '編集中',
+  'projectStorage.currentNamedHint':
+    '名前付きプロジェクトは、編集を続けると自動で上書き保存されます。',
+  'projectStorage.currentUntitledHint':
+    'まだ名前がありません。下の「名前を付けて保存」でギャラリーに残せます。',
   'projectStorage.saveAsLabel': '名前を付けて保存',
+  'projectStorage.saveAsHint':
+    'ギャラリーに別名でコピーを作ります（未設定ならこのプロジェクトに名前を付けます）。',
   'projectStorage.namePlaceholder': 'プロジェクト名',
   'projectStorage.save': '保存',
   'projectStorage.needImageHint': '画像を開いてから保存できます。',
-  'projectStorage.savedListLabel': '保存済みのプロジェクト',
+  'projectStorage.savedListLabel': 'ほかの保存済みプロジェクト',
   'projectStorage.empty': 'まだ保存されたプロジェクトはありません。',
+  'projectStorage.emptyOthers': 'ほかに保存済みのプロジェクトはありません。',
   'projectStorage.open': '開く',
   'projectStorage.overwriteTitle': '現在のプロジェクトでこの保存を上書きします',
   'projectStorage.overwrite': '上書き保存',

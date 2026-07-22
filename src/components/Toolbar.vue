@@ -1,21 +1,33 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { ToolMode } from '../types/annotation'
 import type { ModelStatus } from '../types/detection'
+import type { AppPageId } from './NavigationBar.vue'
 import { useI18n } from '../i18n'
 
 const { t } = useI18n()
 
-defineProps<{
-  toolMode: ToolMode
-  showSections: boolean
-  isDetecting: boolean
-  canExport: boolean
-  copyJustSucceeded?: boolean
-  hasImage: boolean
-  modelStatus: ModelStatus
-  canUndoCrop: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    page: AppPageId
+    projectTitle?: string | null
+    toolMode: ToolMode
+    showSections: boolean
+    isDetecting: boolean
+    canExport: boolean
+    copyJustSucceeded?: boolean
+    hasImage: boolean
+    /** When false, hide the floating edit dock (e.g. gallery while a project remains open). */
+    showToolDock?: boolean
+    modelStatus: ModelStatus
+    canUndoCrop: boolean
+  }>(),
+  {
+    projectTitle: null,
+    copyJustSucceeded: false,
+    showToolDock: true,
+  },
+)
 
 const emit = defineEmits<{
   'update:toolMode': [mode: ToolMode]
@@ -27,10 +39,62 @@ const emit = defineEmits<{
   openImportProject: []
   openProjectStorage: []
   newProject: []
+  renameProject: [name: string]
 }>()
 
 const cropMenuOpen = ref(false)
 const projectMenuOpen = ref(false)
+const titleDraft = ref('')
+const titleInputRef = ref<HTMLInputElement | null>(null)
+
+function syncTitleDraft(): void {
+  titleDraft.value = props.projectTitle?.trim() || ''
+}
+
+watch(
+  () => props.projectTitle,
+  () => {
+    if (document.activeElement === titleInputRef.value) return
+    syncTitleDraft()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.page,
+  (page) => {
+    cropMenuOpen.value = false
+    projectMenuOpen.value = false
+    if (page === 'edit') syncTitleDraft()
+  },
+)
+
+function commitTitle(): void {
+  const next = titleDraft.value.trim()
+  const current = props.projectTitle?.trim() || ''
+  if (!next) {
+    syncTitleDraft()
+    return
+  }
+  if (next === current) {
+    titleDraft.value = next
+    return
+  }
+  emit('renameProject', next)
+}
+
+function onTitleKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    titleInputRef.value?.blur()
+    return
+  }
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    syncTitleDraft()
+    titleInputRef.value?.blur()
+  }
+}
 
 function setTool(mode: ToolMode): void {
   emit('update:toolMode', mode)
@@ -85,14 +149,84 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
 <template>
   <header class="app-header">
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true" />
-      <div class="brand-text">
-        <div class="brand-name">ScreenDesc</div>
-      </div>
+    <div class="header-title">
+      <template v-if="page === 'gallery'">
+        <h1 class="page-title">{{ t('header.galleryTitle') }}</h1>
+      </template>
+      <template v-else>
+        <input
+          ref="titleInputRef"
+          v-model="titleDraft"
+          class="page-title-input"
+          type="text"
+          :aria-label="t('header.projectNameAria')"
+          :placeholder="t('header.untitledProject')"
+          @keydown="onTitleKeydown"
+          @blur="commitTitle"
+        />
+      </template>
     </div>
 
-    <div class="header-actions">
+    <div v-if="page === 'gallery'" class="header-actions">
+      <button
+        class="header-btn"
+        type="button"
+        :data-tooltip="t('tooltip.importProjectFile')"
+        @click="chooseImportProject"
+      >
+        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path
+            d="M12 21V10"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+          <path
+            d="M8 14l4-4 4 4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M5 6h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span>{{ t('button.importProject') }}</span>
+      </button>
+      <button
+        class="header-btn header-btn-primary"
+        type="button"
+        :data-tooltip="t('tooltip.newProject')"
+        @click="chooseNewProject"
+      >
+        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path
+            d="M12 5v14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+          <path
+            d="M5 12h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span>{{ t('button.newProject') }}</span>
+      </button>
+    </div>
+
+    <div v-else class="header-actions">
       <span v-if="modelStatus !== 'ready'" class="status-chip">
         {{ modelStatus === 'error' ? t('status.modelLoadFailed') : t('status.modelLoading') }}
       </span>
@@ -211,7 +345,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   </header>
 
   <!-- Single floating dock: tools + modes + scan (no duplicate second bar) -->
-  <div v-if="hasImage" class="tool-dock" @keydown.stop>
+  <div v-if="showToolDock" class="tool-dock" @keydown.stop>
     <div class="dock-bar material" role="toolbar" :aria-label="t('aria.editToolbar')">
       <div class="dock-group">
         <button
@@ -350,31 +484,63 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   z-index: 5;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.header-title {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
-.brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(145deg, #5ac8fa 0%, #007aff 55%, #5856d6 100%);
-  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.35);
-}
-
-.brand-name {
-  font-size: 0.98rem;
+.page-title {
+  margin: 0;
+  font-size: 1rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-title-input {
+  display: block;
+  width: 100%;
+  max-width: min(420px, 48vw);
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  outline: none;
+  transition:
+    background var(--press),
+    border-color var(--press);
+}
+
+.page-title-input::placeholder {
+  color: var(--ink-muted);
+  font-weight: 650;
+}
+
+.page-title-input:hover {
+  background: rgba(120, 120, 128, 0.08);
+}
+
+.page-title-input:focus {
+  background: var(--bg-elevated);
+  border-color: rgba(0, 122, 255, 0.35);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.14);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
 }
 
 .header-btn {
@@ -413,7 +579,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
 .tool-dock {
   position: fixed;
-  left: 50%;
+  /* Center within the main column (right of the nav rail). */
+  left: calc(var(--nav-rail-width) + (100vw - var(--nav-rail-width)) / 2);
   bottom: 24px;
   transform: translateX(-50%);
   z-index: 40;

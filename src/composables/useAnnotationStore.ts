@@ -67,6 +67,7 @@ import {
   listSavedProjects,
   loadNamedProject,
   loadProject,
+  renameNamedProject,
   saveNamedProject,
   saveProject,
   type ProjectSnapshot,
@@ -184,6 +185,59 @@ function refreshDocumentAndLayouts(): void {
   )
   state.document = document
   state.calloutLayouts = layouts
+}
+
+interface EditSnapshot {
+  sections: Section[]
+  annotations: Annotation[]
+}
+
+const MAX_EDIT_UNDO = 40
+const editUndoStack = ref<EditSnapshot[]>([])
+let editUndoCoalesceKey: string | null = null
+let editUndoCoalesceUntil = 0
+
+function cloneEditSnapshot(): EditSnapshot {
+  return {
+    sections: JSON.parse(JSON.stringify(state.sections)) as Section[],
+    annotations: JSON.parse(JSON.stringify(state.annotations)) as Annotation[],
+  }
+}
+
+function clearEditUndoStack(): void {
+  editUndoStack.value = []
+  editUndoCoalesceKey = null
+  editUndoCoalesceUntil = 0
+}
+
+/** Snapshot current sections/annotations before a mutating edit. */
+function pushEditUndo(coalesceKey: string | null = null): void {
+  const now = performance.now()
+  if (
+    coalesceKey !== null &&
+    coalesceKey === editUndoCoalesceKey &&
+    now < editUndoCoalesceUntil
+  ) {
+    editUndoCoalesceUntil = now + 700
+    return
+  }
+
+  editUndoStack.value.push(cloneEditSnapshot())
+  if (editUndoStack.value.length > MAX_EDIT_UNDO) {
+    editUndoStack.value.shift()
+  }
+  editUndoCoalesceKey = coalesceKey
+  editUndoCoalesceUntil = coalesceKey ? now + 700 : 0
+}
+
+function restoreEditSnapshot(snapshot: EditSnapshot): void {
+  state.sections = snapshot.sections
+  state.annotations = snapshot.annotations.map(sanitizeAnnotation)
+  state.selectedSectionIds = []
+  state.selectedAnnotationIds = []
+  refreshDocumentAndLayouts()
+  namedSaveDirty = true
+  scheduleSave()
 }
 
 function loadImageElement(url: string): Promise<HTMLImageElement> {
@@ -320,6 +374,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   ocrLines.value = fields.ocrLines
+  clearEditUndoStack()
   await ensureGoogleFontsLoaded([state.defaultFontFamily])
   refreshDocumentAndLayouts()
 }
@@ -516,6 +571,7 @@ export function useAnnotationStore() {
     }
     activeNamedProject.value = null
     clearNamedSaveSchedule()
+    clearEditUndoStack()
     await applyImageSource(file)
   }
 
@@ -526,6 +582,7 @@ export function useAnnotationStore() {
     }
     clearNamedSaveSchedule()
     activeNamedProject.value = null
+    clearEditUndoStack()
     if (cropHistory.value) {
       URL.revokeObjectURL(cropHistory.value.imageUrl)
       cropHistory.value = null
@@ -590,6 +647,7 @@ export function useAnnotationStore() {
       ocrLines: ocrLines.value,
     }
 
+    clearEditUndoStack()
     await applyImageSource(blob, { revokePrevious: false })
   }
 
@@ -608,6 +666,7 @@ export function useAnnotationStore() {
     state.selectedAnnotationIds = []
     ocrLines.value = snapshot.ocrLines
     cropHistory.value = null
+    clearEditUndoStack()
 
     refreshDocumentAndLayouts()
   }
@@ -720,6 +779,7 @@ export function useAnnotationStore() {
     if (normalized.width < 8 || normalized.height < 8) {
       throw new Error('Section too small')
     }
+    pushEditUndo()
     const section = createManualSection(normalized)
     state.sections.push(section)
     state.selectedSectionIds = [section.id]
@@ -729,10 +789,13 @@ export function useAnnotationStore() {
   function updateSectionRect(sectionId: string, rect: Rect): void {
     const section = state.sections.find((item) => item.id === sectionId)
     if (!section) return
+    pushEditUndo(`section-rect:${sectionId}`)
     section.rect = normalizeRect(rect)
   }
 
   function removeSections(sectionIds: string[]): void {
+    if (sectionIds.length === 0) return
+    pushEditUndo()
     const idSet = new Set(sectionIds)
     state.sections = state.sections.filter((section) => !idSet.has(section.id))
     for (const annotation of state.annotations) {
@@ -744,6 +807,7 @@ export function useAnnotationStore() {
   }
 
   function createAnnotationForSection(section: Section): Annotation {
+    pushEditUndo()
     const center = rectCenter(section.rect)
     const annotation: Annotation = {
       id: createId('ann'),
@@ -763,6 +827,7 @@ export function useAnnotationStore() {
   }
 
   function addAnnotationAtPoint(point: Point, sectionId: string | null = null): Annotation {
+    pushEditUndo()
     const annotation: Annotation = {
       id: createId('ann'),
       sectionId,
@@ -877,6 +942,14 @@ export function useAnnotationStore() {
   ): void {
     const annotation = state.annotations.find((item) => item.id === annotationId)
     if (!annotation) return
+    const coalesceKey = patch.calloutPosition
+      ? `callout-pos:${annotationId}`
+      : patch.anchorOffset
+        ? `anchor-offset:${annotationId}`
+        : patch.description !== undefined
+          ? `description:${annotationId}`
+          : null
+    pushEditUndo(coalesceKey)
     if (patch.anchorOffset) {
       annotation.anchorOffset = sanitizeAnchorOffset(patch.anchorOffset)
       const { anchorOffset: _ignored, ...rest } = patch
@@ -887,6 +960,8 @@ export function useAnnotationStore() {
   }
 
   function removeAnnotations(annotationIds: string[]): void {
+    if (annotationIds.length === 0) return
+    pushEditUndo()
     const idSet = new Set(annotationIds)
     state.annotations = state.annotations.filter((annotation) => !idSet.has(annotation.id))
     state.selectedAnnotationIds = state.selectedAnnotationIds.filter((id) => !idSet.has(id))
@@ -894,11 +969,23 @@ export function useAnnotationStore() {
   }
 
   function reorderAnnotations(orderedIds: string[]): void {
+    pushEditUndo()
     orderedIds.forEach((annotationId, annotationIndex) => {
       const annotation = state.annotations.find((item) => item.id === annotationId)
       if (annotation) annotation.order = annotationIndex + 1
     })
   }
+
+  function undoEdit(): boolean {
+    const snapshot = editUndoStack.value.pop()
+    if (!snapshot) return false
+    editUndoCoalesceKey = null
+    editUndoCoalesceUntil = 0
+    restoreEditSnapshot(snapshot)
+    return true
+  }
+
+  const canUndoEdit = computed(() => editUndoStack.value.length > 0)
 
   async function renderExportBlob(options: ExportOptions): Promise<Blob | null> {
     if (!imageElement.value) return null
@@ -999,6 +1086,23 @@ export function useAnnotationStore() {
     return projectId
   }
 
+  async function setProjectName(rawName: string): Promise<void> {
+    const name = rawName.trim()
+    if (!name) return
+
+    const active = activeNamedProject.value
+    if (active) {
+      if (active.name === name) return
+      const renamed = await renameNamedProject(active.id, name)
+      if (!renamed) return
+      activeNamedProject.value = { id: active.id, name }
+      await persistCurrentProject()
+      return
+    }
+
+    await saveProjectAs(name)
+  }
+
   async function fetchSavedProjects(): Promise<SavedProjectMeta[]> {
     return listSavedProjects()
   }
@@ -1015,6 +1119,7 @@ export function useAnnotationStore() {
     clearNamedSaveSchedule()
     await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
     activeNamedProject.value = { id, name: meta?.name ?? 'Project' }
+    clearEditUndoStack()
     await persistCurrentProject()
   }
 
@@ -1036,6 +1141,7 @@ export function useAnnotationStore() {
     }
     activeNamedProject.value = null
     clearNamedSaveSchedule()
+    clearEditUndoStack()
     await applyRestoredSnapshot(imageBlob, data)
   }
 
@@ -1059,6 +1165,8 @@ export function useAnnotationStore() {
     activeNamedProject: readonly(activeNamedProject),
     sortedAnnotations,
     canUndoCrop,
+    undoEdit,
+    canUndoEdit,
     imageElement: readonly(imageElement),
     loadImageFile,
     clearCurrentProject,
@@ -1103,6 +1211,7 @@ export function useAnnotationStore() {
     saveProjectToFile,
     loadProjectFromFile,
     saveProjectAs,
+    setProjectName,
     fetchSavedProjects,
     loadSavedProject,
     removeSavedProject,

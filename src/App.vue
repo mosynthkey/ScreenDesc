@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Toolbar from './components/Toolbar.vue'
 import UploadZone from './components/UploadZone.vue'
 import AnnotationCanvas from './components/AnnotationCanvas.vue'
@@ -9,6 +9,7 @@ import ExportDialog from './components/ExportDialog.vue'
 import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
+import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
 import type { ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
@@ -27,10 +28,12 @@ const {
   hasImage,
   sortedAnnotations,
   canUndoCrop,
+  activeNamedProject,
   loadImageFile,
   clearCurrentProject,
   cropImage,
   undoCrop,
+  undoEdit,
   addSection,
   setToolMode,
   setDefaultFontFamily,
@@ -62,6 +65,7 @@ const {
   saveProjectToFile,
   loadProjectFromFile,
   saveProjectAs,
+  setProjectName,
   fetchSavedProjects,
   loadSavedProject,
   removeSavedProject,
@@ -86,6 +90,7 @@ const commonSettingsPresets = ref<CommonSettingsPresetMeta[]>([])
 const commonSettingsBusy = ref(false)
 const cropConfirmOpen = ref(false)
 const pendingCropRect = ref<Rect | null>(null)
+const appPage = ref<AppPageId>('gallery')
 
 const selectedAnnotation = computed(() => {
   const selectedId = state.selectedAnnotationIds[0]
@@ -97,23 +102,35 @@ const effectiveCalloutBorderWidth = computed(() =>
   resolveCalloutBorderWidth(state.calloutBorderEnabled, state.lineWidth),
 )
 
-async function onFile(file: File): Promise<void> {
-  await loadImageFile(file)
+const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
+
+function goToPage(page: AppPageId): void {
+  if (page === 'edit' && !hasImage.value) return
+  appPage.value = page
+  if (page === 'gallery') void refreshSavedProjects()
 }
 
-function onWindowPaste(event: ClipboardEvent): void {
-  if (hasImage.value) return
+async function onFile(file: File): Promise<void> {
+  await loadImageFile(file)
+  appPage.value = 'edit'
+}
+
+async function onWindowPaste(event: ClipboardEvent): Promise<void> {
+  if (appPage.value !== 'gallery') return
   const items = event.clipboardData?.items
   if (!items) return
   for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      const file = item.getAsFile()
-      if (file) {
-        event.preventDefault()
-        void onFile(file)
-      }
-      return
+    if (!item.type.startsWith('image/')) continue
+    const file = item.getAsFile()
+    if (!file) return
+    event.preventDefault()
+    if (hasImage.value) {
+      if (!window.confirm(t('confirm.newProject'))) return
+      projectLoadError.value = null
+      await clearCurrentProject()
     }
+    await onFile(file)
+    return
   }
 }
 
@@ -126,18 +143,32 @@ onBeforeUnmount(() => {
   if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer)
 })
 
-watch(hasImage, (open) => {
-  if (!open) void refreshSavedProjects()
-})
+watch(
+  hasImage,
+  (open, previouslyOpen) => {
+    if (!open) {
+      void refreshSavedProjects()
+      if (previouslyOpen) appPage.value = 'gallery'
+      return
+    }
+    if (previouslyOpen === false || previouslyOpen === undefined) {
+      appPage.value = 'edit'
+    }
+  },
+  { immediate: true },
+)
 
 async function onNewProject(): Promise<void> {
   if (!hasImage.value) {
+    appPage.value = 'gallery'
+    await nextTick()
     homeRef.value?.openFilePicker()
     return
   }
   if (!window.confirm(t('confirm.newProject'))) return
   projectLoadError.value = null
   await clearCurrentProject()
+  appPage.value = 'gallery'
   await refreshSavedProjects()
 }
 
@@ -207,6 +238,7 @@ async function onProjectFileChange(event: Event): Promise<void> {
   projectLoadError.value = null
   try {
     await loadProjectFromFile(file)
+    appPage.value = 'edit'
   } catch (err) {
     projectLoadError.value = err instanceof Error ? err.message : t('error.projectLoadFailed')
   }
@@ -249,6 +281,7 @@ async function onLoadSavedProject(id: string): Promise<void> {
   try {
     await loadSavedProject(id)
     projectStorageOpen.value = false
+    appPage.value = 'edit'
   } catch (err) {
     projectLoadError.value = err instanceof Error ? err.message : t('error.projectLoadFailed')
   } finally {
@@ -257,6 +290,9 @@ async function onLoadSavedProject(id: string): Promise<void> {
 }
 
 async function onRemoveSavedProject(id: string): Promise<void> {
+  const target = savedProjects.value.find((item) => item.id === id)
+  const name = target?.name?.trim() || t('header.untitledProject')
+  if (!window.confirm(t('confirm.deleteSavedProject', { name }))) return
   projectStorageBusy.value = true
   try {
     await removeSavedProject(id)
@@ -350,6 +386,14 @@ function onCommitDescription(annotationId: string, description: string): void {
 function onKeydown(event: KeyboardEvent): void {
   const target = event.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return
+  if (appPage.value !== 'edit' || !hasImage.value) return
+
+  if ((event.metaKey || event.ctrlKey) && !event.altKey && (event.key === 'z' || event.key === 'Z')) {
+    if (event.shiftKey) return
+    event.preventDefault()
+    undoEdit()
+    return
+  }
 
   if (event.key === 'Delete' || event.key === 'Backspace') {
     event.preventDefault()
@@ -375,200 +419,210 @@ function onKeydown(event: KeyboardEvent): void {
 
 <template>
   <div class="app-shell" tabindex="0" @keydown="onKeydown">
-    <Toolbar
-      :tool-mode="state.toolMode"
-      :show-sections="state.showSections"
-      :is-detecting="isDetecting"
-      :can-export="hasImage && !isExporting"
-      :copy-just-succeeded="copyJustSucceeded"
-      :has-image="hasImage"
-      :model-status="modelStatus"
-      :can-undo-crop="canUndoCrop"
-      @update:tool-mode="setToolMode"
-      @toggle-sections="toggleShowSections"
-      @copy-clipboard="onCopyClipboard"
-      @export="exportOpen = true"
-      @undo-crop="onUndoCrop"
-      @export-project-file="onExportProjectFile"
-      @open-import-project="onOpenImportProject"
-      @open-project-storage="onOpenProjectStorage"
-      @new-project="onNewProject"
+    <NavigationBar
+      :active="appPage"
+      :edit-available="hasImage"
+      @navigate="goToPage"
     />
 
-    <input
-      ref="projectFileInputRef"
-      type="file"
-      accept=".json,application/json"
-      hidden
-      @change="onProjectFileChange"
-    />
-    <p v-if="projectLoadError" class="project-load-error">{{ projectLoadError }}</p>
+    <div class="app-column">
+      <Toolbar
+        :page="appPage"
+        :project-title="activeNamedProject?.name ?? null"
+        :tool-mode="state.toolMode"
+        :show-sections="state.showSections"
+        :is-detecting="isDetecting"
+        :can-export="hasImage && !isExporting"
+        :copy-just-succeeded="copyJustSucceeded"
+        :has-image="hasImage"
+        :show-tool-dock="showToolDock"
+        :model-status="modelStatus"
+        :can-undo-crop="canUndoCrop"
+        @update:tool-mode="setToolMode"
+        @toggle-sections="toggleShowSections"
+        @copy-clipboard="onCopyClipboard"
+        @export="exportOpen = true"
+        @undo-crop="onUndoCrop"
+        @export-project-file="onExportProjectFile"
+        @open-import-project="onOpenImportProject"
+        @open-project-storage="onOpenProjectStorage"
+        @new-project="onNewProject"
+        @rename-project="setProjectName"
+      />
 
-    <div class="workspace" :class="{ 'is-home': !hasImage }">
-      <template v-if="hasImage">
-        <aside class="panel panel-left">
-          <div class="panel-section panel-section-list">
-            <AnnotationList
-              :annotations="sortedAnnotations"
-              :selected-ids="[...state.selectedAnnotationIds]"
-              @select="selectAnnotation"
-              @reorder="reorderAnnotations"
-              @remove="(id) => removeAnnotations([id])"
-            />
-          </div>
-          <div class="panel-section panel-section-annotation">
-            <StylePanel
-              :show-project="false"
-              :show-annotation="true"
-              :annotation="selectedAnnotation"
-              :default-font-family="state.defaultFontFamily"
-              :line-style="state.lineStyle"
-              :line-width="state.lineWidth"
-              :line-color="state.lineColor"
-              :dot-radius="state.dotRadius"
-              :anchor-style="state.anchorStyle"
-              :line-halo-width="state.lineHaloWidth"
-              :line-halo-color="state.lineHaloColor"
-              :callout-font-size="state.calloutFontSize"
-              :callout-border-enabled="state.calloutBorderEnabled"
-              :callout-fill-enabled="state.calloutFillEnabled"
-              :callout-fill-color="state.calloutFillColor"
-              :callout-fill-opacity="state.calloutFillOpacity"
-              :number-style="state.numberStyle"
-              :image-width="state.imageWidth"
-              :image-height="state.imageHeight"
-              @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
-            />
-          </div>
-        </aside>
+      <input
+        ref="projectFileInputRef"
+        type="file"
+        accept=".json,application/json"
+        hidden
+        @change="onProjectFileChange"
+      />
+      <p v-if="projectLoadError" class="project-load-error">{{ projectLoadError }}</p>
 
-        <AnnotationCanvas
-          :image-url="state.imageUrl!"
-          :document="state.document"
-          :sections="[...state.sections]"
-          :annotations="[...state.annotations]"
-          :callout-layouts="state.calloutLayouts.map((item) => ({ ...item, lines: [...item.lines] }))"
-          :selected-section-ids="[...state.selectedSectionIds]"
-          :selected-annotation-ids="[...state.selectedAnnotationIds]"
-          :tool-mode="state.toolMode"
-          :show-sections="state.showSections"
-          :line-style="state.lineStyle"
-          :line-width="state.lineWidth"
-          :line-color="state.lineColor"
-          :dot-color="state.lineColor"
-          :dot-radius="state.dotRadius"
-          :anchor-style="state.anchorStyle"
-          :line-halo-width="state.lineHaloWidth"
-          :line-halo-color="state.lineHaloColor"
-          :callout-font-size="state.calloutFontSize"
-          :callout-border-width="effectiveCalloutBorderWidth"
-          :callout-fill-enabled="state.calloutFillEnabled"
-          :callout-fill-color="state.calloutFillColor"
-          :callout-fill-opacity="state.calloutFillOpacity"
-          :font-family="state.defaultFontFamily"
-          :is-detecting="isDetecting"
-          :empty-hint="state.sections.length === 0"
-          @clear-selection="clearSelection"
-          @select-section="selectSection"
-          @select-annotation="selectAnnotation"
-          @annotate-section="onAnnotateSection"
-          @add-annotation-at="onAddAnnotationAt"
-          @update-section-rect="updateSectionRect"
-          @update-callout-position="onUpdateCalloutPosition"
-          @add-section="onAddSection"
-          @commit-description="onCommitDescription"
-          @crop-image="onCropImage"
+      <main class="app-main" :class="{ 'is-gallery': appPage === 'gallery' }">
+        <UploadZone
+          v-if="appPage === 'gallery'"
+          ref="homeRef"
+          :projects="savedProjects"
+          :is-busy="projectStorageBusy"
+          @file="onFile"
+          @open="onLoadSavedProject"
+          @remove="onRemoveSavedProject"
         />
 
-        <aside class="panel">
-          <div class="panel-section">
-            <StylePanel
-              :show-project="true"
-              :show-annotation="false"
-              :annotation="null"
-              :default-font-family="state.defaultFontFamily"
-              :line-style="state.lineStyle"
-              :line-width="state.lineWidth"
-              :line-color="state.lineColor"
-              :dot-radius="state.dotRadius"
-              :anchor-style="state.anchorStyle"
-              :line-halo-width="state.lineHaloWidth"
-              :line-halo-color="state.lineHaloColor"
-              :callout-font-size="state.calloutFontSize"
-              :callout-border-enabled="state.calloutBorderEnabled"
-              :callout-fill-enabled="state.calloutFillEnabled"
-              :callout-fill-color="state.calloutFillColor"
-              :callout-fill-opacity="state.calloutFillOpacity"
-              :number-style="state.numberStyle"
-              :image-width="state.imageWidth"
-              :image-height="state.imageHeight"
-              @update:default-font-family="setDefaultFontFamily"
-              @update:line-style="setLineStyle"
-              @update:line-width="setLineWidth"
-              @update:line-color="setLineColor"
-              @update:dot-radius="setDotRadius"
-              @update:anchor-style="setAnchorStyle"
-              @update:line-halo-width="setLineHaloWidth"
-              @update:line-halo-color="setLineHaloColor"
-              @update:callout-font-size="setCalloutFontSize"
-              @update:callout-border-enabled="setCalloutBorderEnabled"
-              @update:callout-fill-enabled="setCalloutFillEnabled"
-              @update:callout-fill-color="setCalloutFillColor"
-              @update:callout-fill-opacity="setCalloutFillOpacity"
-              @update:number-style="setNumberStyle"
-              @open-presets="onOpenCommonSettings"
-            />
-          </div>
-        </aside>
-      </template>
+        <div v-else class="workspace">
+          <aside class="panel panel-left">
+            <div class="panel-section panel-section-list">
+              <AnnotationList
+                :annotations="sortedAnnotations"
+                :selected-ids="[...state.selectedAnnotationIds]"
+                @select="selectAnnotation"
+                @reorder="reorderAnnotations"
+                @remove="(id) => removeAnnotations([id])"
+              />
+            </div>
+            <div class="panel-section panel-section-annotation">
+              <StylePanel
+                :show-project="false"
+                :show-annotation="true"
+                :annotation="selectedAnnotation"
+                :default-font-family="state.defaultFontFamily"
+                :line-style="state.lineStyle"
+                :line-width="state.lineWidth"
+                :line-color="state.lineColor"
+                :dot-radius="state.dotRadius"
+                :anchor-style="state.anchorStyle"
+                :line-halo-width="state.lineHaloWidth"
+                :line-halo-color="state.lineHaloColor"
+                :callout-font-size="state.calloutFontSize"
+                :callout-border-enabled="state.calloutBorderEnabled"
+                :callout-fill-enabled="state.calloutFillEnabled"
+                :callout-fill-color="state.calloutFillColor"
+                :callout-fill-opacity="state.calloutFillOpacity"
+                :number-style="state.numberStyle"
+                :image-width="state.imageWidth"
+                :image-height="state.imageHeight"
+                @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
+              />
+            </div>
+          </aside>
 
-      <UploadZone
-        v-else
-        ref="homeRef"
+          <AnnotationCanvas
+            :image-url="state.imageUrl!"
+            :document="state.document"
+            :sections="[...state.sections]"
+            :annotations="[...state.annotations]"
+            :callout-layouts="state.calloutLayouts.map((item) => ({ ...item, lines: [...item.lines] }))"
+            :selected-section-ids="[...state.selectedSectionIds]"
+            :selected-annotation-ids="[...state.selectedAnnotationIds]"
+            :tool-mode="state.toolMode"
+            :show-sections="state.showSections"
+            :line-style="state.lineStyle"
+            :line-width="state.lineWidth"
+            :line-color="state.lineColor"
+            :dot-color="state.lineColor"
+            :dot-radius="state.dotRadius"
+            :anchor-style="state.anchorStyle"
+            :line-halo-width="state.lineHaloWidth"
+            :line-halo-color="state.lineHaloColor"
+            :callout-font-size="state.calloutFontSize"
+            :callout-border-width="effectiveCalloutBorderWidth"
+            :callout-fill-enabled="state.calloutFillEnabled"
+            :callout-fill-color="state.calloutFillColor"
+            :callout-fill-opacity="state.calloutFillOpacity"
+            :font-family="state.defaultFontFamily"
+            :is-detecting="isDetecting"
+            :empty-hint="state.sections.length === 0"
+            @clear-selection="clearSelection"
+            @select-section="selectSection"
+            @select-annotation="selectAnnotation"
+            @annotate-section="onAnnotateSection"
+            @add-annotation-at="onAddAnnotationAt"
+            @update-section-rect="updateSectionRect"
+            @update-callout-position="onUpdateCalloutPosition"
+            @add-section="onAddSection"
+            @commit-description="onCommitDescription"
+            @crop-image="onCropImage"
+          />
+
+          <aside class="panel">
+            <div class="panel-section">
+              <StylePanel
+                :show-project="true"
+                :show-annotation="false"
+                :annotation="null"
+                :default-font-family="state.defaultFontFamily"
+                :line-style="state.lineStyle"
+                :line-width="state.lineWidth"
+                :line-color="state.lineColor"
+                :dot-radius="state.dotRadius"
+                :anchor-style="state.anchorStyle"
+                :line-halo-width="state.lineHaloWidth"
+                :line-halo-color="state.lineHaloColor"
+                :callout-font-size="state.calloutFontSize"
+                :callout-border-enabled="state.calloutBorderEnabled"
+                :callout-fill-enabled="state.calloutFillEnabled"
+                :callout-fill-color="state.calloutFillColor"
+                :callout-fill-opacity="state.calloutFillOpacity"
+                :number-style="state.numberStyle"
+                :image-width="state.imageWidth"
+                :image-height="state.imageHeight"
+                @update:default-font-family="setDefaultFontFamily"
+                @update:line-style="setLineStyle"
+                @update:line-width="setLineWidth"
+                @update:line-color="setLineColor"
+                @update:dot-radius="setDotRadius"
+                @update:anchor-style="setAnchorStyle"
+                @update:line-halo-width="setLineHaloWidth"
+                @update:line-halo-color="setLineHaloColor"
+                @update:callout-font-size="setCalloutFontSize"
+                @update:callout-border-enabled="setCalloutBorderEnabled"
+                @update:callout-fill-enabled="setCalloutFillEnabled"
+                @update:callout-fill-color="setCalloutFillColor"
+                @update:callout-fill-opacity="setCalloutFillOpacity"
+                @update:number-style="setNumberStyle"
+                @open-presets="onOpenCommonSettings"
+              />
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <ExportDialog :open="exportOpen" @close="exportOpen = false" @export="onExport" />
+      <ProjectStorageDialog
+        :open="projectStorageOpen"
+        :has-image="hasImage"
         :projects="savedProjects"
         :is-busy="projectStorageBusy"
-        @file="onFile"
-        @open="onLoadSavedProject"
+        :active-project-id="activeNamedProject?.id ?? null"
+        :active-project-name="activeNamedProject?.name ?? null"
+        @close="projectStorageOpen = false"
+        @save="onSaveNamedProject"
+        @overwrite="onOverwriteSavedProject"
+        @load="onLoadSavedProject"
         @remove="onRemoveSavedProject"
       />
+      <CommonSettingsDialog
+        :open="commonSettingsOpen"
+        :presets="commonSettingsPresets"
+        :is-busy="commonSettingsBusy"
+        @close="commonSettingsOpen = false"
+        @save="onSaveCommonSettings"
+        @overwrite="onOverwriteCommonSettings"
+        @apply="onApplyCommonSettings"
+        @remove="onRemoveCommonSettings"
+      />
+      <CropConfirmDialog
+        :open="cropConfirmOpen"
+        @close="closeCropConfirm"
+        @as-new-project="confirmCropAsNewProject"
+        @overwrite="confirmCropOverwrite"
+      />
     </div>
-
-    <ExportDialog :open="exportOpen" @close="exportOpen = false" @export="onExport" />
-    <ProjectStorageDialog
-      :open="projectStorageOpen"
-      :has-image="hasImage"
-      :projects="savedProjects"
-      :is-busy="projectStorageBusy"
-      @close="projectStorageOpen = false"
-      @save="onSaveNamedProject"
-      @overwrite="onOverwriteSavedProject"
-      @load="onLoadSavedProject"
-      @remove="onRemoveSavedProject"
-    />
-    <CommonSettingsDialog
-      :open="commonSettingsOpen"
-      :presets="commonSettingsPresets"
-      :is-busy="commonSettingsBusy"
-      @close="commonSettingsOpen = false"
-      @save="onSaveCommonSettings"
-      @overwrite="onOverwriteCommonSettings"
-      @apply="onApplyCommonSettings"
-      @remove="onRemoveCommonSettings"
-    />
-    <CropConfirmDialog
-      :open="cropConfirmOpen"
-      @close="closeCropConfirm"
-      @as-new-project="confirmCropAsNewProject"
-      @overwrite="confirmCropOverwrite"
-    />
   </div>
 </template>
 
 <style scoped>
-.workspace.is-home {
-  grid-template-columns: 1fr;
-}
-
 .panel-left {
   display: flex;
   flex-direction: column;

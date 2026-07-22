@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { SavedProjectMeta } from '../utils/projectStorage'
 import { locale, useI18n } from '../i18n'
 
@@ -8,6 +8,8 @@ const props = defineProps<{
   hasImage: boolean
   projects: SavedProjectMeta[]
   isBusy: boolean
+  activeProjectId?: string | null
+  activeProjectName?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -21,10 +23,24 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const nameInput = ref('')
 
+const currentDisplayName = computed(() => {
+  const named = props.activeProjectName?.trim()
+  if (named) return named
+  return t('header.untitledProject')
+})
+
+const otherProjects = computed(() => {
+  const activeId = props.activeProjectId
+  if (!activeId) return props.projects
+  return props.projects.filter((project) => project.id !== activeId)
+})
+
 watch(
   () => props.open,
   (open) => {
-    if (open) nameInput.value = defaultName()
+    if (!open) return
+    const current = props.activeProjectName?.trim()
+    nameInput.value = current || defaultName()
   },
 )
 
@@ -64,33 +80,37 @@ function submitSave(): void {
     <div class="modal">
       <h2>{{ t('projectStorage.title') }}</h2>
       <p class="hint">{{ t('projectStorage.description') }}</p>
+      <p class="autosave-hint">{{ t('projectStorage.autosaveHint') }}</p>
 
       <div class="field">
-        <label>{{ t('projectStorage.saveAsLabel') }}</label>
-        <div class="save-row">
-          <input
-            v-model="nameInput"
-            type="text"
-            :placeholder="t('projectStorage.namePlaceholder')"
-            :disabled="!hasImage"
-          />
-          <button
-            class="btn btn-primary"
-            type="button"
-            :disabled="!hasImage || !nameInput.trim() || isBusy"
-            @click="submitSave"
-          >
-            {{ t('projectStorage.save') }}
-          </button>
+        <label>{{ t('projectStorage.currentLabel') }}</label>
+        <div v-if="hasImage" class="current-card">
+          <div class="current-meta">
+            <strong>{{ currentDisplayName }}</strong>
+            <span class="current-badge">{{ t('projectStorage.currentBadge') }}</span>
+          </div>
+          <p class="hint current-hint">
+            {{
+              activeProjectId
+                ? t('projectStorage.currentNamedHint')
+                : t('projectStorage.currentUntitledHint')
+            }}
+          </p>
         </div>
-        <p v-if="!hasImage" class="hint">{{ t('projectStorage.needImageHint') }}</p>
+        <p v-else class="hint">{{ t('projectStorage.needImageHint') }}</p>
       </div>
 
       <div class="field">
         <label>{{ t('projectStorage.savedListLabel') }}</label>
-        <p v-if="projects.length === 0" class="hint">{{ t('projectStorage.empty') }}</p>
+        <p v-if="otherProjects.length === 0" class="hint">
+          {{
+            projects.length > 0 && activeProjectId
+              ? t('projectStorage.emptyOthers')
+              : t('projectStorage.empty')
+          }}
+        </p>
         <ul v-else class="saved-list">
-          <li v-for="project in projects" :key="project.id" class="saved-item">
+          <li v-for="project in otherProjects" :key="project.id" class="saved-item">
             <div class="saved-meta">
               <strong>{{ project.name }}</strong>
               <span>{{ formatDate(project.updatedAt) }}</span>
@@ -116,6 +136,27 @@ function submitSave(): void {
         </ul>
       </div>
 
+      <div class="field save-as-field">
+        <label>{{ t('projectStorage.saveAsLabel') }}</label>
+        <p class="hint">{{ t('projectStorage.saveAsHint') }}</p>
+        <div class="save-row">
+          <input
+            v-model="nameInput"
+            type="text"
+            :placeholder="t('projectStorage.namePlaceholder')"
+            :disabled="!hasImage"
+          />
+          <button
+            class="btn btn-primary"
+            type="button"
+            :disabled="!hasImage || !nameInput.trim() || isBusy"
+            @click="submitSave"
+          >
+            {{ t('projectStorage.save') }}
+          </button>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('projectStorage.close') }}
@@ -126,6 +167,58 @@ function submitSave(): void {
 </template>
 
 <style scoped>
+.autosave-hint {
+  margin: -4px 0 14px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--ink-secondary);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.current-card {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 122, 255, 0.28);
+  background: rgba(0, 122, 255, 0.06);
+}
+
+.current-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.current-meta strong {
+  min-width: 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-badge {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 980px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.current-hint {
+  margin: 6px 0 0;
+}
+
+.save-as-field {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
 .save-row {
   display: flex;
   gap: 8px;
@@ -139,7 +232,7 @@ function submitSave(): void {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 260px;
+  max-height: 220px;
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 10px;

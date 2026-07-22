@@ -167,6 +167,33 @@ export async function loadNamedProjectImageBlob(id: string): Promise<Blob | null
   return snapshot?.imageBlob ?? null
 }
 
+export async function renameNamedProject(id: string, name: string): Promise<boolean> {
+  const trimmed = name.trim()
+  if (!trimmed) return false
+
+  const db = await openDb()
+  const updated = await new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction(SAVED_META_STORE, 'readwrite')
+    const store = tx.objectStore(SAVED_META_STORE)
+    const request = store.get(id)
+    let found = false
+    request.onsuccess = () => {
+      const existing = request.result as SavedProjectMeta | undefined
+      if (!existing) return
+      found = true
+      store.put({
+        ...existing,
+        name: trimmed,
+        updatedAt: Date.now(),
+      })
+    }
+    tx.oncomplete = () => resolve(found)
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+  return updated
+}
+
 export async function deleteNamedProject(id: string): Promise<void> {
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {

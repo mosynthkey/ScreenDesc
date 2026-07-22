@@ -93,12 +93,6 @@ defineExpose({ openFilePicker })
 
 <template>
   <div class="home">
-    <section class="home-intro">
-      <div class="hero-mark" aria-hidden="true" />
-      <h1>{{ t('home.title') }}</h1>
-      <p>{{ t('home.description') }}</p>
-    </section>
-
     <section
       class="new-card"
       :class="{ 'is-active': isDragging }"
@@ -173,42 +167,10 @@ defineExpose({ openFilePicker })
 .home {
   height: 100%;
   overflow: auto;
-  padding: 36px 40px 48px;
+  padding: 28px 40px 48px;
   background:
     radial-gradient(900px 480px at 50% 0%, rgba(0, 122, 255, 0.08), transparent 60%),
     var(--bg);
-}
-
-.home-intro {
-  max-width: 920px;
-  margin: 0 auto 28px;
-  text-align: center;
-}
-
-.hero-mark {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 16px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #5ac8fa 0%, #007aff 55%, #5856d6 100%);
-  box-shadow:
-    0 10px 28px rgba(0, 122, 255, 0.28),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.4);
-}
-
-.home-intro h1 {
-  margin: 0 0 8px;
-  font-size: clamp(1.5rem, 3.2vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-}
-
-.home-intro p {
-  margin: 0;
-  color: var(--ink-secondary);
-  line-height: 1.6;
-  font-size: 0.95rem;
 }
 
 .new-card {

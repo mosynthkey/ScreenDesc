@@ -3,6 +3,15 @@ export const en = {
 
   'brand.tagline': 'Manual annotation',
 
+  'about.title': 'About ScreenDesc',
+  'about.openAria': 'About ScreenDesc',
+  'about.version': 'Version {version}',
+
+  'nav.aria': 'Main navigation',
+  'nav.gallery': 'Gallery',
+  'nav.edit': 'Edit',
+  'nav.editDisabledHint': 'Open or create a project first',
+
   'status.modelLoadFailed': 'Model failed to load',
   'status.modelLoading': 'Loading model…',
   'status.proposing': 'Proposing…',
@@ -11,10 +20,18 @@ export const en = {
   'button.copyClipboard': 'Copy',
   'button.copied': 'Copied',
   'button.export': 'Export',
+  'button.newProject': 'New project',
+  'button.importProject': 'Import',
+
+  'header.galleryTitle': 'Gallery',
+  'header.untitledProject': 'Untitled project',
+  'header.projectNameAria': 'Project name',
 
   'tooltip.projectMenu': 'Save or load project',
   'tooltip.copyClipboard': 'Copy the annotated image to the clipboard',
   'tooltip.export': 'Export the annotated image',
+  'tooltip.newProject': 'Create a new project from a screenshot',
+  'tooltip.importProjectFile': 'Import a ScreenDesc project file',
   'tooltip.toolSelect': 'Select / move (V)',
   'tooltip.toolAddSection': 'Draw a region to propose one section (F)',
   'tooltip.toolAnnotate': 'Click a section to add an annotation (A)',
@@ -37,6 +54,7 @@ export const en = {
   'menu.undoCrop': 'Undo crop',
 
   'confirm.newProject': 'Discard the current project and start a new one?',
+  'confirm.deleteSavedProject': 'Delete “{name}”? This cannot be undone.',
 
   'cropConfirm.title': 'Crop and start fresh?',
   'cropConfirm.body':
@@ -67,7 +85,7 @@ export const en = {
   'sidebar.shortcuts.line1': 'F add section · V select · A annotate · X crop',
   'sidebar.shortcuts.line3': 'Pinch → zoom image only',
   'sidebar.shortcuts.line4': 'Drag a region → add a hand-drawn section',
-  'sidebar.shortcuts.line5': 'Delete → remove · Esc → clear selection',
+  'sidebar.shortcuts.line5': 'Delete → remove · Esc → clear selection · ⌘Z/Ctrl+Z → undo',
 
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Click a section to add an annotation.',
@@ -94,12 +112,22 @@ export const en = {
   'projectStorage.title': 'Save / load in browser storage',
   'projectStorage.description':
     'Save and manage multiple projects in this browser. To move work to another device, use Export.',
+  'projectStorage.autosaveHint':
+    'Your current work is auto-saved in this browser as you edit.',
+  'projectStorage.currentLabel': 'Current project',
+  'projectStorage.currentBadge': 'Editing',
+  'projectStorage.currentNamedHint':
+    'This named project receives automatic overwrites while you keep editing.',
+  'projectStorage.currentUntitledHint':
+    'Still untitled — use Save as below to keep a named copy in the gallery.',
   'projectStorage.saveAsLabel': 'Save as',
+  'projectStorage.saveAsHint': 'Creates another named copy in the gallery (or names this project if untitled).',
   'projectStorage.namePlaceholder': 'Project name',
   'projectStorage.save': 'Save',
   'projectStorage.needImageHint': 'Open an image before saving.',
-  'projectStorage.savedListLabel': 'Saved projects',
+  'projectStorage.savedListLabel': 'Other saved projects',
   'projectStorage.empty': 'No saved projects yet.',
+  'projectStorage.emptyOthers': 'No other saved projects.',
   'projectStorage.open': 'Open',
   'projectStorage.overwriteTitle': 'Overwrite this save with the current project',
   'projectStorage.overwrite': 'Overwrite',
