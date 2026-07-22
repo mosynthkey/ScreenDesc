@@ -21,6 +21,9 @@ import {
   CALLOUT_BORDER_WIDTH_MIN,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
+  DOT_OFFSET_MAX,
+  DOT_OFFSET_MIN,
+  DOT_OFFSET_STEP,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   DOT_RADIUS_STEP,
@@ -35,6 +38,7 @@ const props = withDefaults(
     lineWidth: number
     lineColor: string
     dotRadius: number
+    dotOffset: number
     lineHaloWidth: number
     lineHaloColor: string
     calloutFontSize: number
@@ -55,6 +59,7 @@ const emit = defineEmits<{
   'update:lineWidth': [width: number]
   'update:lineColor': [color: string]
   'update:dotRadius': [radius: number]
+  'update:dotOffset': [offset: number]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
   'update:calloutFontSize': [size: number]
@@ -159,6 +164,21 @@ watch(
           :step="DOT_RADIUS_STEP"
           :value="dotRadius"
           @input="emit('update:dotRadius', Number(($event.target as HTMLInputElement).value))"
+        />
+      </div>
+      <div class="field">
+        <label class="slider-label">
+          <span>{{ t('style.dotOffset') }}</span>
+          <span class="slider-value">{{ dotOffset }}px</span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="DOT_OFFSET_MIN"
+          :max="DOT_OFFSET_MAX"
+          :step="DOT_OFFSET_STEP"
+          :value="dotOffset"
+          @input="emit('update:dotOffset', Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div v-if="lineStyle !== 'invert'" class="field">

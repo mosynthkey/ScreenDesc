@@ -109,6 +109,7 @@ export const ja: Record<MessageKey, string> = {
   'style.lineAndDotColor': '引き出し線・アンカーの色',
   'style.lineColor': '線',
   'style.dotRadius': 'アンカーの大きさ',
+  'style.dotOffset': 'アンカーのオフセット',
   'style.lineHalo': '縁取り',
   'style.lineHalo.off': 'なし',
   'style.lineHaloColor': '縁取りの色',

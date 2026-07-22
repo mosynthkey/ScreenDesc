@@ -32,6 +32,9 @@ import {
   CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
+  DEFAULT_DOT_OFFSET,
+  DOT_OFFSET_MAX,
+  DOT_OFFSET_MIN,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
 } from '../utils/markerSize'
@@ -72,6 +75,7 @@ const state = reactive<ProjectState>({
   lineColor: '#ffd60a',
   dotColor: '#ffd60a',
   dotRadius: 4.5,
+  dotOffset: DEFAULT_DOT_OFFSET,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
   calloutFontSize: CALLOUT_FONT_SIZE,
@@ -143,6 +147,7 @@ function refreshDocumentAndLayouts(): void {
     state.calloutFontSize,
     state.defaultFontFamily,
     state.numberStyle,
+    state.dotOffset,
   )
   state.document = document
   state.calloutLayouts = layouts
@@ -210,6 +215,7 @@ watch(
       state.imageHeight,
       state.calloutFontSize,
       state.numberStyle,
+      state.dotOffset,
     ] as const,
   () => {
     refreshDocumentAndLayouts()
@@ -228,6 +234,7 @@ interface RestorableFields {
   lineColor: string
   dotColor: string
   dotRadius: number
+  dotOffset?: number
   lineHaloWidth?: number
   lineHaloColor?: string
   /** @deprecated Prefer `lineHaloWidth`. */
@@ -259,6 +266,10 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.lineColor = fields.lineColor
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
+  state.dotOffset = Math.min(
+    DOT_OFFSET_MAX,
+    Math.max(DOT_OFFSET_MIN, fields.dotOffset ?? DEFAULT_DOT_OFFSET),
+  )
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
   state.calloutFontSize = fields.calloutFontSize
@@ -314,6 +325,7 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineColor: state.lineColor,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,
+    dotOffset: state.dotOffset,
     lineHaloWidth: state.lineHaloWidth,
     lineHaloColor: state.lineHaloColor,
     calloutFontSize: state.calloutFontSize,
@@ -384,6 +396,7 @@ watch(
     state.lineColor,
     state.dotColor,
     state.dotRadius,
+    state.dotOffset,
     state.lineHaloWidth,
     state.lineHaloColor,
     state.calloutFontSize,
@@ -563,6 +576,10 @@ export function useAnnotationStore() {
 
   function setDotRadius(radius: number): void {
     state.dotRadius = Math.min(DOT_RADIUS_MAX, Math.max(DOT_RADIUS_MIN, radius))
+  }
+
+  function setDotOffset(offset: number): void {
+    state.dotOffset = Math.min(DOT_OFFSET_MAX, Math.max(DOT_OFFSET_MIN, offset))
   }
 
   function setLineHaloWidth(width: number): void {
@@ -867,6 +884,7 @@ export function useAnnotationStore() {
     setLineWidth,
     setLineColor,
     setDotRadius,
+    setDotOffset,
     setLineHaloWidth,
     setLineHaloColor,
     setCalloutFontSize,

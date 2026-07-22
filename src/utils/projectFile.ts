@@ -12,6 +12,11 @@ import {
   normalizeLineHaloWidth,
   normalizeLineStyle,
 } from './lineStyle'
+import {
+  DEFAULT_DOT_OFFSET,
+  DOT_OFFSET_MAX,
+  DOT_OFFSET_MIN,
+} from './markerSize'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
@@ -30,6 +35,7 @@ export interface ProjectFileData {
   lineColor: string
   dotColor: string
   dotRadius: number
+  dotOffset: number
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
@@ -101,6 +107,13 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   const normalizedLine = normalizeLineStyle(project.lineStyle, (project as { lineWidth?: number }).lineWidth)
   project.lineStyle = normalizedLine.lineStyle
   project.lineWidth = normalizedLine.lineWidth
+  {
+    const rawOffset = (project as { dotOffset?: number }).dotOffset
+    project.dotOffset =
+      typeof rawOffset === 'number' && Number.isFinite(rawOffset)
+        ? Math.min(DOT_OFFSET_MAX, Math.max(DOT_OFFSET_MIN, rawOffset))
+        : DEFAULT_DOT_OFFSET
+  }
   project.lineHaloWidth = normalizeLineHaloWidth(
     (project as { lineHaloWidth?: number }).lineHaloWidth,
     (project as { lineHalo?: boolean }).lineHalo,

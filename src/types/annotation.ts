@@ -86,6 +86,8 @@ export interface ProjectState {
   lineColor: string
   dotColor: string
   dotRadius: number
+  /** Inset of the anchor from the section edge (px, toward center). */
+  dotOffset: number
   /** Extra outline underlay width in px (0 = none). */
   lineHaloWidth: number
   lineHaloColor: string
