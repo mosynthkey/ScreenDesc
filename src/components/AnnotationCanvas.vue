@@ -110,6 +110,8 @@ const editingId = ref<string | null>(null)
 const editDraft = ref('')
 const editInputRef = ref<HTMLInputElement | null>(null)
 const pointerMoved = ref(false)
+/** Ignore blur-to-commit while the editor is still mounting / focusing. */
+let suppressEditBlurUntil = 0
 
 /** User zoom relative to fit-to-width (1 = fit canvas area). */
 const viewZoom = ref(1)
@@ -336,10 +338,22 @@ function onPointerDown(event: PointerEvent): void {
   const docPoint = clientToDocument(event)
   const imagePoint = clampToImage(toImagePoint(docPoint))
 
-  const handle = target.getAttribute('data-handle') as ResizeHandle | null
-  const sectionId = target.getAttribute('data-section')
-  const markerId = target.getAttribute('data-marker')
-  const calloutId = target.getAttribute('data-callout-label')
+  const handle = (target.closest('[data-handle]')?.getAttribute('data-handle') ??
+    null) as ResizeHandle | null
+  const sectionId = target.closest('[data-section]')?.getAttribute('data-section')
+  const markerId = target.closest('[data-marker]')?.getAttribute('data-marker')
+  const calloutId = target.closest('[data-callout-label]')?.getAttribute('data-callout-label')
+
+  // Second click of a double-click: edit instead of starting a drag.
+  if (event.detail >= 2 && (calloutId || markerId)) {
+    event.preventDefault()
+    void beginEdit((calloutId || markerId)!)
+    return
+  }
+
+  if (editingId.value && !target.closest('.callout-inplace-edit') && !target.closest('.inline-edit')) {
+    commitEdit()
+  }
 
   pointerMoved.value = false
   ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
@@ -538,30 +552,30 @@ function onPointerUp(): void {
   drag.value = null
 }
 
-function annotationIdFromTarget(target: Element | null): string | null {
-  if (!target) return null
-  return (
-    target.closest('[data-callout-label]')?.getAttribute('data-callout-label') ??
-    target.closest('[data-marker]')?.getAttribute('data-marker')
-  )
-}
-
 async function beginEdit(annotationId: string): Promise<void> {
   const annotation = props.annotations.find((item) => item.id === annotationId)
   if (!annotation) return
   drag.value = null
+  pointerMoved.value = false
+  suppressEditBlurUntil = performance.now() + 400
   editingId.value = annotationId
   editDraft.value = annotation.description
   emit('selectAnnotation', annotationId, false)
   await nextTick()
-  editInputRef.value?.focus()
-  editInputRef.value?.select()
+  const input = editInputRef.value
+  if (!input) return
+  input.focus({ preventScroll: true })
+  input.select()
 }
 
 function onDblClick(event: MouseEvent): void {
+  // Backup path; primary edit trigger is pointerdown with detail >= 2.
   event.preventDefault()
-  const annotationId = annotationIdFromTarget(event.target as Element)
-  if (!annotationId) return
+  const target = event.target as Element
+  const annotationId =
+    target.closest('[data-callout-label]')?.getAttribute('data-callout-label') ??
+    target.closest('[data-marker]')?.getAttribute('data-marker')
+  if (!annotationId || editingId.value === annotationId) return
   void beginEdit(annotationId)
 }
 
@@ -573,6 +587,16 @@ function commitEdit(): void {
 
 function cancelEdit(): void {
   editingId.value = null
+}
+
+function onEditBlur(): void {
+  if (performance.now() < suppressEditBlurUntil) {
+    requestAnimationFrame(() => {
+      editInputRef.value?.focus({ preventScroll: true })
+    })
+    return
+  }
+  commitEdit()
 }
 
 const screenScale = computed(() =>
@@ -861,19 +885,24 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           :placeholder="t('canvas.descriptionPlaceholder')"
           @keydown.enter.prevent="commitEdit"
           @keydown.escape.prevent="cancelEdit"
-          @blur="commitEdit"
+          @blur="onEditBlur"
         />
       </div>
     </div>
 
-    <div v-if="editingId && !editingCalloutLayout" class="inline-edit">
+    <div
+      v-if="editingId && !editingCalloutLayout"
+      class="inline-edit"
+      @pointerdown.stop
+    >
       <input
         ref="editInputRef"
         v-model="editDraft"
         type="text"
         :placeholder="t('canvas.descriptionPlaceholder')"
-        @keydown.enter="commitEdit"
-        @keydown.escape="cancelEdit"
+        @keydown.enter.prevent="commitEdit"
+        @keydown.escape.prevent="cancelEdit"
+        @blur="onEditBlur"
       />
       <button class="btn btn-primary" type="button" @click="commitEdit">{{ t('canvas.commit') }}</button>
     </div>
@@ -998,6 +1027,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
   fill: #111;
   dominant-baseline: middle;
   pointer-events: none;
+  user-select: none;
 }
 
 .marker {
