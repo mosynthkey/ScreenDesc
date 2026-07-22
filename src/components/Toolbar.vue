@@ -11,6 +11,7 @@ defineProps<{
   showSections: boolean
   isDetecting: boolean
   canExport: boolean
+  copyJustSucceeded?: boolean
   hasImage: boolean
   modelStatus: ModelStatus
   canUndoCrop: boolean
@@ -19,6 +20,7 @@ defineProps<{
 const emit = defineEmits<{
   'update:toolMode': [mode: ToolMode]
   toggleSections: []
+  copyClipboard: []
   export: []
   undoCrop: []
   exportProjectFile: []
@@ -128,6 +130,15 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
       </div>
 
       <button
+        class="header-btn"
+        type="button"
+        :data-tooltip="t('tooltip.copyClipboard')"
+        :disabled="!canExport"
+        @click="emit('copyClipboard')"
+      >
+        {{ copyJustSucceeded ? t('button.copied') : t('button.copyClipboard') }}
+      </button>
+      <button
         class="header-btn header-btn-primary"
         type="button"
         :data-tooltip="t('tooltip.export')"
@@ -151,7 +162,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolSelect')"
           @click="setTool('select')"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path d="M6 4.5 17.5 12l-5.2 1.3L10 20.5 6 4.5Z" fill="currentColor" />
           </svg>
         </button>
@@ -164,7 +175,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolAddSection')"
           @click="setTool('add-section')"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path
               d="M8 5h8M5 8v8M19 8v8M8 19h8"
               stroke="currentColor"
@@ -183,7 +194,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolAnnotate')"
           @click="setTool('annotate')"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8" />
             <circle cx="12" cy="12" r="2.2" fill="currentColor" />
           </svg>
@@ -197,7 +208,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolCrop')"
           @click="setTool('crop')"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path
               d="M7 3v14a1 1 0 0 0 1 1h14M17 21V7a1 1 0 0 0-1-1H3"
               fill="none"
@@ -217,7 +228,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :aria-label="t('aria.cropMenu')"
             @click.stop="toggleCropMenu"
           >
-            <svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
               <path d="M5 8l7 8 7-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
@@ -246,7 +257,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toggleSections')"
           @click="emit('toggleSections')"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <rect
               x="5"
               y="6"
@@ -383,7 +394,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
 .dock-sep {
   width: 1px;
-  height: 22px;
+  height: 26px;
   margin: 0 6px;
   background: rgba(255, 255, 255, 0.16);
 }
@@ -394,12 +405,12 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   border: none;
   background: transparent;
   color: rgba(245, 245, 247, 0.92);
-  border-radius: 10px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 40px;
+  min-width: 44px;
+  height: 44px;
   padding: 0 8px;
 }
 

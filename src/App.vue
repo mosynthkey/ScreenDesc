@@ -7,9 +7,13 @@ import AnnotationList from './components/AnnotationList.vue'
 import StylePanel from './components/StylePanel.vue'
 import ExportDialog from './components/ExportDialog.vue'
 import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
+import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
+import CropConfirmDialog from './components/CropConfirmDialog.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
 import type { ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
+import type { CommonSettingsPresetMeta } from './utils/commonSettings'
+import { resolveCalloutBorderWidth } from './utils/commonSettings'
 import { useI18n } from './i18n'
 
 const { t } = useI18n()
@@ -37,7 +41,7 @@ const {
   setLineHaloWidth,
   setLineHaloColor,
   setCalloutFontSize,
-  setCalloutBorderWidth,
+  setCalloutBorderEnabled,
   setNumberStyle,
   toggleShowSections,
   clearSelection,
@@ -50,28 +54,44 @@ const {
   removeAnnotations,
   reorderAnnotations,
   exportProject,
+  copyAnnotatedImageToClipboard,
   saveProjectToFile,
   loadProjectFromFile,
   saveProjectAs,
   fetchSavedProjects,
   loadSavedProject,
   removeSavedProject,
+  fetchCommonSettingsPresets,
+  saveCommonSettingsAs,
+  applyCommonSettingsPreset,
+  removeCommonSettingsPreset,
   deleteSelection,
 } = store
 
 const exportOpen = ref(false)
+const copyJustSucceeded = ref(false)
+let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined
 const projectFileInputRef = ref<HTMLInputElement | null>(null)
 const homeRef = ref<{ openFilePicker: () => void } | null>(null)
 const projectLoadError = ref<string | null>(null)
 const projectStorageOpen = ref(false)
 const savedProjects = ref<SavedProjectMeta[]>([])
 const projectStorageBusy = ref(false)
+const commonSettingsOpen = ref(false)
+const commonSettingsPresets = ref<CommonSettingsPresetMeta[]>([])
+const commonSettingsBusy = ref(false)
+const cropConfirmOpen = ref(false)
+const pendingCropRect = ref<Rect | null>(null)
 
 const selectedAnnotation = computed(() => {
   const selectedId = state.selectedAnnotationIds[0]
   if (!selectedId) return null
   return state.annotations.find((item) => item.id === selectedId) ?? null
 })
+
+const effectiveCalloutBorderWidth = computed(() =>
+  resolveCalloutBorderWidth(state.calloutBorderEnabled, state.lineWidth),
+)
 
 async function onFile(file: File): Promise<void> {
   await loadImageFile(file)
@@ -97,7 +117,10 @@ onMounted(() => {
   window.addEventListener('paste', onWindowPaste)
   void refreshSavedProjects()
 })
-onBeforeUnmount(() => window.removeEventListener('paste', onWindowPaste))
+onBeforeUnmount(() => {
+  window.removeEventListener('paste', onWindowPaste)
+  if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer)
+})
 
 watch(hasImage, (open) => {
   if (!open) void refreshSavedProjects()
@@ -129,7 +152,34 @@ function onAddSection(rect: Rect): void {
 }
 
 async function onCropImage(rect: Rect): Promise<void> {
+  const hasWork = state.annotations.length > 0 || state.sections.length > 0
+  if (hasWork) {
+    pendingCropRect.value = rect
+    cropConfirmOpen.value = true
+    return
+  }
   await cropImage(rect)
+  setToolMode('select')
+}
+
+function closeCropConfirm(): void {
+  cropConfirmOpen.value = false
+  pendingCropRect.value = null
+}
+
+async function confirmCropAsNewProject(): Promise<void> {
+  const rect = pendingCropRect.value
+  closeCropConfirm()
+  if (!rect) return
+  await cropImage(rect, { asNewProject: true })
+  setToolMode('select')
+}
+
+async function confirmCropOverwrite(): Promise<void> {
+  const rect = pendingCropRect.value
+  closeCropConfirm()
+  if (!rect) return
+  await cropImage(rect, { asNewProject: false })
   setToolMode('select')
 }
 
@@ -217,6 +267,74 @@ async function onExport(options: ExportOptions): Promise<void> {
   exportOpen.value = false
 }
 
+function refreshCommonSettingsPresets(): void {
+  commonSettingsPresets.value = fetchCommonSettingsPresets()
+}
+
+function onOpenCommonSettings(): void {
+  refreshCommonSettingsPresets()
+  commonSettingsOpen.value = true
+}
+
+async function onSaveCommonSettings(name: string): Promise<void> {
+  commonSettingsBusy.value = true
+  try {
+    saveCommonSettingsAs(name)
+    refreshCommonSettingsPresets()
+  } finally {
+    commonSettingsBusy.value = false
+  }
+}
+
+async function onOverwriteCommonSettings(id: string): Promise<void> {
+  const target = commonSettingsPresets.value.find((preset) => preset.id === id)
+  if (!target) return
+  commonSettingsBusy.value = true
+  try {
+    saveCommonSettingsAs(target.name, id)
+    refreshCommonSettingsPresets()
+  } finally {
+    commonSettingsBusy.value = false
+  }
+}
+
+async function onApplyCommonSettings(id: string): Promise<void> {
+  commonSettingsBusy.value = true
+  try {
+    const applied = await applyCommonSettingsPreset(id)
+    if (!applied) {
+      window.alert(t('error.commonSettingsNotFound'))
+      return
+    }
+    commonSettingsOpen.value = false
+  } finally {
+    commonSettingsBusy.value = false
+  }
+}
+
+async function onRemoveCommonSettings(id: string): Promise<void> {
+  commonSettingsBusy.value = true
+  try {
+    removeCommonSettingsPreset(id)
+    refreshCommonSettingsPresets()
+  } finally {
+    commonSettingsBusy.value = false
+  }
+}
+
+async function onCopyClipboard(): Promise<void> {
+  try {
+    await copyAnnotatedImageToClipboard()
+    copyJustSucceeded.value = true
+    if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer)
+    copyFeedbackTimer = setTimeout(() => {
+      copyJustSucceeded.value = false
+    }, 2000)
+  } catch {
+    window.alert(t('error.clipboardCopyFailed'))
+  }
+}
+
 function onUpdateCalloutPosition(annotationId: string, point: Point): void {
   updateAnnotation(annotationId, { calloutPosition: point })
 }
@@ -258,11 +376,13 @@ function onKeydown(event: KeyboardEvent): void {
       :show-sections="state.showSections"
       :is-detecting="isDetecting"
       :can-export="hasImage && !isExporting"
+      :copy-just-succeeded="copyJustSucceeded"
       :has-image="hasImage"
       :model-status="modelStatus"
       :can-undo-crop="canUndoCrop"
       @update:tool-mode="setToolMode"
       @toggle-sections="toggleShowSections"
+      @copy-clipboard="onCopyClipboard"
       @export="exportOpen = true"
       @undo-crop="onUndoCrop"
       @export-project-file="onExportProjectFile"
@@ -305,8 +425,10 @@ function onKeydown(event: KeyboardEvent): void {
               :line-halo-width="state.lineHaloWidth"
               :line-halo-color="state.lineHaloColor"
               :callout-font-size="state.calloutFontSize"
-              :callout-border-width="state.calloutBorderWidth"
+              :callout-border-enabled="state.calloutBorderEnabled"
               :number-style="state.numberStyle"
+              :image-width="state.imageWidth"
+              :image-height="state.imageHeight"
               @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
             />
           </div>
@@ -330,7 +452,7 @@ function onKeydown(event: KeyboardEvent): void {
           :line-halo-width="state.lineHaloWidth"
           :line-halo-color="state.lineHaloColor"
           :callout-font-size="state.calloutFontSize"
-          :callout-border-width="state.calloutBorderWidth"
+          :callout-border-width="effectiveCalloutBorderWidth"
           :font-family="state.defaultFontFamily"
           :is-detecting="isDetecting"
           :empty-hint="state.sections.length === 0"
@@ -360,8 +482,10 @@ function onKeydown(event: KeyboardEvent): void {
               :line-halo-width="state.lineHaloWidth"
               :line-halo-color="state.lineHaloColor"
               :callout-font-size="state.calloutFontSize"
-              :callout-border-width="state.calloutBorderWidth"
+              :callout-border-enabled="state.calloutBorderEnabled"
               :number-style="state.numberStyle"
+              :image-width="state.imageWidth"
+              :image-height="state.imageHeight"
               @update:default-font-family="setDefaultFontFamily"
               @update:line-style="setLineStyle"
               @update:line-width="setLineWidth"
@@ -370,8 +494,9 @@ function onKeydown(event: KeyboardEvent): void {
               @update:line-halo-width="setLineHaloWidth"
               @update:line-halo-color="setLineHaloColor"
               @update:callout-font-size="setCalloutFontSize"
-              @update:callout-border-width="setCalloutBorderWidth"
+              @update:callout-border-enabled="setCalloutBorderEnabled"
               @update:number-style="setNumberStyle"
+              @open-presets="onOpenCommonSettings"
             />
           </div>
         </aside>
@@ -399,6 +524,22 @@ function onKeydown(event: KeyboardEvent): void {
       @overwrite="onOverwriteSavedProject"
       @load="onLoadSavedProject"
       @remove="onRemoveSavedProject"
+    />
+    <CommonSettingsDialog
+      :open="commonSettingsOpen"
+      :presets="commonSettingsPresets"
+      :is-busy="commonSettingsBusy"
+      @close="commonSettingsOpen = false"
+      @save="onSaveCommonSettings"
+      @overwrite="onOverwriteCommonSettings"
+      @apply="onApplyCommonSettings"
+      @remove="onRemoveCommonSettings"
+    />
+    <CropConfirmDialog
+      :open="cropConfirmOpen"
+      @close="closeCropConfirm"
+      @as-new-project="confirmCropAsNewProject"
+      @overwrite="confirmCropOverwrite"
     />
   </div>
 </template>

@@ -1,13 +1,15 @@
 import type { Exporter, ExportScene } from './types'
 import { buildSceneSvg } from './buildSceneSvg'
+import { htmlImageToPngDataUrl } from './imageDataUrl'
 import { prepareExportFontCss } from './prepareFontCss'
 
 export const svgExporter: Exporter = {
   format: 'svg',
   async export(scene: ExportScene): Promise<Blob> {
     const fontCss = await prepareExportFontCss(scene.fontFamily)
+    const imageHref = await htmlImageToPngDataUrl(scene.image)
     const svg = buildSceneSvg({
-      imageHref: scene.image.src,
+      imageHref,
       sections: scene.sections,
       annotations: scene.annotations,
       calloutLayouts: scene.calloutLayouts,

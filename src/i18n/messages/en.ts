@@ -8,9 +8,12 @@ export const en = {
   'status.proposing': 'Proposing…',
 
   'button.project': 'Project ▾',
+  'button.copyClipboard': 'Copy',
+  'button.copied': 'Copied',
   'button.export': 'Export',
 
   'tooltip.projectMenu': 'Save or load project',
+  'tooltip.copyClipboard': 'Copy the annotated image to the clipboard',
   'tooltip.export': 'Export the annotated image',
   'tooltip.toolSelect': 'Select / move (V)',
   'tooltip.toolAddSection': 'Draw a region to propose one section (F)',
@@ -34,6 +37,15 @@ export const en = {
   'menu.undoCrop': 'Undo crop',
 
   'confirm.newProject': 'Discard the current project and start a new one?',
+
+  'cropConfirm.title': 'Crop and start fresh?',
+  'cropConfirm.body':
+    'Cropping replaces the image, so annotations and sections on this canvas will be cleared. Choose how to continue.',
+  'cropConfirm.asNewProject': 'Continue as a new project',
+  'cropConfirm.asNewProjectHint': 'Keep the current project as it is, and edit the cropped image separately',
+  'cropConfirm.overwrite': 'Overwrite this project',
+  'cropConfirm.overwriteHint': 'Replace the image in the current project (you can undo the crop once)',
+  'cropConfirm.cancel': 'Cancel',
 
   'home.title': 'ScreenDesc',
   'home.description': 'Create a new annotation project, or open one saved in this browser.',
@@ -95,11 +107,16 @@ export const en = {
   'projectStorage.close': 'Close',
 
   'style.calloutBorder.none': 'None',
-  'style.calloutBorder.hairline': 'Hairline',
-  'style.calloutBorder.medium': 'Medium',
-  'style.calloutBorder.bold': 'Bold',
-  'style.calloutBorder.heavy': 'Heavy',
-  'style.projectSettingsTitle': 'Project settings',
+  'style.projectSettingsTitle': 'Shared settings',
+  'style.presetsManage': 'Save / load',
+  'style.section.number': 'Numbers',
+  'style.section.stroke': 'Stroke',
+  'style.section.anchor': 'Anchor',
+  'style.section.label': 'Label',
+  'style.section.placement': 'Placement',
+  'style.section.description': 'Description',
+  'style.axis.x': 'X',
+  'style.axis.y': 'Y',
   'style.lineStyle': 'Line pattern',
   'style.lineWidth': 'Line weight',
   'style.lineAndDotColor': 'Leader & anchor color',
@@ -111,7 +128,8 @@ export const en = {
   'style.lineHalo.off': 'Off',
   'style.lineHaloColor': 'Outline color',
   'style.calloutFontSize': 'Label font size',
-  'style.calloutBorderWidth': 'Label border width',
+  'style.calloutBorder': 'Label border',
+  'style.calloutBorderHint': 'When on, uses the stroke line weight',
   'style.numberStyle': 'Number style',
   'style.numberStyle.circled': '① ② ③',
   'style.numberStyle.paren': '(1) (2) (3)',
@@ -135,6 +153,21 @@ export const en = {
   'style.descriptionPlaceholder': 'e.g. Click [Save]',
   'style.noSelectionHint': 'Select an annotation to edit its style and description.',
 
+  'commonSettings.defaultName': 'Settings {stamp}',
+  'commonSettings.title': 'Shared settings presets',
+  'commonSettings.description':
+    'Save the current shared settings and apply them later in any project.',
+  'commonSettings.saveAsLabel': 'Save as',
+  'commonSettings.namePlaceholder': 'Preset name',
+  'commonSettings.save': 'Save',
+  'commonSettings.savedListLabel': 'Saved presets',
+  'commonSettings.empty': 'No saved presets yet.',
+  'commonSettings.apply': 'Apply',
+  'commonSettings.overwriteTitle': 'Overwrite this preset with the current settings',
+  'commonSettings.overwrite': 'Overwrite',
+  'commonSettings.remove': 'Delete',
+  'commonSettings.close': 'Close',
+
   'sectionKind.region': 'Region',
   'sectionKind.text': 'Text',
 
@@ -150,6 +183,8 @@ export const en = {
   'error.projectFileInvalidJson': 'Invalid project file format (JSON parse error)',
   'error.projectFileUnsupported': 'Unsupported project file',
   'error.savedProjectNotFound': 'Saved project not found',
+  'error.clipboardCopyFailed': 'Could not copy the image to the clipboard',
+  'error.commonSettingsNotFound': 'Saved settings preset not found',
 } as const
 
 export type MessageKey = keyof typeof en

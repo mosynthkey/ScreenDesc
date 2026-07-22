@@ -12,7 +12,8 @@ import {
   normalizeLineHaloWidth,
   normalizeLineStyle,
 } from './lineStyle'
-import { ANCHOR_OFFSET_MAX, ANCHOR_OFFSET_MIN } from './markerSize'
+import { normalizeCalloutBorderEnabled } from './commonSettings'
+import { clampAnchorOffsetAxis } from './markerSize'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
@@ -34,7 +35,9 @@ export interface ProjectFileData {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
-  calloutBorderWidth: number
+  calloutBorderEnabled: boolean
+  /** @deprecated Prefer `calloutBorderEnabled`. */
+  calloutBorderWidth?: number
   numberStyle: NumberStyleId
   showSections: boolean
 }
@@ -48,17 +51,28 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
-function sanitizeAnchorOffset(raw: unknown): { x: number; y: number } {
+function sanitizeAnchorOffset(
+  raw: unknown,
+  imageWidth: number,
+  imageHeight: number,
+): { x: number; y: number } {
   if (!raw || typeof raw !== 'object') return { x: 0, y: 0 }
   const point = raw as { x?: unknown; y?: unknown }
-  const toNum = (value: unknown) => {
+  const toAxis = (value: unknown, imageSize: number) => {
     if (typeof value !== 'number' || !Number.isFinite(value)) return 0
-    return Math.min(ANCHOR_OFFSET_MAX, Math.max(ANCHOR_OFFSET_MIN, value))
+    return clampAnchorOffsetAxis(value, imageSize)
   }
-  return { x: toNum(point.x), y: toNum(point.y) }
+  return {
+    x: toAxis(point.x, imageWidth),
+    y: toAxis(point.y, imageHeight),
+  }
 }
 
-function sanitizeAnnotation(raw: Annotation): Annotation {
+function sanitizeAnnotation(
+  raw: Annotation,
+  imageWidth: number,
+  imageHeight: number,
+): Annotation {
   return {
     id: raw.id,
     sectionId: raw.sectionId,
@@ -69,6 +83,8 @@ function sanitizeAnnotation(raw: Annotation): Annotation {
     calloutPosition: raw.calloutPosition,
     anchorOffset: sanitizeAnchorOffset(
       (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,
+      imageWidth,
+      imageHeight,
     ),
   }
 }
@@ -82,7 +98,9 @@ export async function buildProjectFile(
     version: FILE_VERSION,
     imageDataUrl,
     ...fields,
-    annotations: fields.annotations.map(sanitizeAnnotation),
+    annotations: fields.annotations.map((annotation) =>
+      sanitizeAnnotation(annotation, fields.imageWidth, fields.imageHeight),
+    ),
   }
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
@@ -122,6 +140,12 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   project.lineHaloColor = normalizeLineHaloColor(
     (project as { lineHaloColor?: string }).lineHaloColor,
   )
-  project.annotations = (project.annotations ?? []).map(sanitizeAnnotation)
+  project.calloutBorderEnabled = normalizeCalloutBorderEnabled(
+    (project as { calloutBorderEnabled?: boolean }).calloutBorderEnabled,
+    (project as { calloutBorderWidth?: number }).calloutBorderWidth,
+  )
+  project.annotations = (project.annotations ?? []).map((annotation) =>
+    sanitizeAnnotation(annotation, project.imageWidth, project.imageHeight),
+  )
   return project
 }

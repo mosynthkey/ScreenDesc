@@ -10,9 +10,12 @@ export const ja: Record<MessageKey, string> = {
   'status.proposing': '提案中…',
 
   'button.project': 'プロジェクト ▾',
+  'button.copyClipboard': 'コピー',
+  'button.copied': 'コピー済み',
   'button.export': '書き出し',
 
   'tooltip.projectMenu': 'プロジェクトの保存・読み込み',
+  'tooltip.copyClipboard': '注釈付き画像をクリップボードにコピーします',
   'tooltip.export': '注釈付き画像を書き出します',
   'tooltip.toolSelect': '選択・移動 (V)',
   'tooltip.toolAddSection': '範囲を描いてセクションを1件提案 (F)',
@@ -36,6 +39,15 @@ export const ja: Record<MessageKey, string> = {
   'menu.undoCrop': '切り抜きを元に戻す',
 
   'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
+
+  'cropConfirm.title': '切り抜いて作り直しますか？',
+  'cropConfirm.body':
+    '切り抜くと画像が差し替わるため、いまの注釈とセクションは消えます。このあとどう進めるか選んでください。',
+  'cropConfirm.asNewProject': '新規プロジェクトとして続行',
+  'cropConfirm.asNewProjectHint': 'いまのプロジェクトはそのまま残し、切り抜き後の画像を別途編集します',
+  'cropConfirm.overwrite': 'このプロジェクトを上書き',
+  'cropConfirm.overwriteHint': 'いまのプロジェクトの画像を差し替えます（切り抜きは1回だけ元に戻せます）',
+  'cropConfirm.cancel': 'キャンセル',
 
   'home.title': 'ScreenDesc',
   'home.description': '新しい注釈プロジェクトを作るか、このブラウザに保存したプロジェクトを開きます。',
@@ -97,11 +109,16 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.close': '閉じる',
 
   'style.calloutBorder.none': '枠なし',
-  'style.calloutBorder.hairline': '極細',
-  'style.calloutBorder.medium': '標準',
-  'style.calloutBorder.bold': '太め',
-  'style.calloutBorder.heavy': '極太',
-  'style.projectSettingsTitle': 'プロジェクト全体の設定',
+  'style.projectSettingsTitle': '共通設定',
+  'style.presetsManage': '保存 / 呼び出し',
+  'style.section.number': '番号',
+  'style.section.stroke': '線',
+  'style.section.anchor': 'アンカー',
+  'style.section.label': '説明',
+  'style.section.placement': '配置',
+  'style.section.description': '説明',
+  'style.axis.x': 'X',
+  'style.axis.y': 'Y',
   'style.lineStyle': '線種',
   'style.lineWidth': '線の太さ',
   'style.lineAndDotColor': '引き出し線・アンカーの色',
@@ -113,7 +130,8 @@ export const ja: Record<MessageKey, string> = {
   'style.lineHalo.off': 'なし',
   'style.lineHaloColor': '縁取りの色',
   'style.calloutFontSize': '説明の文字サイズ',
-  'style.calloutBorderWidth': '説明枠の太さ',
+  'style.calloutBorder': '説明枠',
+  'style.calloutBorderHint': 'オンのときは線の太さに合わせます',
   'style.numberStyle': '番号のスタイル',
   'style.numberStyle.circled': '① ② ③',
   'style.numberStyle.paren': '(1) (2) (3)',
@@ -137,6 +155,21 @@ export const ja: Record<MessageKey, string> = {
   'style.descriptionPlaceholder': '例: ［保存］をクリック',
   'style.noSelectionHint': '注釈を選択すると、スタイルと説明を編集できます。',
 
+  'commonSettings.defaultName': '設定 {stamp}',
+  'commonSettings.title': '共通設定の保存 / 呼び出し',
+  'commonSettings.description':
+    'いまの共通設定を保存し、別のプロジェクトでも呼び出して適用できます。',
+  'commonSettings.saveAsLabel': '名前を付けて保存',
+  'commonSettings.namePlaceholder': 'プリセット名',
+  'commonSettings.save': '保存',
+  'commonSettings.savedListLabel': '保存済みプリセット',
+  'commonSettings.empty': 'まだ保存されたプリセットはありません。',
+  'commonSettings.apply': '適用',
+  'commonSettings.overwriteTitle': 'このプリセットをいまの設定で上書きします',
+  'commonSettings.overwrite': '上書き',
+  'commonSettings.remove': '削除',
+  'commonSettings.close': '閉じる',
+
   'sectionKind.region': '領域',
   'sectionKind.text': 'テキスト',
 
@@ -152,4 +185,6 @@ export const ja: Record<MessageKey, string> = {
   'error.projectFileInvalidJson': 'プロジェクトファイルの形式が正しくありません(JSON解析エラー)',
   'error.projectFileUnsupported': '対応していないプロジェクトファイルです',
   'error.savedProjectNotFound': '保存済みのプロジェクトが見つかりませんでした',
+  'error.clipboardCopyFailed': 'クリップボードにコピーできませんでした',
+  'error.commonSettingsNotFound': '保存済みの共通設定が見つかりませんでした',
 }

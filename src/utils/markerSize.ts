@@ -9,7 +9,19 @@ export const DOT_RADIUS_MIN = 1.5
 export const DOT_RADIUS_MAX = 42
 export const DOT_RADIUS_STEP = 0.5
 
-/** Per-annotation anchor offset from the default edge/center position. */
-export const ANCHOR_OFFSET_MIN = -200
-export const ANCHOR_OFFSET_MAX = 200
+/** Fallback when image size is unknown. */
+export const ANCHOR_OFFSET_FALLBACK = 200
 export const ANCHOR_OFFSET_STEP = 1
+
+export function anchorOffsetExtent(imageSize: number): number {
+  if (!Number.isFinite(imageSize) || imageSize <= 0) return ANCHOR_OFFSET_FALLBACK
+  return Math.max(1, Math.round(imageSize))
+}
+
+export function clampAnchorOffsetAxis(
+  value: number,
+  imageSize: number,
+): number {
+  const extent = anchorOffsetExtent(imageSize)
+  return Math.min(extent, Math.max(-extent, Math.round(value)))
+}

@@ -29,7 +29,9 @@ export interface ProjectSnapshot {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
-  calloutBorderWidth: number
+  calloutBorderEnabled: boolean
+  /** @deprecated Prefer `calloutBorderEnabled`. */
+  calloutBorderWidth?: number
   numberStyle: NumberStyleId
   showSections: boolean
   /** When set, edits auto-overwrite this named browser save. */

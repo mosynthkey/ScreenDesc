@@ -21,21 +21,19 @@ import {
   createDefaultDocumentLayout,
 } from '../utils/calloutLayout'
 import { downloadBlob, exportScene } from '../utils/export'
+import { blobToPngBlob } from '../utils/export/imageDataUrl'
 import {
   DEFAULT_FONT_FAMILY,
   ensureGoogleFontsLoaded,
   loadGoogleFont,
 } from '../utils/googleFonts'
 import {
-  ANCHOR_OFFSET_MAX,
-  ANCHOR_OFFSET_MIN,
-  CALLOUT_BORDER_WIDTH_MAX,
-  CALLOUT_BORDER_WIDTH_MIN,
   CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
+  clampAnchorOffsetAxis,
 } from '../utils/markerSize'
 import {
   DEFAULT_LINE_HALO_COLOR,
@@ -45,6 +43,17 @@ import {
   normalizeLineHaloWidth,
   normalizeLineStyle,
 } from '../utils/lineStyle'
+import {
+  deleteCommonSettingsPreset,
+  listCommonSettingsPresets,
+  loadCommonSettingsPreset,
+  normalizeCalloutBorderEnabled,
+  normalizeCommonSettings,
+  resolveCalloutBorderWidth,
+  saveCommonSettingsPreset,
+  type CommonSettings,
+  type CommonSettingsPresetMeta,
+} from '../utils/commonSettings'
 import {
   clearAutosavedProject,
   deleteNamedProject,
@@ -77,7 +86,7 @@ const state = reactive<ProjectState>({
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
   calloutFontSize: CALLOUT_FONT_SIZE,
-  calloutBorderWidth: 0,
+  calloutBorderEnabled: false,
   numberStyle: DEFAULT_NUMBER_STYLE,
   showSections: true,
   calloutLayouts: [],
@@ -117,17 +126,16 @@ function reindexOrders(): void {
   })
 }
 
-function clampAnchorOffset(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 0
-  return Math.min(ANCHOR_OFFSET_MAX, Math.max(ANCHOR_OFFSET_MIN, value))
-}
-
 function sanitizeAnchorOffset(raw: unknown): Point {
   if (!raw || typeof raw !== 'object') return { x: 0, y: 0 }
   const point = raw as { x?: unknown; y?: unknown }
+  const toAxis = (value: unknown, imageSize: number) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+    return clampAnchorOffsetAxis(value, imageSize)
+  }
   return {
-    x: clampAnchorOffset(point.x),
-    y: clampAnchorOffset(point.y),
+    x: toAxis(point.x, state.imageWidth),
+    y: toAxis(point.y, state.imageHeight),
   }
 }
 
@@ -253,7 +261,9 @@ interface RestorableFields {
   /** @deprecated Prefer `lineHaloWidth`. */
   lineHalo?: boolean
   calloutFontSize: number
-  calloutBorderWidth: number
+  calloutBorderEnabled?: boolean
+  /** @deprecated Prefer `calloutBorderEnabled`. */
+  calloutBorderWidth?: number
   numberStyle?: NumberStyleId
   showSections: boolean
 }
@@ -282,7 +292,10 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
   state.calloutFontSize = fields.calloutFontSize
-  state.calloutBorderWidth = fields.calloutBorderWidth
+  state.calloutBorderEnabled = normalizeCalloutBorderEnabled(
+    fields.calloutBorderEnabled,
+    fields.calloutBorderWidth,
+  )
   state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
   state.showSections = fields.showSections
   state.selectedSectionIds = []
@@ -337,7 +350,7 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineHaloWidth: state.lineHaloWidth,
     lineHaloColor: state.lineHaloColor,
     calloutFontSize: state.calloutFontSize,
-    calloutBorderWidth: state.calloutBorderWidth,
+    calloutBorderEnabled: state.calloutBorderEnabled,
     numberStyle: state.numberStyle,
     showSections: state.showSections,
     activeNamedProjectId: activeNamedProject.value?.id ?? null,
@@ -407,7 +420,7 @@ watch(
     state.lineHaloWidth,
     state.lineHaloColor,
     state.calloutFontSize,
-    state.calloutBorderWidth,
+    state.calloutBorderEnabled,
     state.numberStyle,
     state.showSections,
   ],
@@ -513,7 +526,10 @@ export function useAnnotationStore() {
     }
   }
 
-  async function cropImage(rect: Rect): Promise<void> {
+  async function cropImage(
+    rect: Rect,
+    options: { asNewProject?: boolean } = {},
+  ): Promise<void> {
     if (!imageElement.value || !state.imageUrl) return
     const normalized = normalizeRect(rect)
     const x = Math.max(0, Math.round(normalized.x))
@@ -530,6 +546,11 @@ export function useAnnotationStore() {
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
     if (!blob) return
+
+    if (options.asNewProject) {
+      clearNamedSaveSchedule()
+      activeNamedProject.value = null
+    }
 
     if (cropHistory.value) URL.revokeObjectURL(cropHistory.value.imageUrl)
     cropHistory.value = {
@@ -603,11 +624,8 @@ export function useAnnotationStore() {
     }
   }
 
-  function setCalloutBorderWidth(width: number): void {
-    state.calloutBorderWidth = Math.min(
-      CALLOUT_BORDER_WIDTH_MAX,
-      Math.max(CALLOUT_BORDER_WIDTH_MIN, width),
-    )
+  function setCalloutBorderEnabled(enabled: boolean): void {
+    state.calloutBorderEnabled = enabled
   }
 
   function setNumberStyle(style: NumberStyleId): void {
@@ -727,6 +745,71 @@ export function useAnnotationStore() {
     refreshDocumentAndLayouts()
   }
 
+  function getCommonSettings(): CommonSettings {
+    return {
+      defaultFontFamily: state.defaultFontFamily,
+      lineStyle: state.lineStyle,
+      lineWidth: state.lineWidth,
+      lineColor: state.lineColor,
+      dotRadius: state.dotRadius,
+      lineHaloWidth: state.lineHaloWidth,
+      lineHaloColor: state.lineHaloColor,
+      calloutFontSize: state.calloutFontSize,
+      calloutBorderEnabled: state.calloutBorderEnabled,
+      numberStyle: state.numberStyle,
+    }
+  }
+
+  async function applyCommonSettings(raw: CommonSettings): Promise<void> {
+    const settings = normalizeCommonSettings(raw)
+    if (!settings) return
+
+    const fontChanged = settings.defaultFontFamily !== state.defaultFontFamily
+    const layoutAffecting =
+      fontChanged ||
+      settings.calloutFontSize !== state.calloutFontSize ||
+      settings.numberStyle !== state.numberStyle
+
+    state.defaultFontFamily = settings.defaultFontFamily
+    state.lineStyle = settings.lineStyle
+    state.lineWidth = settings.lineWidth
+    state.lineColor = settings.lineColor
+    state.dotColor = settings.lineColor
+    state.dotRadius = settings.dotRadius
+    state.lineHaloWidth = settings.lineHaloWidth
+    state.lineHaloColor = settings.lineHaloColor
+    state.calloutFontSize = settings.calloutFontSize
+    state.calloutBorderEnabled = settings.calloutBorderEnabled
+    state.numberStyle = settings.numberStyle
+
+    await ensureGoogleFontsLoaded([state.defaultFontFamily])
+    if (layoutAffecting) {
+      for (const annotation of state.annotations) {
+        annotation.calloutPosition = null
+      }
+    }
+    refreshDocumentAndLayouts()
+  }
+
+  function fetchCommonSettingsPresets(): CommonSettingsPresetMeta[] {
+    return listCommonSettingsPresets()
+  }
+
+  function saveCommonSettingsAs(name: string, overwriteId?: string): string {
+    return saveCommonSettingsPreset(name, getCommonSettings(), overwriteId)
+  }
+
+  async function applyCommonSettingsPreset(id: string): Promise<boolean> {
+    const preset = loadCommonSettingsPreset(id)
+    if (!preset) return false
+    await applyCommonSettings(preset.settings)
+    return true
+  }
+
+  function removeCommonSettingsPreset(id: string): void {
+    deleteCommonSettingsPreset(id)
+  }
+
   function updateAnnotation(
     annotationId: string,
     patch: Partial<
@@ -766,30 +849,39 @@ export function useAnnotationStore() {
     })
   }
 
+  async function renderExportBlob(options: ExportOptions): Promise<Blob | null> {
+    if (!imageElement.value) return null
+    refreshDocumentAndLayouts()
+    await ensureGoogleFontsLoaded([state.defaultFontFamily])
+    return exportScene({
+      image: imageElement.value,
+      sections: state.sections,
+      annotations: state.annotations,
+      calloutLayouts: state.calloutLayouts,
+      document: state.document,
+      options,
+      lineStyle: state.lineStyle,
+      lineWidth: state.lineWidth,
+      lineColor: state.lineColor,
+      dotColor: state.lineColor,
+      dotRadius: state.dotRadius,
+      lineHaloWidth: state.lineHaloWidth,
+      lineHaloColor: state.lineHaloColor,
+      calloutFontSize: state.calloutFontSize,
+      calloutBorderWidth: resolveCalloutBorderWidth(
+        state.calloutBorderEnabled,
+        state.lineWidth,
+      ),
+      fontFamily: state.defaultFontFamily,
+    })
+  }
+
   async function exportProject(options: ExportOptions): Promise<void> {
     if (!imageElement.value) return
     isExporting.value = true
     try {
-      refreshDocumentAndLayouts()
-      await ensureGoogleFontsLoaded([state.defaultFontFamily])
-      const blob = await exportScene({
-        image: imageElement.value,
-        sections: state.sections,
-        annotations: state.annotations,
-        calloutLayouts: state.calloutLayouts,
-        document: state.document,
-        options,
-        lineStyle: state.lineStyle,
-        lineWidth: state.lineWidth,
-        lineColor: state.lineColor,
-        dotColor: state.lineColor,
-        dotRadius: state.dotRadius,
-        lineHaloWidth: state.lineHaloWidth,
-        lineHaloColor: state.lineHaloColor,
-        calloutFontSize: state.calloutFontSize,
-        calloutBorderWidth: state.calloutBorderWidth,
-        fontFamily: state.defaultFontFamily,
-      })
+      const blob = await renderExportBlob(options)
+      if (!blob) return
       downloadBlob(blob, `${options.filename}.${options.format}`)
 
       if (options.includeOriginal && state.imageUrl) {
@@ -797,6 +889,34 @@ export function useAnnotationStore() {
         const ext = originalBlob.type.split('/')[1] ?? 'png'
         downloadBlob(originalBlob, `${options.filename}-original.${ext}`)
       }
+    } finally {
+      isExporting.value = false
+    }
+  }
+
+  async function copyAnnotatedImageToClipboard(): Promise<void> {
+    if (!imageElement.value) return
+    if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+      throw new Error('Clipboard write is not supported in this browser')
+    }
+
+    isExporting.value = true
+    try {
+      const blob = await renderExportBlob({
+        format: 'png',
+        includeSectionGuides: false,
+        includeOriginal: false,
+        scale: 2,
+        filename: 'clipboard',
+      })
+      if (!blob) return
+
+      const annotatedPng = await blobToPngBlob(blob)
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': annotatedPng,
+        }),
+      ])
     } finally {
       isExporting.value = false
     }
@@ -892,6 +1012,12 @@ export function useAnnotationStore() {
     runSectionDetection,
     setToolMode,
     setDefaultFontFamily,
+    getCommonSettings,
+    applyCommonSettings,
+    fetchCommonSettingsPresets,
+    saveCommonSettingsAs,
+    applyCommonSettingsPreset,
+    removeCommonSettingsPreset,
     setLineStyle,
     setLineWidth,
     setLineColor,
@@ -899,7 +1025,7 @@ export function useAnnotationStore() {
     setLineHaloWidth,
     setLineHaloColor,
     setCalloutFontSize,
-    setCalloutBorderWidth,
+    setCalloutBorderEnabled,
     setNumberStyle,
     toggleShowSections,
     clearSelection,
@@ -914,6 +1040,7 @@ export function useAnnotationStore() {
     removeAnnotations,
     reorderAnnotations,
     exportProject,
+    copyAnnotatedImageToClipboard,
     saveProjectToFile,
     loadProjectFromFile,
     saveProjectAs,

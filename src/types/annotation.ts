@@ -92,8 +92,8 @@ export interface ProjectState {
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
-  /** Label box stroke width; 0 = no border. */
-  calloutBorderWidth: number
+  /** When true, label box stroke uses `lineWidth`. */
+  calloutBorderEnabled: boolean
   /** Project-wide step number style (① / (1) / …). */
   numberStyle: NumberStyleId
   showSections: boolean
