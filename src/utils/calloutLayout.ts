@@ -29,13 +29,16 @@ const LABEL_GAP = 12
 const LINE_INSET = 8
 const IMAGE_GUTTER = 14
 const PAGE_PAD = 8
-const LABEL_H_PADDING = 20
 const MIN_LABEL_WIDTH = 120
 const EMPTY_SIDE_MARGIN = 32
 const ELBOW_INSET = 10
 
 function lineHeightFor(fontSize: number): number {
   return Math.round(fontSize * 1.375)
+}
+
+function labelHPadding(fontSize: number): number {
+  return Math.max(20, Math.round(fontSize * 0.55))
 }
 
 function sideMarginFor(maxLabelWidth: number): number {
@@ -55,7 +58,7 @@ function estimateLabelSize(
   const text = `${prefix}${description || t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
-  const textWidth = measureTextWidth(text, fontSize, fontCss) + LABEL_H_PADDING
+  const textWidth = measureTextWidth(text, fontSize, fontCss) + labelHPadding(fontSize)
   return {
     width: Math.max(MIN_LABEL_WIDTH, Math.ceil(textWidth)),
     height: Math.max(lineHeight + 14, Math.round(fontSize * 1.5)),
@@ -198,16 +201,29 @@ function packSide(
     const size = sizes[itemIndex]!
     const anchor = anchors[itemIndex]!
 
-    let labelX =
+    const imageLeft = document.marginLeft
+    const imageRight = document.marginLeft + document.imageWidth
+    const autoLabelX =
       side === 'left'
-        ? document.marginLeft - size.width - IMAGE_GUTTER
-        : document.marginLeft + document.imageWidth + IMAGE_GUTTER
+        ? imageLeft - size.width - IMAGE_GUTTER
+        : imageRight + IMAGE_GUTTER
 
+    let labelX = autoLabelX
     let labelY = autoTops[itemIndex]!
 
     if (annotation.calloutPosition) {
       labelX = annotation.calloutPosition.x
       labelY = annotation.calloutPosition.y
+      // Keep dragged labels outside the screenshot when size/margins change.
+      if (side === 'left') {
+        labelX = Math.min(labelX, imageLeft - size.width - IMAGE_GUTTER)
+        labelX = Math.max(PAGE_PAD, labelX)
+      } else {
+        labelX = Math.max(labelX, imageRight + IMAGE_GUTTER)
+        const maxX =
+          imageRight + document.marginRight - size.width - PAGE_PAD
+        labelX = Math.min(labelX, Math.max(imageRight + IMAGE_GUTTER, maxX))
+      }
     }
 
     const labelCenterY = labelY + size.height / 2

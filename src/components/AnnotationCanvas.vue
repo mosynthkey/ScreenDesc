@@ -808,14 +808,15 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               v-show="editingId !== annotation.id"
               :data-callout-label="annotation.id"
               class="callout-text"
-              :x="layoutFor(annotation.id)!.labelPosition.x + 10"
-              :style="{ fontFamily: activeFontFamily, fontSize: `${calloutFontSize}px` }"
+              :x="layoutFor(annotation.id)!.labelPosition.x + Math.max(10, calloutFontSize * 0.28)"
+              :font-size="calloutFontSize"
+              :style="{ fontFamily: activeFontFamily }"
             >
               <tspan
                 v-for="(line, lineIndex) in layoutFor(annotation.id)!.lines"
                 :key="lineIndex"
                 :data-callout-label="annotation.id"
-                :x="layoutFor(annotation.id)!.labelPosition.x + 10"
+                :x="layoutFor(annotation.id)!.labelPosition.x + Math.max(10, calloutFontSize * 0.28)"
                 :y="calloutLineY(layoutFor(annotation.id)!, lineIndex)"
               >{{ line }}</tspan>
             </text>
@@ -1036,7 +1037,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 }
 
 .callout-text {
-  font-size: 16px;
   font-weight: 700;
   fill: #111;
   dominant-baseline: middle;
