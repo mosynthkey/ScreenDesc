@@ -9,6 +9,7 @@ const NUMBER_STYLE_IDS: NumberStyleId[] = [
   'dotted',
   'paren-suffix',
   'plain',
+  'none',
 ]
 
 export const DEFAULT_NUMBER_STYLE: NumberStyleId = 'circled'
@@ -21,6 +22,7 @@ export function formatStepNumber(
   order: number,
   style: NumberStyleId = DEFAULT_NUMBER_STYLE,
 ): string {
+  if (style === 'none') return ''
   if (style === 'circled' && order >= 1 && order <= 20) {
     return CIRCLED_DIGITS[order - 1]!
   }

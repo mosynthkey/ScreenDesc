@@ -10,13 +10,9 @@ export const ja: Record<MessageKey, string> = {
   'status.proposing': '提案中…',
 
   'button.project': 'プロジェクト ▾',
-  'button.replaceImage': '画像を差し替え',
-  'button.openImage': '画像を開く',
   'button.export': '書き出し',
 
   'tooltip.projectMenu': 'プロジェクトの保存・読み込み',
-  'tooltip.replaceImage': '別のスクリーンショットに差し替えます',
-  'tooltip.openImage': 'スクリーンショットを開きます',
   'tooltip.export': '注釈付き画像を書き出します',
   'tooltip.toolSelect': '選択・移動 (V)',
   'tooltip.toolAddSection': '範囲を描いてセクションを1件提案 (F)',
@@ -39,18 +35,24 @@ export const ja: Record<MessageKey, string> = {
   'aria.toggleSections': 'セクション表示',
   'aria.rescan': '全体スキャン',
 
+  'menu.newProject': '新規作成',
   'menu.projectStorage': '保存 / 読み込み(ブラウザ内)',
   'menu.exportProjectFile': 'エクスポート(ファイルに書き出し)',
   'menu.importProjectFile': 'インポート(ファイルから読み込み)',
   'menu.undoCrop': '切り抜きを元に戻す',
 
-  'upload.title': 'スクリーンショットを開く',
-  'upload.description':
-    '開くと全体をスキャンし、UI要素のセクション案を自動で提案します。',
-  'upload.hint.formats': '対応形式: PNG / JPEG / WebP',
-  'upload.hint.dnd': 'ドラッグ&ドロップ、クリップボード貼り付け(⌘V)にも対応',
-  'upload.hint.scanOnLoad': '読み込み後に全体をスキャンします',
-  'upload.button.open': 'スクリーンショットを開く',
+  'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
+
+  'home.title': 'ScreenDesc',
+  'home.description': '新しい注釈プロジェクトを作るか、このブラウザに保存したプロジェクトを開きます。',
+  'home.newTitle': '新規作成',
+  'home.newHint.formats': 'PNG / JPEG / WebP',
+  'home.newHint.dnd': 'ドラッグ&ドロップまたは貼り付け(⌘V)でも開始できます',
+  'home.newButton': 'スクリーンショットを選ぶ',
+  'home.galleryTitle': '保存済みのプロジェクト',
+  'home.galleryCount': '{count} 件',
+  'home.galleryEmpty': 'まだ保存がありません。作成後、プロジェクト → 保存 / 読み込み で残せます。',
+  'home.removeAria': '保存済みプロジェクトを削除',
 
   'sidebar.workflowTitle': '作業の流れ',
   'sidebar.workflow.step1': '1. アップロード時に全体をスキャン',
@@ -127,6 +129,7 @@ export const ja: Record<MessageKey, string> = {
   'style.numberStyle.dotted': '1. 2. 3.',
   'style.numberStyle.parenSuffix': '1) 2) 3)',
   'style.numberStyle.plain': '1 2 3',
+  'style.numberStyle.none': '番号なし',
   'style.defaultTextStyle': 'デフォルトの文字スタイル',
   'style.labelColor': 'ラベルの色',
   'style.defaultFont': 'デフォルトのフォント（Google Fonts）',

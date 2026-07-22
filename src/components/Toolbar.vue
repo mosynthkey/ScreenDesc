@@ -20,12 +20,12 @@ const emit = defineEmits<{
   'update:toolMode': [mode: ToolMode]
   toggleSections: []
   export: []
-  upload: []
   propose: []
   undoCrop: []
   exportProjectFile: []
   openImportProject: []
   openProjectStorage: []
+  newProject: []
 }>()
 
 const cropMenuOpen = ref(false)
@@ -50,6 +50,11 @@ function toggleProjectMenu(): void {
 
 function chooseProjectStorage(): void {
   emit('openProjectStorage')
+  projectMenuOpen.value = false
+}
+
+function chooseNewProject(): void {
+  emit('newProject')
   projectMenuOpen.value = false
 }
 
@@ -103,6 +108,9 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           {{ t('button.project') }}
         </button>
         <div v-if="projectMenuOpen" class="project-menu" @click.stop>
+          <button class="project-menu-item" type="button" @click="chooseNewProject">
+            {{ t('menu.newProject') }}
+          </button>
           <button class="project-menu-item" type="button" @click="chooseProjectStorage">
             {{ t('menu.projectStorage') }}
           </button>
@@ -121,14 +129,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         </div>
       </div>
 
-      <button
-        class="header-btn"
-        type="button"
-        :data-tooltip="hasImage ? t('tooltip.replaceImage') : t('tooltip.openImage')"
-        @click="emit('upload')"
-      >
-        {{ hasImage ? t('button.replaceImage') : t('button.openImage') }}
-      </button>
       <button
         class="header-btn header-btn-primary"
         type="button"

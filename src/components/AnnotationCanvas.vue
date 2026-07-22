@@ -793,6 +793,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           :fill="markerStyle(annotation).background || '#0b6e4f'"
         />
         <text
+          v-if="formatStepNumber(annotation.order, numberStyle)"
           :data-marker="annotation.id"
           class="marker-text"
           :x="document.marginLeft + annotation.markerPosition.x"

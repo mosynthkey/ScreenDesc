@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Toolbar from './components/Toolbar.vue'
 import UploadZone from './components/UploadZone.vue'
 import AnnotationCanvas from './components/AnnotationCanvas.vue'
@@ -24,6 +24,7 @@ const {
   sortedAnnotations,
   canUndoCrop,
   loadImageFile,
+  clearCurrentProject,
   cropImage,
   undoCrop,
   runSectionDetection,
@@ -62,8 +63,8 @@ const {
 } = store
 
 const exportOpen = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
 const projectFileInputRef = ref<HTMLInputElement | null>(null)
+const homeRef = ref<{ openFilePicker: () => void } | null>(null)
 const projectLoadError = ref<string | null>(null)
 const projectStorageOpen = ref(false)
 const savedProjects = ref<SavedProjectMeta[]>([])
@@ -80,6 +81,7 @@ async function onFile(file: File): Promise<void> {
 }
 
 function onWindowPaste(event: ClipboardEvent): void {
+  if (hasImage.value) return
   const items = event.clipboardData?.items
   if (!items) return
   for (const item of items) {
@@ -94,18 +96,25 @@ function onWindowPaste(event: ClipboardEvent): void {
   }
 }
 
-onMounted(() => window.addEventListener('paste', onWindowPaste))
+onMounted(() => {
+  window.addEventListener('paste', onWindowPaste)
+  void refreshSavedProjects()
+})
 onBeforeUnmount(() => window.removeEventListener('paste', onWindowPaste))
 
-function onReplaceClick(): void {
-  fileInputRef.value?.click()
-}
+watch(hasImage, (open) => {
+  if (!open) void refreshSavedProjects()
+})
 
-function onReplaceChange(event: Event): void {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (file) void onFile(file)
-  input.value = ''
+async function onNewProject(): Promise<void> {
+  if (!hasImage.value) {
+    homeRef.value?.openFilePicker()
+    return
+  }
+  if (!window.confirm(t('confirm.newProject'))) return
+  projectLoadError.value = null
+  await clearCurrentProject()
+  await refreshSavedProjects()
 }
 
 function onAnnotateSection(sectionId: string): void {
@@ -274,21 +283,14 @@ function onKeydown(event: KeyboardEvent): void {
       @update:tool-mode="setToolMode"
       @toggle-sections="toggleShowSections"
       @export="exportOpen = true"
-      @upload="onReplaceClick"
       @propose="onPropose"
       @undo-crop="onUndoCrop"
       @export-project-file="onExportProjectFile"
       @open-import-project="onOpenImportProject"
       @open-project-storage="onOpenProjectStorage"
+      @new-project="onNewProject"
     />
 
-    <input
-      ref="fileInputRef"
-      type="file"
-      accept="image/*"
-      hidden
-      @change="onReplaceChange"
-    />
     <input
       ref="projectFileInputRef"
       type="file"
@@ -298,111 +300,120 @@ function onKeydown(event: KeyboardEvent): void {
     />
     <p v-if="projectLoadError" class="project-load-error">{{ projectLoadError }}</p>
 
-    <div class="workspace">
-      <aside class="panel">
-        <div class="panel-section">
-          <h3 class="panel-title">{{ t('sidebar.workflowTitle') }}</h3>
-          <p class="hint">
-            {{ t('sidebar.workflow.step1') }}<br />
-            {{ t('sidebar.workflow.step2') }}<br />
-            {{ t('sidebar.workflow.step3') }}<br />
-            {{ t('sidebar.workflow.step4') }}
-          </p>
-        </div>
-        <div class="panel-section">
-          <AnnotationList
-            :annotations="sortedAnnotations"
-            :selected-ids="[...state.selectedAnnotationIds]"
-            :number-style="state.numberStyle"
-            @select="selectAnnotation"
-            @reorder="reorderAnnotations"
-            @remove="(id) => removeAnnotations([id])"
-            @edit-description="(id, value) => updateAnnotation(id, { description: value })"
-          />
-        </div>
-      </aside>
+    <div class="workspace" :class="{ 'is-home': !hasImage }">
+      <template v-if="hasImage">
+        <aside class="panel">
+          <div class="panel-section">
+            <h3 class="panel-title">{{ t('sidebar.workflowTitle') }}</h3>
+            <p class="hint">
+              {{ t('sidebar.workflow.step1') }}<br />
+              {{ t('sidebar.workflow.step2') }}<br />
+              {{ t('sidebar.workflow.step3') }}<br />
+              {{ t('sidebar.workflow.step4') }}
+            </p>
+          </div>
+          <div class="panel-section">
+            <AnnotationList
+              :annotations="sortedAnnotations"
+              :selected-ids="[...state.selectedAnnotationIds]"
+              @select="selectAnnotation"
+              @reorder="reorderAnnotations"
+              @remove="(id) => removeAnnotations([id])"
+              @edit-description="(id, value) => updateAnnotation(id, { description: value })"
+            />
+          </div>
+        </aside>
 
-      <UploadZone v-if="!hasImage" @file="onFile" />
-      <AnnotationCanvas
+        <AnnotationCanvas
+          :image-url="state.imageUrl!"
+          :document="state.document"
+          :sections="[...state.sections]"
+          :annotations="[...state.annotations]"
+          :callout-layouts="state.calloutLayouts.map((item) => ({ ...item, lines: [...item.lines] }))"
+          :selected-section-ids="[...state.selectedSectionIds]"
+          :selected-annotation-ids="[...state.selectedAnnotationIds]"
+          :tool-mode="state.toolMode"
+          :show-sections="state.showSections"
+          :annotation-mode="state.defaultAnnotationMode"
+          :line-style="state.lineStyle"
+          :line-width="state.lineWidth"
+          :line-color="state.lineColor"
+          :dot-color="state.lineColor"
+          :dot-radius="state.dotRadius"
+          :line-halo="state.lineHalo"
+          :callout-font-size="state.calloutFontSize"
+          :callout-border-width="state.calloutBorderWidth"
+          :number-style="state.numberStyle"
+          :label-color="state.labelColor"
+          :font-family="state.defaultFontFamily"
+          :is-detecting="isDetecting"
+          :empty-hint="state.sections.length === 0"
+          @clear-selection="clearSelection"
+          @select-section="selectSection"
+          @select-annotation="selectAnnotation"
+          @annotate-section="onAnnotateSection"
+          @add-annotation-at="onAddAnnotationAt"
+          @update-section-rect="updateSectionRect"
+          @update-marker="onUpdateMarker"
+          @update-callout-position="onUpdateCalloutPosition"
+          @add-section="onAddSection"
+          @commit-description="onCommitDescription"
+          @crop-image="onCropImage"
+        />
+
+        <aside class="panel">
+          <div class="panel-section">
+            <StylePanel
+              :annotation="selectedAnnotation"
+              :default-annotation-mode="state.defaultAnnotationMode"
+              :default-text-style="state.defaultTextStyle"
+              :default-font-family="state.defaultFontFamily"
+              :line-style="state.lineStyle"
+              :line-width="state.lineWidth"
+              :line-color="state.lineColor"
+              :dot-radius="state.dotRadius"
+              :line-halo="state.lineHalo"
+              :callout-font-size="state.calloutFontSize"
+              :callout-border-width="state.calloutBorderWidth"
+              :number-style="state.numberStyle"
+              :label-color="state.labelColor"
+              @update:default-annotation-mode="setDefaultAnnotationMode"
+              @update:default-text-style="setDefaultTextStyle"
+              @update:default-font-family="setDefaultFontFamily"
+              @update:line-style="setLineStyle"
+              @update:line-width="setLineWidth"
+              @update:line-color="setLineColor"
+              @update:dot-radius="setDotRadius"
+              @update:line-halo="setLineHalo"
+              @update:callout-font-size="setCalloutFontSize"
+              @update:callout-border-width="setCalloutBorderWidth"
+              @update:number-style="setNumberStyle"
+              @update:label-color="setLabelColor"
+              @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
+            />
+          </div>
+          <div class="panel-section">
+            <h3 class="panel-title">{{ t('sidebar.shortcutsTitle') }}</h3>
+            <p class="hint">
+              {{ t('sidebar.shortcuts.line1') }}<br />
+              {{ t('sidebar.shortcuts.line2') }}<br />
+              {{ t('sidebar.shortcuts.line3') }}<br />
+              {{ t('sidebar.shortcuts.line4') }}<br />
+              {{ t('sidebar.shortcuts.line5') }}
+            </p>
+          </div>
+        </aside>
+      </template>
+
+      <UploadZone
         v-else
-        :image-url="state.imageUrl!"
-        :document="state.document"
-        :sections="[...state.sections]"
-        :annotations="[...state.annotations]"
-        :callout-layouts="state.calloutLayouts.map((item) => ({ ...item, lines: [...item.lines] }))"
-        :selected-section-ids="[...state.selectedSectionIds]"
-        :selected-annotation-ids="[...state.selectedAnnotationIds]"
-        :tool-mode="state.toolMode"
-        :show-sections="state.showSections"
-        :annotation-mode="state.defaultAnnotationMode"
-        :line-style="state.lineStyle"
-        :line-width="state.lineWidth"
-        :line-color="state.lineColor"
-        :dot-color="state.lineColor"
-        :dot-radius="state.dotRadius"
-        :line-halo="state.lineHalo"
-        :callout-font-size="state.calloutFontSize"
-        :callout-border-width="state.calloutBorderWidth"
-        :number-style="state.numberStyle"
-        :label-color="state.labelColor"
-        :font-family="state.defaultFontFamily"
-        :is-detecting="isDetecting"
-        :empty-hint="state.sections.length === 0"
-        @clear-selection="clearSelection"
-        @select-section="selectSection"
-        @select-annotation="selectAnnotation"
-        @annotate-section="onAnnotateSection"
-        @add-annotation-at="onAddAnnotationAt"
-        @update-section-rect="updateSectionRect"
-        @update-marker="onUpdateMarker"
-        @update-callout-position="onUpdateCalloutPosition"
-        @add-section="onAddSection"
-        @commit-description="onCommitDescription"
-        @crop-image="onCropImage"
+        ref="homeRef"
+        :projects="savedProjects"
+        :is-busy="projectStorageBusy"
+        @file="onFile"
+        @open="onLoadSavedProject"
+        @remove="onRemoveSavedProject"
       />
-
-      <aside class="panel">
-        <div class="panel-section">
-          <StylePanel
-            :annotation="selectedAnnotation"
-            :default-annotation-mode="state.defaultAnnotationMode"
-            :default-text-style="state.defaultTextStyle"
-            :default-font-family="state.defaultFontFamily"
-            :line-style="state.lineStyle"
-            :line-width="state.lineWidth"
-            :line-color="state.lineColor"
-            :dot-radius="state.dotRadius"
-            :line-halo="state.lineHalo"
-            :callout-font-size="state.calloutFontSize"
-            :callout-border-width="state.calloutBorderWidth"
-            :number-style="state.numberStyle"
-            :label-color="state.labelColor"
-            @update:default-annotation-mode="setDefaultAnnotationMode"
-            @update:default-text-style="setDefaultTextStyle"
-            @update:default-font-family="setDefaultFontFamily"
-            @update:line-style="setLineStyle"
-            @update:line-width="setLineWidth"
-            @update:line-color="setLineColor"
-            @update:dot-radius="setDotRadius"
-            @update:line-halo="setLineHalo"
-            @update:callout-font-size="setCalloutFontSize"
-            @update:callout-border-width="setCalloutBorderWidth"
-            @update:number-style="setNumberStyle"
-            @update:label-color="setLabelColor"
-            @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
-          />
-        </div>
-        <div class="panel-section">
-          <h3 class="panel-title">{{ t('sidebar.shortcutsTitle') }}</h3>
-          <p class="hint">
-            {{ t('sidebar.shortcuts.line1') }}<br />
-            {{ t('sidebar.shortcuts.line2') }}<br />
-            {{ t('sidebar.shortcuts.line3') }}<br />
-            {{ t('sidebar.shortcuts.line4') }}<br />
-            {{ t('sidebar.shortcuts.line5') }}
-          </p>
-        </div>
-      </aside>
     </div>
 
     <ExportDialog :open="exportOpen" @close="exportOpen = false" @export="onExport" />
@@ -421,6 +432,10 @@ function onKeydown(event: KeyboardEvent): void {
 </template>
 
 <style scoped>
+.workspace.is-home {
+  grid-template-columns: 1fr;
+}
+
 .project-load-error {
   position: fixed;
   top: 64px;

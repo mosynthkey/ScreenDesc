@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Annotation, NumberStyleId } from '../types/annotation'
-import { formatStepNumber } from '../utils/circledNumbers'
+import type { Annotation } from '../types/annotation'
 import { useI18n } from '../i18n'
 
 const props = defineProps<{
   annotations: Annotation[]
   selectedIds: string[]
-  numberStyle: NumberStyleId
 }>()
 
 const emit = defineEmits<{
@@ -81,7 +79,6 @@ function onDrop(targetId: string, event: DragEvent): void {
         @drop="onDrop(annotation.id, $event)"
       >
         <span class="drag-handle" :title="t('annotationList.dragTitle')" aria-hidden="true">⠿</span>
-        <span class="annotation-number">{{ formatStepNumber(annotation.order, numberStyle) }}</span>
         <input
           class="desc-input"
           type="text"
@@ -112,7 +109,7 @@ function onDrop(targetId: string, event: DragEvent): void {
 
 .annotation-item {
   display: grid;
-  grid-template-columns: 14px 1.5rem 1fr auto;
+  grid-template-columns: 14px 1fr auto;
   gap: 6px;
   align-items: center;
   padding: 6px 4px;
@@ -160,16 +157,6 @@ function onDrop(targetId: string, event: DragEvent): void {
 .annotation-item:hover .drag-handle,
 .annotation-item.dragging .drag-handle {
   color: var(--ink-muted);
-}
-
-.annotation-number {
-  font-family: var(--mono);
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--accent);
-  text-align: center;
-  line-height: 1;
-  letter-spacing: -0.02em;
 }
 
 .desc-input {

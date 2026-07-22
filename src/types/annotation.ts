@@ -34,6 +34,7 @@ export type NumberStyleId =
   | 'dotted'
   | 'paren-suffix'
   | 'plain'
+  | 'none'
 
 
 export interface Section {

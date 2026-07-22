@@ -36,12 +36,24 @@ export interface ProjectSnapshot {
   numberStyle: NumberStyleId
   labelColor: string
   showSections: boolean
+  /** When set, edits auto-overwrite this named browser save. */
+  activeNamedProjectId?: string | null
+  activeNamedProjectName?: string | null
 }
 
 export interface SavedProjectMeta {
   id: string
   name: string
   updatedAt: number
+}
+
+/** Strip Vue proxies so structured clone (IndexedDB) accepts the snapshot. */
+function toCloneableSnapshot(snapshot: ProjectSnapshot): ProjectSnapshot {
+  const { imageBlob, ...fields } = snapshot
+  return {
+    imageBlob,
+    ...(JSON.parse(JSON.stringify(fields)) as Omit<ProjectSnapshot, 'imageBlob'>),
+  }
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -65,10 +77,11 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function saveProject(snapshot: ProjectSnapshot): Promise<void> {
+  const payload = toCloneableSnapshot(snapshot)
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(AUTOSAVE_STORE, 'readwrite')
-    tx.objectStore(AUTOSAVE_STORE).put(snapshot, AUTOSAVE_KEY)
+    tx.objectStore(AUTOSAVE_STORE).put(payload, AUTOSAVE_KEY)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })
@@ -87,6 +100,17 @@ export async function loadProject(): Promise<ProjectSnapshot | null> {
   return result
 }
 
+export async function clearAutosavedProject(): Promise<void> {
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(AUTOSAVE_STORE, 'readwrite')
+    tx.objectStore(AUTOSAVE_STORE).delete(AUTOSAVE_KEY)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+}
+
 export async function saveNamedProject(
   name: string,
   snapshot: ProjectSnapshot,
@@ -94,12 +118,13 @@ export async function saveNamedProject(
 ): Promise<string> {
   const projectId = id ?? crypto.randomUUID()
   const meta: SavedProjectMeta = { id: projectId, name, updatedAt: Date.now() }
+  const payload = toCloneableSnapshot(snapshot)
 
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction([SAVED_META_STORE, SAVED_DATA_STORE], 'readwrite')
     tx.objectStore(SAVED_META_STORE).put(meta)
-    tx.objectStore(SAVED_DATA_STORE).put(snapshot, projectId)
+    tx.objectStore(SAVED_DATA_STORE).put(payload, projectId)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })
@@ -129,6 +154,11 @@ export async function loadNamedProject(id: string): Promise<ProjectSnapshot | nu
   })
   db.close()
   return result
+}
+
+export async function loadNamedProjectImageBlob(id: string): Promise<Blob | null> {
+  const snapshot = await loadNamedProject(id)
+  return snapshot?.imageBlob ?? null
 }
 
 export async function deleteNamedProject(id: string): Promise<void> {

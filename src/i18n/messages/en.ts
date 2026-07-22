@@ -8,13 +8,9 @@ export const en = {
   'status.proposing': 'Proposing…',
 
   'button.project': 'Project ▾',
-  'button.replaceImage': 'Replace image',
-  'button.openImage': 'Open image',
   'button.export': 'Export',
 
   'tooltip.projectMenu': 'Save or load project',
-  'tooltip.replaceImage': 'Replace with another screenshot',
-  'tooltip.openImage': 'Open a screenshot',
   'tooltip.export': 'Export the annotated image',
   'tooltip.toolSelect': 'Select / move (V)',
   'tooltip.toolAddSection': 'Draw a region to propose one section (F)',
@@ -37,18 +33,24 @@ export const en = {
   'aria.toggleSections': 'Section visibility',
   'aria.rescan': 'Full scan',
 
+  'menu.newProject': 'New project',
   'menu.projectStorage': 'Save / load (in browser)',
   'menu.exportProjectFile': 'Export (write to file)',
   'menu.importProjectFile': 'Import (read from file)',
   'menu.undoCrop': 'Undo crop',
 
-  'upload.title': 'Open a screenshot',
-  'upload.description':
-    'Opening runs a full scan and proposes UI element sections automatically.',
-  'upload.hint.formats': 'Formats: PNG / JPEG / WebP',
-  'upload.hint.dnd': 'Drag & drop and clipboard paste (⌘V) are supported',
-  'upload.hint.scanOnLoad': 'A full scan runs after loading',
-  'upload.button.open': 'Open screenshot',
+  'confirm.newProject': 'Discard the current project and start a new one?',
+
+  'home.title': 'ScreenDesc',
+  'home.description': 'Create a new annotation project, or open one saved in this browser.',
+  'home.newTitle': 'New project',
+  'home.newHint.formats': 'PNG / JPEG / WebP',
+  'home.newHint.dnd': 'Drag & drop or paste (⌘V) a screenshot to start',
+  'home.newButton': 'Choose screenshot',
+  'home.galleryTitle': 'Saved projects',
+  'home.galleryCount': '{count} saved',
+  'home.galleryEmpty': 'No saved projects yet. Create one and use Project → Save / load.',
+  'home.removeAria': 'Delete saved project',
 
   'sidebar.workflowTitle': 'Workflow',
   'sidebar.workflow.step1': '1. Scan the full image on upload',
@@ -125,6 +127,7 @@ export const en = {
   'style.numberStyle.dotted': '1. 2. 3.',
   'style.numberStyle.parenSuffix': '1) 2) 3)',
   'style.numberStyle.plain': '1 2 3',
+  'style.numberStyle.none': 'No number',
   'style.defaultTextStyle': 'Default text style',
   'style.labelColor': 'Label color',
   'style.defaultFont': 'Default font (Google Fonts)',

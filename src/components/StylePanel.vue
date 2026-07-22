@@ -68,6 +68,7 @@ const NUMBER_STYLE_LABEL_KEYS: Record<NumberStyleId, MessageKey> = {
   dotted: 'style.numberStyle.dotted',
   'paren-suffix': 'style.numberStyle.parenSuffix',
   plain: 'style.numberStyle.plain',
+  none: 'style.numberStyle.none',
 }
 const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),

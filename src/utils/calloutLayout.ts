@@ -50,7 +50,8 @@ function estimateLabelSize(
   fontSize: number,
   numberStyle: NumberStyleId,
 ): { width: number; height: number; lines: string[] } {
-  const prefix = `${formatStepNumber(order, numberStyle)} `
+  const numberLabel = formatStepNumber(order, numberStyle)
+  const prefix = numberLabel ? `${numberLabel} ` : ''
   const text = `${prefix}${description || t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)

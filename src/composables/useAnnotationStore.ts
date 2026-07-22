@@ -33,6 +33,7 @@ import { CALLOUT_FONT_SIZE } from '../utils/markerSize'
 import { DEFAULT_LINE_WIDTH, normalizeLineStyle } from '../utils/lineStyle'
 import { DEFAULT_LABEL_COLOR, normalizeTextStyle } from '../utils/textVisibility'
 import {
+  clearAutosavedProject,
   deleteNamedProject,
   listSavedProjects,
   loadNamedProject,
@@ -79,6 +80,8 @@ const isExporting = ref(false)
 const imageElement = ref<HTMLImageElement | null>(null)
 const imageDataCache = ref<ImageData | null>(null)
 const ocrLines = ref<OcrLineHit[]>([])
+/** Named browser save that receives periodic overwrite while editing. */
+const activeNamedProject = ref<{ id: string; name: string } | null>(null)
 
 interface ImageSnapshot {
   imageUrl: string
@@ -285,12 +288,23 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
 
 let restored = false
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+let namedSaveTimer: ReturnType<typeof setTimeout> | null = null
+let namedSaveDirty = false
+const SESSION_SAVE_DEBOUNCE_MS = 600
+const NAMED_SAVE_DEBOUNCE_MS = 2500
+const NAMED_SAVE_INTERVAL_MS = 30_000
 
 async function restorePersistedProject(): Promise<void> {
   try {
     const snapshot = await loadProject()
     if (!snapshot) return
     await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
+    if (snapshot.activeNamedProjectId && snapshot.activeNamedProjectName) {
+      activeNamedProject.value = {
+        id: snapshot.activeNamedProjectId,
+        name: snapshot.activeNamedProjectName,
+      }
+    }
   } catch (err) {
     console.warn('[ScreenDesc] failed to restore persisted project', err)
   } finally {
@@ -322,6 +336,8 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     numberStyle: state.numberStyle,
     labelColor: state.labelColor,
     showSections: state.showSections,
+    activeNamedProjectId: activeNamedProject.value?.id ?? null,
+    activeNamedProjectName: activeNamedProject.value?.name ?? null,
   }
 }
 
@@ -335,12 +351,40 @@ async function persistCurrentProject(): Promise<void> {
   }
 }
 
+async function persistActiveNamedProject(): Promise<void> {
+  const active = activeNamedProject.value
+  if (!active || !state.imageUrl) return
+  try {
+    const snapshot = await buildCurrentSnapshot()
+    if (!snapshot) return
+    await saveNamedProject(active.name, snapshot, active.id)
+    namedSaveDirty = false
+  } catch (err) {
+    console.warn('[ScreenDesc] failed to auto-overwrite named project', err)
+  }
+}
+
 function scheduleSave(): void {
   if (!restored || !state.imageUrl) return
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     void persistCurrentProject()
-  }, 600)
+  }, SESSION_SAVE_DEBOUNCE_MS)
+
+  if (!activeNamedProject.value) return
+  namedSaveDirty = true
+  if (namedSaveTimer) clearTimeout(namedSaveTimer)
+  namedSaveTimer = setTimeout(() => {
+    void persistActiveNamedProject()
+  }, NAMED_SAVE_DEBOUNCE_MS)
+}
+
+function clearNamedSaveSchedule(): void {
+  if (namedSaveTimer) {
+    clearTimeout(namedSaveTimer)
+    namedSaveTimer = null
+  }
+  namedSaveDirty = false
 }
 
 void restorePersistedProject()
@@ -368,6 +412,13 @@ watch(
   () => scheduleSave(),
   { deep: true },
 )
+
+if (typeof window !== 'undefined') {
+  window.setInterval(() => {
+    if (!namedSaveDirty || !activeNamedProject.value || !state.imageUrl) return
+    void persistActiveNamedProject()
+  }, NAMED_SAVE_INTERVAL_MS)
+}
 
 export function useAnnotationStore() {
   const hasImage = computed(() => Boolean(state.imageUrl))
@@ -422,7 +473,44 @@ export function useAnnotationStore() {
       URL.revokeObjectURL(cropHistory.value.imageUrl)
       cropHistory.value = null
     }
+    activeNamedProject.value = null
+    clearNamedSaveSchedule()
     await applyImageSource(file)
+  }
+
+  async function clearCurrentProject(): Promise<void> {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    clearNamedSaveSchedule()
+    activeNamedProject.value = null
+    if (cropHistory.value) {
+      URL.revokeObjectURL(cropHistory.value.imageUrl)
+      cropHistory.value = null
+    }
+    if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
+
+    imageElement.value = null
+    imageDataCache.value = null
+    ocrLines.value = []
+    state.imageUrl = null
+    state.imageWidth = 0
+    state.imageHeight = 0
+    state.sections = []
+    state.annotations = []
+    state.selectedSectionIds = []
+    state.selectedAnnotationIds = []
+    state.toolMode = 'select'
+    state.showSections = true
+    state.calloutLayouts = []
+    state.document = createDefaultDocumentLayout(0, 0, 0)
+
+    try {
+      await clearAutosavedProject()
+    } catch (err) {
+      console.warn('[ScreenDesc] failed to clear autosaved project', err)
+    }
   }
 
   async function cropImage(rect: Rect): Promise<void> {
@@ -717,7 +805,15 @@ export function useAnnotationStore() {
   async function saveProjectAs(name: string, overwriteId?: string): Promise<string | null> {
     const snapshot = await buildCurrentSnapshot()
     if (!snapshot) return null
-    return saveNamedProject(name, snapshot, overwriteId)
+    const projectId = await saveNamedProject(name, snapshot, overwriteId)
+    activeNamedProject.value = { id: projectId, name }
+    namedSaveDirty = false
+    if (namedSaveTimer) {
+      clearTimeout(namedSaveTimer)
+      namedSaveTimer = null
+    }
+    await persistCurrentProject()
+    return projectId
   }
 
   async function fetchSavedProjects(): Promise<SavedProjectMeta[]> {
@@ -727,15 +823,25 @@ export function useAnnotationStore() {
   async function loadSavedProject(id: string): Promise<void> {
     const snapshot = await loadNamedProject(id)
     if (!snapshot) throw new Error(t('error.savedProjectNotFound'))
+    const metas = await listSavedProjects()
+    const meta = metas.find((item) => item.id === id)
     if (cropHistory.value) {
       URL.revokeObjectURL(cropHistory.value.imageUrl)
       cropHistory.value = null
     }
+    clearNamedSaveSchedule()
     await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
+    activeNamedProject.value = { id, name: meta?.name ?? 'Project' }
+    await persistCurrentProject()
   }
 
   async function removeSavedProject(id: string): Promise<void> {
     await deleteNamedProject(id)
+    if (activeNamedProject.value?.id === id) {
+      activeNamedProject.value = null
+      clearNamedSaveSchedule()
+      await persistCurrentProject()
+    }
   }
 
   async function loadProjectFromFile(file: File): Promise<void> {
@@ -745,6 +851,8 @@ export function useAnnotationStore() {
       URL.revokeObjectURL(cropHistory.value.imageUrl)
       cropHistory.value = null
     }
+    activeNamedProject.value = null
+    clearNamedSaveSchedule()
     await applyRestoredSnapshot(imageBlob, data)
   }
 
@@ -765,10 +873,12 @@ export function useAnnotationStore() {
     isExporting: readonly(isExporting),
     modelStatus: screenParser.status,
     hasImage,
+    activeNamedProject: readonly(activeNamedProject),
     sortedAnnotations,
     canUndoCrop,
     imageElement: readonly(imageElement),
     loadImageFile,
+    clearCurrentProject,
     cropImage,
     undoCrop,
     runSectionDetection,

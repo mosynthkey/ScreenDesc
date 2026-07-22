@@ -59,9 +59,11 @@ function renderInlineMarker(
     )
   }
 
-  parts.push(
-    `<text x="${cx}" y="${cy + 2}" text-anchor="middle" dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${MARKER_FONT_SIZE}" font-weight="800" ${strokeAttrs(visual.fill, visual.stroke, visual.strokeWidth)}>${label}</text>`,
-  )
+  if (label) {
+    parts.push(
+      `<text x="${cx}" y="${cy + 2}" text-anchor="middle" dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${MARKER_FONT_SIZE}" font-weight="800" ${strokeAttrs(visual.fill, visual.stroke, visual.strokeWidth)}>${label}</text>`,
+    )
+  }
 
   return `<g data-annotation="${annotation.id}">${parts.join('')}</g>`
 }
