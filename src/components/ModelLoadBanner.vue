@@ -29,66 +29,57 @@ const showBar = computed(() => props.status === 'downloading' || props.status ==
 </script>
 
 <template>
-  <div
-    v-if="visible"
-    class="model-load-banner"
-    :class="{ error: status === 'error' }"
-    role="status"
-    aria-live="polite"
-  >
-    <div class="model-load-copy">
-      <p class="model-load-title">{{ title }}</p>
-      <p v-if="status === 'error' && errorMessage" class="model-load-detail">{{ errorMessage }}</p>
-      <p v-else class="model-load-detail">{{ t('status.modelEditBlocked') }}</p>
-    </div>
-    <div v-if="showBar" class="model-load-track" aria-hidden="true">
-      <div
-        class="model-load-fill"
-        :class="{ indeterminate: status === 'loading' }"
-        :style="status === 'downloading' ? { width: `${percent}%` } : undefined"
-      />
-    </div>
-    <button
-      v-if="status === 'error'"
-      class="btn btn-primary model-load-retry"
-      type="button"
-      @click="emit('retry')"
+  <Teleport to="body">
+    <div
+      v-if="visible"
+      class="modal-backdrop model-load-backdrop"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="title"
     >
-      {{ t('status.modelRetry') }}
-    </button>
-  </div>
+      <div class="modal model-load-modal" :class="{ error: status === 'error' }">
+        <h2>{{ title }}</h2>
+        <p v-if="status === 'error' && errorMessage" class="body">{{ errorMessage }}</p>
+        <p v-else class="body">{{ t('status.modelEditBlocked') }}</p>
+
+        <div v-if="showBar" class="model-load-track" aria-hidden="true">
+          <div
+            class="model-load-fill"
+            :class="{ indeterminate: status === 'loading' }"
+            :style="status === 'downloading' ? { width: `${percent}%` } : undefined"
+          />
+        </div>
+
+        <div v-if="status === 'error'" class="modal-actions">
+          <button class="btn btn-primary" type="button" @click="emit('retry')">
+            {{ t('status.modelRetry') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
-.model-load-banner {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 12px 16px 0;
-  padding: 14px 16px;
-  border: 1px solid var(--line-strong);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow);
+.model-load-backdrop {
+  z-index: 55;
+  /* Loading gate: do not dismiss by clicking the scrim. */
+  pointer-events: auto;
 }
 
-.model-load-banner.error {
-  border-color: rgba(255, 59, 48, 0.35);
-  background: rgba(255, 245, 245, 0.96);
+.model-load-modal {
+  width: min(400px, calc(100vw - 32px));
 }
 
-.model-load-title {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 650;
-  color: var(--ink);
+.model-load-modal.error {
+  border-color: rgba(255, 59, 48, 0.28);
 }
 
-.model-load-detail {
-  margin: 4px 0 0;
-  font-size: 0.78rem;
-  line-height: 1.45;
+.body {
+  margin: 0 0 14px;
   color: var(--ink-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 .model-load-track {
@@ -110,8 +101,11 @@ const showBar = computed(() => props.status === 'downloading' || props.status ==
   animation: model-load-indeterminate 1.1s ease-in-out infinite;
 }
 
-.model-load-retry {
-  align-self: flex-start;
+.modal-actions {
+  margin-top: 16px;
+}
+
+.modal-actions .btn {
   border-radius: 10px;
 }
 

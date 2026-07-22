@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { ToolMode } from '../types/annotation'
-import type { ModelStatus } from '../types/detection'
 import type { AppPageId } from './NavigationBar.vue'
 import { useI18n } from '../i18n'
 
@@ -19,15 +18,12 @@ const props = withDefaults(
     hasImage: boolean
     /** When false, hide the floating edit dock (e.g. gallery while a project remains open). */
     showToolDock?: boolean
-    modelStatus: ModelStatus
-    modelDownloadProgress?: number
     canUndoCrop: boolean
   }>(),
   {
     projectTitle: null,
     copyJustSucceeded: false,
     showToolDock: true,
-    modelDownloadProgress: 0,
   },
 )
 
@@ -234,13 +230,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
     </div>
 
     <div v-else class="header-actions">
-      <span v-if="modelStatus !== 'ready'" class="status-chip">
-        <template v-if="modelStatus === 'error'">{{ t('status.modelLoadFailed') }}</template>
-        <template v-else-if="modelStatus === 'downloading'">
-          {{ t('status.modelDownloading', { percent: Math.round(modelDownloadProgress * 100) }) }}
-        </template>
-        <template v-else>{{ t('status.modelPreparing') }}</template>
-      </span>
       <span v-if="isDetecting" class="status-chip">{{ t('status.proposing') }}</span>
 
       <div class="project-menu-wrap">

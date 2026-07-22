@@ -596,13 +596,14 @@ function onKeydown(event: KeyboardEvent): void {
       @navigate="goToPage"
     />
 
+    <ModelLoadBanner
+      :status="modelStatus"
+      :progress="modelDownloadProgress"
+      :error-message="modelError"
+      @retry="onRetryModelLoad"
+    />
+
     <div class="app-column">
-      <ModelLoadBanner
-        :status="modelStatus"
-        :progress="modelDownloadProgress"
-        :error-message="modelError"
-        @retry="onRetryModelLoad"
-      />
       <Toolbar
         :page="appPage"
         :project-title="activeNamedProject?.name ?? null"
@@ -613,8 +614,6 @@ function onKeydown(event: KeyboardEvent): void {
         :copy-just-succeeded="copyJustSucceeded"
         :has-image="hasImage"
         :show-tool-dock="showToolDock"
-        :model-status="modelStatus"
-        :model-download-progress="modelDownloadProgress"
         :can-undo-crop="canUndoCrop"
         @update:tool-mode="setToolMode"
         @toggle-sections="toggleShowSections"

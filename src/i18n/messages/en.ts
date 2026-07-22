@@ -15,13 +15,13 @@ export const en = {
   'nav.aria': 'Main navigation',
   'nav.gallery': 'Gallery',
   'nav.edit': 'Edit',
-  'nav.editDisabledHint': 'Open or create a project first (after the model is ready)',
+  'nav.editDisabledHint': 'Open a project once the model is ready',
 
   'status.modelLoadFailed': 'Model failed to load',
   'status.modelLoading': 'Loading model…',
   'status.modelDownloading': 'Downloading model… {percent}%',
   'status.modelPreparing': 'Preparing model…',
-  'status.modelEditBlocked': 'Editing stays locked until the model is ready.',
+  'status.modelEditBlocked': 'Please wait a moment.',
   'status.modelRetry': 'Retry',
   'status.proposing': 'Proposing…',
 
