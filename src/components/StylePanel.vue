@@ -24,6 +24,8 @@ import { numberStyleIds } from '../utils/circledNumbers'
 
 const CALLOUT_FONT_SIZE_MIN = 16
 const CALLOUT_FONT_SIZE_MAX = 80
+const CALLOUT_BORDER_WIDTH_MIN = 0
+const CALLOUT_BORDER_WIDTH_MAX = 8
 const DOT_RADIUS_MIN = 1.5
 const DOT_RADIUS_MAX = 14
 const DOT_RADIUS_STEP = 0.5
@@ -92,14 +94,6 @@ const NUMBER_STYLE_LABEL_KEYS: Record<NumberStyleId, MessageKey> = {
 const numberStyleOptions = computed(() =>
   numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
 )
-const calloutBorderWidthOptions = computed(() => [
-
-  { value: 0, label: t('style.calloutBorder.none') },
-  { value: 0.75, label: t('style.calloutBorder.hairline') },
-  { value: 1.5, label: t('style.calloutBorder.medium') },
-  { value: 2.5, label: t('style.calloutBorder.bold') },
-  { value: 4, label: t('style.calloutBorder.heavy') },
-])
 
 onMounted(() => {
   for (const option of GOOGLE_FONT_OPTIONS) {
@@ -245,15 +239,25 @@ onMounted(() => {
         />
       </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
-        <label>{{ t('style.calloutBorderWidth') }}</label>
-        <select
+        <label class="slider-label">
+          <span>{{ t('style.calloutBorderWidth') }}</span>
+          <span class="slider-value">
+            {{
+              calloutBorderWidth === 0
+                ? t('style.calloutBorder.none')
+                : `${calloutBorderWidth}px`
+            }}
+          </span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="CALLOUT_BORDER_WIDTH_MIN"
+          :max="CALLOUT_BORDER_WIDTH_MAX"
+          :step="0.25"
           :value="calloutBorderWidth"
-          @change="emit('update:calloutBorderWidth', Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option v-for="option in calloutBorderWidthOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+          @input="emit('update:calloutBorderWidth', Number(($event.target as HTMLInputElement).value))"
+        />
       </div>
       <div class="field">
         <label>{{ t('style.defaultTextStyle') }}</label>

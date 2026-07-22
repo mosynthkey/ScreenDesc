@@ -640,7 +640,7 @@ export function useAnnotationStore() {
   }
 
   function setCalloutBorderWidth(width: number): void {
-    state.calloutBorderWidth = width
+    state.calloutBorderWidth = Math.min(8, Math.max(0, width))
   }
 
   function setNumberStyle(style: NumberStyleId): void {

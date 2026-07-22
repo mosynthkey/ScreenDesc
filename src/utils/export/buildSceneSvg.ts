@@ -119,11 +119,18 @@ function renderCallout(
   // Blend on the group so overlapping line+dot invert the backdrop once.
   const blendAttr = spec.blendMode ? ` style="mix-blend-mode:${spec.blendMode}"` : ''
 
+  const fillOpacityAttr = lineOpacity < 1 ? ` fill-opacity="${lineOpacity}"` : ''
+  const dotHalo =
+    lineHaloWidth > 0 && !isInvert
+      ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius + lineHaloWidth / 2}" fill="${lineHaloColor}"${fillOpacityAttr} />`
+      : ''
+
   return `
     <g data-callout="${annotation.id}">
       ${haloPath}
       <g${blendAttr}>
         <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${opacityAttr} />
+        ${dotHalo}
         <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />
       </g>
       <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="#ffffff" stroke="#1f2933" stroke-width="${calloutBorderWidth}" />

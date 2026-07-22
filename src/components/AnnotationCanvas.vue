@@ -771,6 +771,14 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               }"
             />
             <circle
+              v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
+              class="anchor-dot-halo"
+              :cx="layoutFor(annotation.id)!.anchorPoint.x"
+              :cy="layoutFor(annotation.id)!.anchorPoint.y"
+              :r="dotRadius + lineHaloWidth / 2"
+              :style="{ fill: lineHaloColor, fillOpacity: lineOpacity }"
+            />
+            <circle
               class="anchor-dot"
               :cx="layoutFor(annotation.id)!.anchorPoint.x"
               :cy="layoutFor(annotation.id)!.anchorPoint.y"
@@ -1012,8 +1020,8 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
   pointer-events: none;
 }
 
-.anchor-dot {
-  fill: #1f2933;
+.anchor-dot,
+.anchor-dot-halo {
   pointer-events: none;
 }
 
