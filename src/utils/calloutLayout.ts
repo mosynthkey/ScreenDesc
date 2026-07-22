@@ -270,7 +270,6 @@ function splitBySide(
 
 /**
  * Place callout labels beside the image near each target's Y.
- * Pass only annotations that should render as callouts.
  */
 export function computeCalloutLayouts(
   annotations: Annotation[],

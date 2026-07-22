@@ -112,31 +112,3 @@ export function distance(a: Point, b: Point): number {
   const dy = a.y - b.y
   return Math.hypot(dx, dy)
 }
-
-export function sampleLuminance(
-  imageData: ImageData,
-  x: number,
-  y: number,
-  radius = 4,
-): number {
-  const { width, height, data } = imageData
-  let sum = 0
-  let count = 0
-  const startX = Math.max(0, Math.floor(x - radius))
-  const endX = Math.min(width - 1, Math.ceil(x + radius))
-  const startY = Math.max(0, Math.floor(y - radius))
-  const endY = Math.min(height - 1, Math.ceil(y + radius))
-
-  for (let sampleY = startY; sampleY <= endY; sampleY += 1) {
-    for (let sampleX = startX; sampleX <= endX; sampleX += 1) {
-      const index = (sampleY * width + sampleX) * 4
-      const r = data[index] ?? 0
-      const g = data[index + 1] ?? 0
-      const b = data[index + 2] ?? 0
-      sum += 0.2126 * r + 0.7152 * g + 0.0722 * b
-      count += 1
-    }
-  }
-
-  return count === 0 ? 128 : sum / count
-}

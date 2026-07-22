@@ -1,10 +1,8 @@
 import type {
   Annotation,
-  AnnotationMode,
   LineStyleId,
   NumberStyleId,
   Section,
-  TextStylePreset,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
 
@@ -22,8 +20,6 @@ export interface ProjectSnapshot {
   sections: Section[]
   annotations: Annotation[]
   ocrLines: OcrLineHit[]
-  defaultAnnotationMode: AnnotationMode
-  defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
@@ -36,7 +32,6 @@ export interface ProjectSnapshot {
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
-  labelColor: string
   showSections: boolean
   /** When set, edits auto-overwrite this named browser save. */
   activeNamedProjectId?: string | null
@@ -119,9 +114,12 @@ export async function saveNamedProject(
   id?: string,
 ): Promise<string> {
   const projectId = id ?? crypto.randomUUID()
-  const meta: SavedProjectMeta = { id: projectId, name, updatedAt: Date.now() }
   const payload = toCloneableSnapshot(snapshot)
-
+  const meta: SavedProjectMeta = {
+    id: projectId,
+    name,
+    updatedAt: Date.now(),
+  }
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction([SAVED_META_STORE, SAVED_DATA_STORE], 'readwrite')
@@ -136,14 +134,14 @@ export async function saveNamedProject(
 
 export async function listSavedProjects(): Promise<SavedProjectMeta[]> {
   const db = await openDb()
-  const result = await new Promise<SavedProjectMeta[]>((resolve, reject) => {
+  const metas = await new Promise<SavedProjectMeta[]>((resolve, reject) => {
     const tx = db.transaction(SAVED_META_STORE, 'readonly')
     const request = tx.objectStore(SAVED_META_STORE).getAll()
     request.onsuccess = () => resolve((request.result as SavedProjectMeta[]) ?? [])
     request.onerror = () => reject(request.error)
   })
   db.close()
-  return result.sort((a, b) => b.updatedAt - a.updatedAt)
+  return metas.sort((left, right) => right.updatedAt - left.updatedAt)
 }
 
 export async function loadNamedProject(id: string): Promise<ProjectSnapshot | null> {

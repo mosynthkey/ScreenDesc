@@ -1,10 +1,8 @@
 import type {
   Annotation,
-  AnnotationMode,
   LineStyleId,
   NumberStyleId,
   Section,
-  TextStylePreset,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
@@ -16,7 +14,6 @@ import {
   normalizeLineOpacity,
   normalizeLineStyle,
 } from './lineStyle'
-import { DEFAULT_LABEL_COLOR, normalizeTextStyle } from './textVisibility'
 
 const FILE_VERSION = 1
 const FILE_EXTENSION = '.screendesc.json'
@@ -29,8 +26,6 @@ export interface ProjectFileData {
   sections: Section[]
   annotations: Annotation[]
   ocrLines: OcrLineHit[]
-  defaultAnnotationMode: AnnotationMode
-  defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
@@ -43,7 +38,6 @@ export interface ProjectFileData {
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
-  labelColor: string
   showSections: boolean
 }
 
@@ -56,6 +50,18 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
+function sanitizeAnnotation(raw: Annotation): Annotation {
+  return {
+    id: raw.id,
+    sectionId: raw.sectionId,
+    order: raw.order,
+    description: raw.description,
+    markerPosition: raw.markerPosition,
+    calloutSide: raw.calloutSide,
+    calloutPosition: raw.calloutPosition,
+  }
+}
+
 export async function buildProjectFile(
   imageBlob: Blob,
   fields: Omit<ProjectFileData, 'version' | 'imageDataUrl'>,
@@ -65,6 +71,7 @@ export async function buildProjectFile(
     version: FILE_VERSION,
     imageDataUrl,
     ...fields,
+    annotations: fields.annotations.map(sanitizeAnnotation),
   }
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
@@ -107,15 +114,6 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   project.lineHaloColor = normalizeLineHaloColor(
     (project as { lineHaloColor?: string }).lineHaloColor,
   )
-  project.defaultTextStyle = normalizeTextStyle(project.defaultTextStyle)
-  project.labelColor =
-    typeof project.labelColor === 'string' && project.labelColor
-      ? project.labelColor
-      : DEFAULT_LABEL_COLOR
-  project.annotations = project.annotations.map((annotation) => ({
-    ...annotation,
-    textStyle: normalizeTextStyle(annotation.textStyle),
-    resolvedStyle: normalizeTextStyle(annotation.resolvedStyle) as typeof annotation.resolvedStyle,
-  }))
+  project.annotations = (project.annotations ?? []).map(sanitizeAnnotation)
   return project
 }

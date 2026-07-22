@@ -1,7 +1,6 @@
 import { computed, reactive, readonly, ref, watch } from 'vue'
 import type {
   Annotation,
-  AnnotationMode,
   ExportOptions,
   LineStyleId,
   NumberStyleId,
@@ -9,7 +8,6 @@ import type {
   ProjectState,
   Rect,
   Section,
-  TextStylePreset,
   ToolMode,
 } from '../types/annotation'
 import { createId } from '../utils/id'
@@ -22,7 +20,6 @@ import {
   layoutCalloutsForImage,
   createDefaultDocumentLayout,
 } from '../utils/calloutLayout'
-import { resolveTextStyle } from '../utils/textVisibility'
 import { downloadBlob, exportScene } from '../utils/export'
 import {
   DEFAULT_FONT_FAMILY,
@@ -40,7 +37,6 @@ import {
   normalizeLineOpacity,
   normalizeLineStyle,
 } from '../utils/lineStyle'
-import { DEFAULT_LABEL_COLOR, normalizeTextStyle } from '../utils/textVisibility'
 import {
   clearAutosavedProject,
   deleteNamedProject,
@@ -64,8 +60,6 @@ const state = reactive<ProjectState>({
   selectedSectionIds: [],
   selectedAnnotationIds: [],
   toolMode: 'select',
-  defaultAnnotationMode: 'callout',
-  defaultTextStyle: 'auto',
   defaultFontFamily: DEFAULT_FONT_FAMILY,
   lineStyle: 'solid',
   lineWidth: DEFAULT_LINE_WIDTH,
@@ -78,7 +72,6 @@ const state = reactive<ProjectState>({
   calloutFontSize: CALLOUT_FONT_SIZE,
   calloutBorderWidth: 0,
   numberStyle: DEFAULT_NUMBER_STYLE,
-  labelColor: DEFAULT_LABEL_COLOR,
   showSections: true,
   calloutLayouts: [],
   document: createDefaultDocumentLayout(0, 0, 0),
@@ -89,7 +82,6 @@ loadGoogleFont(DEFAULT_FONT_FAMILY)
 const isDetecting = ref(false)
 const isExporting = ref(false)
 const imageElement = ref<HTMLImageElement | null>(null)
-const imageDataCache = ref<ImageData | null>(null)
 const ocrLines = ref<OcrLineHit[]>([])
 /** Named browser save that receives periodic overwrite while editing. */
 const activeNamedProject = ref<{ id: string; name: string } | null>(null)
@@ -118,15 +110,28 @@ function reindexOrders(): void {
   })
 }
 
+function sanitizeAnnotation(raw: Annotation): Annotation {
+  return {
+    id: raw.id,
+    sectionId: raw.sectionId,
+    order: raw.order,
+    description: raw.description,
+    markerPosition: { ...raw.markerPosition },
+    calloutSide: raw.calloutSide,
+    calloutPosition: raw.calloutPosition
+      ? { ...raw.calloutPosition }
+      : null,
+  }
+}
+
 function refreshDocumentAndLayouts(): void {
-  const calloutAnnotations = state.defaultAnnotationMode === 'callout' ? state.annotations : []
-  if (calloutAnnotations.length === 0) {
+  if (state.annotations.length === 0) {
     state.document = createDefaultDocumentLayout(state.imageWidth, state.imageHeight, 0)
     state.calloutLayouts = []
     return
   }
   const { document, layouts } = layoutCalloutsForImage(
-    calloutAnnotations,
+    state.annotations,
     state.sections,
     state.imageWidth,
     state.imageHeight,
@@ -136,29 +141,6 @@ function refreshDocumentAndLayouts(): void {
   )
   state.document = document
   state.calloutLayouts = layouts
-}
-
-function refreshResolvedStyles(): void {
-  for (const annotation of state.annotations) {
-    annotation.resolvedStyle = resolveTextStyle(
-      annotation.textStyle,
-      imageDataCache.value,
-      annotation.markerPosition,
-    )
-  }
-}
-
-async function cacheImageData(image: HTMLImageElement): Promise<void> {
-  const canvas = document.createElement('canvas')
-  canvas.width = image.naturalWidth
-  canvas.height = image.naturalHeight
-  const context = canvas.getContext('2d', { willReadFrequently: true })
-  if (!context) {
-    imageDataCache.value = null
-    return
-  }
-  context.drawImage(image, 0, 0)
-  imageDataCache.value = context.getImageData(0, 0, canvas.width, canvas.height)
 }
 
 function loadImageElement(url: string): Promise<HTMLImageElement> {
@@ -197,11 +179,9 @@ watch(
       calloutPosition: annotation.calloutPosition
         ? { ...annotation.calloutPosition }
         : null,
-      textStyle: annotation.textStyle,
     })),
   () => {
     refreshDocumentAndLayouts()
-    refreshResolvedStyles()
   },
   { deep: true },
 )
@@ -223,7 +203,6 @@ watch(
     [
       state.imageWidth,
       state.imageHeight,
-      state.defaultAnnotationMode,
       state.calloutFontSize,
       state.defaultFontFamily,
       state.numberStyle,
@@ -239,8 +218,6 @@ interface RestorableFields {
   sections: Section[]
   annotations: Annotation[]
   ocrLines: OcrLineHit[]
-  defaultAnnotationMode: AnnotationMode
-  defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth?: number
@@ -255,7 +232,6 @@ interface RestorableFields {
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle?: NumberStyleId
-  labelColor?: string
   showSections: boolean
 }
 
@@ -270,13 +246,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.imageWidth = fields.imageWidth
   state.imageHeight = fields.imageHeight
   state.sections = fields.sections
-  state.annotations = fields.annotations.map((annotation) => ({
-    ...annotation,
-    textStyle: normalizeTextStyle(annotation.textStyle),
-    resolvedStyle: normalizeTextStyle(annotation.resolvedStyle) as typeof annotation.resolvedStyle,
-  }))
-  state.defaultAnnotationMode = fields.defaultAnnotationMode
-  state.defaultTextStyle = normalizeTextStyle(fields.defaultTextStyle)
+  state.annotations = fields.annotations.map(sanitizeAnnotation)
   state.defaultFontFamily = fields.defaultFontFamily
   {
     const normalizedLine = normalizeLineStyle(fields.lineStyle, fields.lineWidth)
@@ -292,14 +262,12 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.calloutFontSize = fields.calloutFontSize
   state.calloutBorderWidth = fields.calloutBorderWidth
   state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
-  state.labelColor = fields.labelColor ?? DEFAULT_LABEL_COLOR
   state.showSections = fields.showSections
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   ocrLines.value = fields.ocrLines
   loadGoogleFont(state.defaultFontFamily)
 
-  await cacheImageData(image)
   refreshDocumentAndLayouts()
 }
 
@@ -337,10 +305,8 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     imageWidth: state.imageWidth,
     imageHeight: state.imageHeight,
     sections: state.sections,
-    annotations: state.annotations,
+    annotations: state.annotations.map(sanitizeAnnotation),
     ocrLines: ocrLines.value,
-    defaultAnnotationMode: state.defaultAnnotationMode,
-    defaultTextStyle: state.defaultTextStyle,
     defaultFontFamily: state.defaultFontFamily,
     lineStyle: state.lineStyle,
     lineWidth: state.lineWidth,
@@ -353,7 +319,6 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     calloutFontSize: state.calloutFontSize,
     calloutBorderWidth: state.calloutBorderWidth,
     numberStyle: state.numberStyle,
-    labelColor: state.labelColor,
     showSections: state.showSections,
     activeNamedProjectId: activeNamedProject.value?.id ?? null,
     activeNamedProjectName: activeNamedProject.value?.name ?? null,
@@ -413,8 +378,6 @@ watch(
     state.imageUrl,
     state.sections,
     state.annotations,
-    state.defaultAnnotationMode,
-    state.defaultTextStyle,
     state.defaultFontFamily,
     state.lineStyle,
     state.lineWidth,
@@ -427,7 +390,6 @@ watch(
     state.calloutFontSize,
     state.calloutBorderWidth,
     state.numberStyle,
-    state.labelColor,
     state.showSections,
   ],
   () => scheduleSave(),
@@ -479,7 +441,6 @@ export function useAnnotationStore() {
     state.toolMode = 'select'
     state.showSections = true
     ocrLines.value = []
-    await cacheImageData(image)
 
     const [, ocrResult] = await Promise.all([
       runSectionDetection(),
@@ -513,7 +474,6 @@ export function useAnnotationStore() {
     if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
 
     imageElement.value = null
-    imageDataCache.value = null
     ocrLines.value = []
     state.imageUrl = null
     state.imageWidth = 0
@@ -582,24 +542,11 @@ export function useAnnotationStore() {
     ocrLines.value = snapshot.ocrLines
     cropHistory.value = null
 
-    await cacheImageData(snapshot.imageElement)
     refreshDocumentAndLayouts()
   }
 
   function setToolMode(mode: ToolMode): void {
     state.toolMode = mode
-  }
-
-  function setDefaultAnnotationMode(mode: AnnotationMode): void {
-    state.defaultAnnotationMode = mode
-  }
-
-  function setDefaultTextStyle(style: TextStylePreset): void {
-    state.defaultTextStyle = style
-    for (const annotation of state.annotations) {
-      annotation.textStyle = style
-    }
-    refreshResolvedStyles()
   }
 
   function setLineStyle(style: LineStyleId): void {
@@ -617,10 +564,6 @@ export function useAnnotationStore() {
 
   function setLineOpacity(opacity: number): void {
     state.lineOpacity = normalizeLineOpacity(opacity)
-  }
-
-  function setLabelColor(color: string): void {
-    state.labelColor = color
   }
 
   function setDotRadius(radius: number): void {
@@ -722,8 +665,6 @@ export function useAnnotationStore() {
       markerPosition: { ...center },
       calloutSide: 'auto',
       calloutPosition: null,
-      textStyle: state.defaultTextStyle,
-      resolvedStyle: 'white-black-stroke',
     }
     state.annotations.push(annotation)
     reindexOrders()
@@ -741,8 +682,6 @@ export function useAnnotationStore() {
       markerPosition: { ...point },
       calloutSide: 'auto',
       calloutPosition: null,
-      textStyle: state.defaultTextStyle,
-      resolvedStyle: 'white-black-stroke',
     }
     state.annotations.push(annotation)
     reindexOrders()
@@ -764,7 +703,6 @@ export function useAnnotationStore() {
         | 'markerPosition'
         | 'calloutSide'
         | 'calloutPosition'
-        | 'textStyle'
         | 'sectionId'
       >
     >,
@@ -793,7 +731,6 @@ export function useAnnotationStore() {
     isExporting.value = true
     try {
       refreshDocumentAndLayouts()
-      refreshResolvedStyles()
       await ensureGoogleFontsLoaded([state.defaultFontFamily])
       const blob = await exportScene({
         image: imageElement.value,
@@ -802,7 +739,6 @@ export function useAnnotationStore() {
         calloutLayouts: state.calloutLayouts,
         document: state.document,
         options,
-        annotationMode: state.defaultAnnotationMode,
         lineStyle: state.lineStyle,
         lineWidth: state.lineWidth,
         lineColor: state.lineColor,
@@ -813,8 +749,6 @@ export function useAnnotationStore() {
         lineHaloColor: state.lineHaloColor,
         calloutFontSize: state.calloutFontSize,
         calloutBorderWidth: state.calloutBorderWidth,
-        numberStyle: state.numberStyle,
-        labelColor: state.labelColor,
         fontFamily: state.defaultFontFamily,
       })
       downloadBlob(blob, `${options.filename}.${options.format}`)
@@ -918,8 +852,6 @@ export function useAnnotationStore() {
     undoCrop,
     runSectionDetection,
     setToolMode,
-    setDefaultAnnotationMode,
-    setDefaultTextStyle,
     setDefaultFontFamily,
     setLineStyle,
     setLineWidth,
@@ -931,7 +863,6 @@ export function useAnnotationStore() {
     setCalloutFontSize,
     setCalloutBorderWidth,
     setNumberStyle,
-    setLabelColor,
     toggleShowSections,
     clearSelection,
     selectSection,

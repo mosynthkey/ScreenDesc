@@ -10,23 +10,12 @@ export interface Rect {
   height: number
 }
 
-export type AnnotationMode = 'inline' | 'callout'
-
-export type TextStylePreset =
-  | 'auto'
-  | 'white-black-stroke'
-  | 'black-white-stroke'
-  | 'semi-transparent-bg'
-  | 'local-invert'
-  | 'label'
-
 export type CalloutSide = 'left' | 'right' | 'auto'
 
 export type ToolMode = 'select' | 'add-section' | 'annotate' | 'crop'
 
 /** Line pattern only; stroke weight is `lineWidth`. */
 export type LineStyleId = 'solid' | 'dashed' | 'invert'
-
 
 export type NumberStyleId =
   | 'circled'
@@ -35,7 +24,6 @@ export type NumberStyleId =
   | 'paren-suffix'
   | 'plain'
   | 'none'
-
 
 export interface Section {
   id: string
@@ -53,14 +41,11 @@ export interface Annotation {
   sectionId: string | null
   order: number
   description: string
-  /** Marker center in image coordinates. */
+  /** Anchor point in image coordinates (leader start). */
   markerPosition: Point
   calloutSide: CalloutSide
   /** Manual override for callout label position (document coords including margin). */
   calloutPosition: Point | null
-  textStyle: TextStylePreset
-  /** Resolved style after auto detection. */
-  resolvedStyle: Exclude<TextStylePreset, 'auto'>
 }
 
 export interface CalloutLayoutItem {
@@ -93,8 +78,6 @@ export interface ProjectState {
   selectedSectionIds: string[]
   selectedAnnotationIds: string[]
   toolMode: ToolMode
-  defaultAnnotationMode: AnnotationMode
-  defaultTextStyle: TextStylePreset
   defaultFontFamily: string
   lineStyle: LineStyleId
   /** Leader stroke width in px (also used for dashed / invert). */
@@ -113,8 +96,6 @@ export interface ProjectState {
   calloutBorderWidth: number
   /** Project-wide step number style (① / (1) / …). */
   numberStyle: NumberStyleId
-  /** Fill color for inline `label` markers. */
-  labelColor: string
   showSections: boolean
   calloutLayouts: CalloutLayoutItem[]
   document: DocumentLayout

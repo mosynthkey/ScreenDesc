@@ -2,24 +2,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type {
   Annotation,
-  AnnotationMode,
   CalloutLayoutItem,
   DocumentLayout,
   LineStyleId,
-  NumberStyleId,
   Point,
   Rect,
   Section,
   ToolMode,
 } from '../types/annotation'
-import { formatStepNumber } from '../utils/circledNumbers'
-import { getMarkerVisualStyle } from '../utils/textVisibility'
 import { pointInRect } from '../utils/geometry'
-import {
-  MARKER_FONT_SIZE,
-  MARKER_HIT_RADIUS,
-  MARKER_RADIUS,
-} from '../utils/markerSize'
 import { fontFamilyCss } from '../utils/googleFonts'
 import { getLineStyleSpec } from '../utils/lineStyle'
 import { buildLeaderPath } from '../utils/calloutLayout'
@@ -41,7 +32,6 @@ const props = defineProps<{
   selectedAnnotationIds: string[]
   toolMode: ToolMode
   showSections: boolean
-  annotationMode: AnnotationMode
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
@@ -52,8 +42,6 @@ const props = defineProps<{
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
-  numberStyle: NumberStyleId
-  labelColor: string
   fontFamily: string
   isDetecting?: boolean
   emptyHint?: boolean
@@ -66,7 +54,6 @@ const emit = defineEmits<{
   annotateSection: [sectionId: string]
   addAnnotationAt: [point: Point]
   updateSectionRect: [sectionId: string, rect: Rect]
-  updateMarker: [annotationId: string, point: Point]
   updateCalloutPosition: [annotationId: string, point: Point]
   addSection: [rect: Rect]
   commitDescription: [annotationId: string, description: string]
@@ -86,11 +73,6 @@ type DragState =
       handle: ResizeHandle
       origin: Point
       startRect: Rect
-    }
-  | {
-      kind: 'marker'
-      annotationId: string
-      offset: Point
     }
   | {
       kind: 'callout'
@@ -343,37 +325,21 @@ function onPointerDown(event: PointerEvent): void {
   const handle = (target.closest('[data-handle]')?.getAttribute('data-handle') ??
     null) as ResizeHandle | null
   const sectionId = target.closest('[data-section]')?.getAttribute('data-section')
-  const markerId = target.closest('[data-marker]')?.getAttribute('data-marker')
   const calloutId = target.closest('[data-callout-label]')?.getAttribute('data-callout-label')
 
   // Second click of a double-click: edit instead of starting a drag.
-  if (event.detail >= 2 && (calloutId || markerId)) {
+  if (event.detail >= 2 && calloutId) {
     event.preventDefault()
-    void beginEdit((calloutId || markerId)!)
+    void beginEdit(calloutId)
     return
   }
 
-  if (editingId.value && !target.closest('.callout-inplace-edit') && !target.closest('.inline-edit')) {
+  if (editingId.value && !target.closest('.callout-inplace-edit')) {
     commitEdit()
   }
 
   pointerMoved.value = false
   ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
-
-  if (markerId) {
-    const annotation = props.annotations.find((item) => item.id === markerId)
-    if (!annotation) return
-    emit('selectAnnotation', markerId, event.shiftKey)
-    drag.value = {
-      kind: 'marker',
-      annotationId: markerId,
-      offset: {
-        x: annotation.markerPosition.x - imagePoint.x,
-        y: annotation.markerPosition.y - imagePoint.y,
-      },
-    }
-    return
-  }
 
   if (calloutId) {
     const layout = props.calloutLayouts.find((item) => item.annotationId === calloutId)
@@ -462,14 +428,6 @@ function onPointerMove(event: PointerEvent): void {
     if (Math.hypot(dx, dy) > 3) {
       pointerMoved.value = true
     }
-  }
-
-  if (drag.value.kind === 'marker') {
-    emit('updateMarker', drag.value.annotationId, {
-      x: imagePoint.x + drag.value.offset.x,
-      y: imagePoint.y + drag.value.offset.y,
-    })
-    return
   }
 
   if (drag.value.kind === 'callout') {
@@ -574,9 +532,7 @@ function onDblClick(event: MouseEvent): void {
   // Backup path; primary edit trigger is pointerdown with detail >= 2.
   event.preventDefault()
   const target = event.target as Element
-  const annotationId =
-    target.closest('[data-callout-label]')?.getAttribute('data-callout-label') ??
-    target.closest('[data-marker]')?.getAttribute('data-marker')
+  const annotationId = target.closest('[data-callout-label]')?.getAttribute('data-callout-label')
   if (!annotationId || editingId.value === annotationId) return
   void beginEdit(annotationId)
 }
@@ -606,7 +562,7 @@ const screenScale = computed(() =>
 )
 
 const editingCalloutLayout = computed(() => {
-  if (!editingId.value || props.annotationMode !== 'callout') return null
+  if (!editingId.value) return null
   return props.calloutLayouts.find((item) => item.annotationId === editingId.value) ?? null
 })
 
@@ -643,10 +599,6 @@ function leaderEndX(layout: CalloutLayoutItem): number {
 
 function leaderPathFor(layout: CalloutLayoutItem): string {
   return buildLeaderPath(layout.anchorPoint, leaderEndX(layout), layout.elbowPoint.y)
-}
-
-function markerStyle(annotation: Annotation) {
-  return getMarkerVisualStyle(annotation.resolvedStyle, props.labelColor)
 }
 
 const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
@@ -746,7 +698,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
       />
 
       <!-- Callouts -->
-      <template v-if="annotationMode === 'callout'">
       <g v-for="annotation in annotations" :key="annotation.id">
         <template v-if="layoutFor(annotation.id)">
           <path
@@ -823,62 +774,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           </g>
         </template>
       </g>
-      </template>
-
-      <!-- Inline markers -->
-      <template v-if="annotationMode === 'inline'">
-      <g
-        v-for="annotation in annotations"
-        :key="annotation.id"
-        class="marker"
-        :class="{ selected: selectedAnnotationIds.includes(annotation.id) }"
-      >
-        <circle
-          :data-marker="annotation.id"
-          class="marker-hit"
-          :cx="document.marginLeft + annotation.markerPosition.x"
-          :cy="document.marginTop + annotation.markerPosition.y"
-          :r="MARKER_HIT_RADIUS"
-        />
-        <circle
-          v-if="markerStyle(annotation).background || markerStyle(annotation).useInvert"
-          :data-marker="annotation.id"
-          :cx="document.marginLeft + annotation.markerPosition.x"
-          :cy="document.marginTop + annotation.markerPosition.y"
-          :r="MARKER_RADIUS"
-          :fill="markerStyle(annotation).background || '#000'"
-          :fill-opacity="
-            markerStyle(annotation).useInvert
-              ? 0.45
-              : markerStyle(annotation).backgroundOpacity
-          "
-        />
-        <rect
-          v-if="markerStyle(annotation).shape === 'label'"
-          :data-marker="annotation.id"
-          :x="document.marginLeft + annotation.markerPosition.x - MARKER_RADIUS"
-          :y="document.marginTop + annotation.markerPosition.y - MARKER_RADIUS + 2"
-          :width="MARKER_RADIUS * 2"
-          :height="MARKER_RADIUS * 2 - 4"
-          rx="6"
-          :fill="markerStyle(annotation).background || '#0b6e4f'"
-        />
-        <text
-          v-if="formatStepNumber(annotation.order, numberStyle)"
-          :data-marker="annotation.id"
-          class="marker-text"
-          :x="document.marginLeft + annotation.markerPosition.x"
-          :y="document.marginTop + annotation.markerPosition.y + 2"
-          :font-size="MARKER_FONT_SIZE"
-          :fill="markerStyle(annotation).fill"
-          :stroke="markerStyle(annotation).stroke === 'none' ? 'none' : markerStyle(annotation).stroke"
-          :stroke-width="markerStyle(annotation).strokeWidth"
-          :style="{ fontFamily: activeFontFamily }"
-        >
-          {{ formatStepNumber(annotation.order, numberStyle) }}
-        </text>
-      </g>
-      </template>
     </svg>
 
       <div
@@ -906,22 +801,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
       </div>
     </div>
 
-    <div
-      v-if="editingId && !editingCalloutLayout"
-      class="inline-edit"
-      @pointerdown.stop
-    >
-      <input
-        ref="editInputRef"
-        v-model="editDraft"
-        type="text"
-        :placeholder="t('canvas.descriptionPlaceholder')"
-        @keydown.enter.prevent="commitEdit"
-        @keydown.escape.prevent="cancelEdit"
-        @blur="onEditBlur"
-      />
-      <button class="btn btn-primary" type="button" @click="commitEdit">{{ t('canvas.commit') }}</button>
-    </div>
   </div>
 </template>
 
@@ -1042,51 +921,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
   dominant-baseline: middle;
   pointer-events: none;
   user-select: none;
-}
-
-.marker {
-  cursor: grab;
-}
-
-.marker-hit {
-  fill: transparent;
-}
-
-.marker.selected .marker-hit {
-  stroke: #2563eb;
-  stroke-width: 2;
-  stroke-dasharray: 4 3;
-}
-
-.marker-text {
-  font-weight: 800;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  paint-order: stroke;
-  stroke-linejoin: round;
-  pointer-events: none;
-}
-
-.inline-edit {
-  position: sticky;
-  bottom: 16px;
-  left: 50%;
-  display: flex;
-  gap: 8px;
-  width: min(420px, calc(100% - 32px));
-  margin: 0 auto 16px;
-  padding: 10px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-}
-
-.inline-edit input {
-  flex: 1;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 10px;
 }
 
 .canvas-banner {

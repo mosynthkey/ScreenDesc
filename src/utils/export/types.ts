@@ -1,11 +1,9 @@
 import type {
   Annotation,
-  AnnotationMode,
   CalloutLayoutItem,
   DocumentLayout,
   ExportOptions,
   LineStyleId,
-  NumberStyleId,
   Section,
 } from '../../types/annotation'
 
@@ -16,7 +14,6 @@ export interface ExportScene {
   calloutLayouts: CalloutLayoutItem[]
   document: DocumentLayout
   options: ExportOptions
-  annotationMode: AnnotationMode
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
@@ -27,8 +24,6 @@ export interface ExportScene {
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
-  numberStyle: NumberStyleId
-  labelColor: string
   fontFamily: string
 }
 

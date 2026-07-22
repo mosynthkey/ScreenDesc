@@ -30,8 +30,6 @@ const {
   runSectionDetection,
   addSection,
   setToolMode,
-  setDefaultAnnotationMode,
-  setDefaultTextStyle,
   setDefaultFontFamily,
   setLineStyle,
   setLineWidth,
@@ -43,7 +41,6 @@ const {
   setCalloutFontSize,
   setCalloutBorderWidth,
   setNumberStyle,
-  setLabelColor,
   toggleShowSections,
   clearSelection,
   selectSection,
@@ -221,9 +218,6 @@ async function onPropose(): Promise<void> {
   await runSectionDetection()
 }
 
-function onUpdateMarker(annotationId: string, point: Point): void {
-  updateAnnotation(annotationId, { markerPosition: point })
-}
 
 function onUpdateCalloutPosition(annotationId: string, point: Point): void {
   updateAnnotation(annotationId, { calloutPosition: point })
@@ -260,14 +254,6 @@ function onKeydown(event: KeyboardEvent): void {
   }
   if (event.key === 'x' || event.key === 'X') {
     setToolMode('crop')
-  }
-  if (event.key === 'c' || event.key === 'C') {
-    setDefaultAnnotationMode('callout')
-    setToolMode('annotate')
-  }
-  if (event.key === 'i' || event.key === 'I') {
-    setDefaultAnnotationMode('inline')
-    setToolMode('annotate')
   }
 }
 </script>
@@ -320,8 +306,6 @@ function onKeydown(event: KeyboardEvent): void {
               :show-project="false"
               :show-annotation="true"
               :annotation="selectedAnnotation"
-              :default-annotation-mode="state.defaultAnnotationMode"
-              :default-text-style="state.defaultTextStyle"
               :default-font-family="state.defaultFontFamily"
               :line-style="state.lineStyle"
               :line-width="state.lineWidth"
@@ -333,7 +317,6 @@ function onKeydown(event: KeyboardEvent): void {
               :callout-font-size="state.calloutFontSize"
               :callout-border-width="state.calloutBorderWidth"
               :number-style="state.numberStyle"
-              :label-color="state.labelColor"
               @patch="(patch) => selectedAnnotation && updateAnnotation(selectedAnnotation.id, patch)"
             />
           </div>
@@ -349,7 +332,6 @@ function onKeydown(event: KeyboardEvent): void {
           :selected-annotation-ids="[...state.selectedAnnotationIds]"
           :tool-mode="state.toolMode"
           :show-sections="state.showSections"
-          :annotation-mode="state.defaultAnnotationMode"
           :line-style="state.lineStyle"
           :line-width="state.lineWidth"
           :line-color="state.lineColor"
@@ -360,8 +342,6 @@ function onKeydown(event: KeyboardEvent): void {
           :line-halo-color="state.lineHaloColor"
           :callout-font-size="state.calloutFontSize"
           :callout-border-width="state.calloutBorderWidth"
-          :number-style="state.numberStyle"
-          :label-color="state.labelColor"
           :font-family="state.defaultFontFamily"
           :is-detecting="isDetecting"
           :empty-hint="state.sections.length === 0"
@@ -371,7 +351,6 @@ function onKeydown(event: KeyboardEvent): void {
           @annotate-section="onAnnotateSection"
           @add-annotation-at="onAddAnnotationAt"
           @update-section-rect="updateSectionRect"
-          @update-marker="onUpdateMarker"
           @update-callout-position="onUpdateCalloutPosition"
           @add-section="onAddSection"
           @commit-description="onCommitDescription"
@@ -384,8 +363,6 @@ function onKeydown(event: KeyboardEvent): void {
               :show-project="true"
               :show-annotation="false"
               :annotation="null"
-              :default-annotation-mode="state.defaultAnnotationMode"
-              :default-text-style="state.defaultTextStyle"
               :default-font-family="state.defaultFontFamily"
               :line-style="state.lineStyle"
               :line-width="state.lineWidth"
@@ -397,9 +374,6 @@ function onKeydown(event: KeyboardEvent): void {
               :callout-font-size="state.calloutFontSize"
               :callout-border-width="state.calloutBorderWidth"
               :number-style="state.numberStyle"
-              :label-color="state.labelColor"
-              @update:default-annotation-mode="setDefaultAnnotationMode"
-              @update:default-text-style="setDefaultTextStyle"
               @update:default-font-family="setDefaultFontFamily"
               @update:line-style="setLineStyle"
               @update:line-width="setLineWidth"
@@ -411,7 +385,6 @@ function onKeydown(event: KeyboardEvent): void {
               @update:callout-font-size="setCalloutFontSize"
               @update:callout-border-width="setCalloutBorderWidth"
               @update:number-style="setNumberStyle"
-              @update:label-color="setLabelColor"
             />
           </div>
         </aside>

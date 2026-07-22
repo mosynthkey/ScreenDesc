@@ -13,7 +13,6 @@ export const svgExporter: Exporter = {
       calloutLayouts: scene.calloutLayouts,
       document: scene.document,
       includeSectionGuides: scene.options.includeSectionGuides,
-      annotationMode: scene.annotationMode,
       lineStyle: scene.lineStyle,
       lineWidth: scene.lineWidth,
       lineColor: scene.lineColor,
@@ -24,8 +23,6 @@ export const svgExporter: Exporter = {
       lineHaloColor: scene.lineHaloColor,
       calloutFontSize: scene.calloutFontSize,
       calloutBorderWidth: scene.calloutBorderWidth,
-      numberStyle: scene.numberStyle,
-      labelColor: scene.labelColor,
       fontFamily: scene.fontFamily,
       fontCss,
     })
