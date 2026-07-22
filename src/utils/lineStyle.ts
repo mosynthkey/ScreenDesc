@@ -10,7 +10,7 @@ export interface LineStyleSpec {
 
 export const DEFAULT_LINE_WIDTH = 4.5
 export const LINE_WIDTH_MIN = 1
-export const LINE_WIDTH_MAX = 18
+export const LINE_WIDTH_MAX = 54
 
 export const DEFAULT_LINE_OPACITY = 1
 export const LINE_OPACITY_MIN = 0.05
@@ -25,7 +25,7 @@ export function normalizeLineOpacity(value: unknown): number {
 export const DEFAULT_LINE_HALO_WIDTH = 0
 export const LEGACY_LINE_HALO_WIDTH = 3
 export const LINE_HALO_WIDTH_MIN = 0
-export const LINE_HALO_WIDTH_MAX = 12
+export const LINE_HALO_WIDTH_MAX = 36
 export const DEFAULT_LINE_HALO_COLOR = '#ffffff'
 
 export function normalizeLineHaloWidth(

@@ -17,15 +17,16 @@ import {
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
 } from '../utils/lineStyle'
+import {
+  CALLOUT_BORDER_WIDTH_MAX,
+  CALLOUT_BORDER_WIDTH_MIN,
+  CALLOUT_FONT_SIZE_MAX,
+  CALLOUT_FONT_SIZE_MIN,
+  DOT_RADIUS_MAX,
+  DOT_RADIUS_MIN,
+  DOT_RADIUS_STEP,
+} from '../utils/markerSize'
 import { numberStyleIds } from '../utils/circledNumbers'
-
-const CALLOUT_FONT_SIZE_MIN = 16
-const CALLOUT_FONT_SIZE_MAX = 80
-const CALLOUT_BORDER_WIDTH_MIN = 0
-const CALLOUT_BORDER_WIDTH_MAX = 8
-const DOT_RADIUS_MIN = 1.5
-const DOT_RADIUS_MAX = 14
-const DOT_RADIUS_STEP = 0.5
 
 withDefaults(
   defineProps<{

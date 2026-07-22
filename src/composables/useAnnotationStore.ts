@@ -26,7 +26,15 @@ import {
   ensureGoogleFontsLoaded,
   loadGoogleFont,
 } from '../utils/googleFonts'
-import { CALLOUT_FONT_SIZE } from '../utils/markerSize'
+import {
+  CALLOUT_BORDER_WIDTH_MAX,
+  CALLOUT_BORDER_WIDTH_MIN,
+  CALLOUT_FONT_SIZE,
+  CALLOUT_FONT_SIZE_MAX,
+  CALLOUT_FONT_SIZE_MIN,
+  DOT_RADIUS_MAX,
+  DOT_RADIUS_MIN,
+} from '../utils/markerSize'
 import {
   DEFAULT_LINE_HALO_COLOR,
   DEFAULT_LINE_HALO_WIDTH,
@@ -567,7 +575,7 @@ export function useAnnotationStore() {
   }
 
   function setDotRadius(radius: number): void {
-    state.dotRadius = radius
+    state.dotRadius = Math.min(DOT_RADIUS_MAX, Math.max(DOT_RADIUS_MIN, radius))
   }
 
   function setLineHaloWidth(width: number): void {
@@ -579,11 +587,17 @@ export function useAnnotationStore() {
   }
 
   function setCalloutFontSize(size: number): void {
-    state.calloutFontSize = size
+    state.calloutFontSize = Math.min(
+      CALLOUT_FONT_SIZE_MAX,
+      Math.max(CALLOUT_FONT_SIZE_MIN, size),
+    )
   }
 
   function setCalloutBorderWidth(width: number): void {
-    state.calloutBorderWidth = Math.min(8, Math.max(0, width))
+    state.calloutBorderWidth = Math.min(
+      CALLOUT_BORDER_WIDTH_MAX,
+      Math.max(CALLOUT_BORDER_WIDTH_MIN, width),
+    )
   }
 
   function setNumberStyle(style: NumberStyleId): void {
