@@ -122,7 +122,7 @@ export const en = {
   'style.numberStyle.parenSuffix': '1) 2) 3)',
   'style.numberStyle.plain': '1 2 3',
   'style.numberStyle.none': 'No number',
-  'style.defaultFont': 'Default font (Google Fonts)',
+  'style.defaultFont': 'Font (Google Fonts)',
   'style.selectedAnnotationTitle': 'Selected annotation',
   'style.calloutSide': 'Callout side',
   'style.calloutSide.auto': 'Auto',

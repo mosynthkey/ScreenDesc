@@ -124,7 +124,7 @@ export const ja: Record<MessageKey, string> = {
   'style.numberStyle.parenSuffix': '1) 2) 3)',
   'style.numberStyle.plain': '1 2 3',
   'style.numberStyle.none': '番号なし',
-  'style.defaultFont': 'デフォルトのフォント（Google Fonts）',
+  'style.defaultFont': 'フォント（Google Fonts）',
   'style.selectedAnnotationTitle': '選択中の注釈',
   'style.calloutSide': 'コールアウトの位置',
   'style.calloutSide.auto': '自動',
