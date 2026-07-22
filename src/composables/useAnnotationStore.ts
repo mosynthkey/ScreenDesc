@@ -27,14 +27,13 @@ import {
   loadGoogleFont,
 } from '../utils/googleFonts'
 import {
+  ANCHOR_OFFSET_MAX,
+  ANCHOR_OFFSET_MIN,
   CALLOUT_BORDER_WIDTH_MAX,
   CALLOUT_BORDER_WIDTH_MIN,
   CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
-  DEFAULT_DOT_OFFSET,
-  DOT_OFFSET_MAX,
-  DOT_OFFSET_MIN,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
 } from '../utils/markerSize'
@@ -75,7 +74,6 @@ const state = reactive<ProjectState>({
   lineColor: '#ffd60a',
   dotColor: '#ffd60a',
   dotRadius: 4.5,
-  dotOffset: DEFAULT_DOT_OFFSET,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
   calloutFontSize: CALLOUT_FONT_SIZE,
@@ -119,6 +117,20 @@ function reindexOrders(): void {
   })
 }
 
+function clampAnchorOffset(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+  return Math.min(ANCHOR_OFFSET_MAX, Math.max(ANCHOR_OFFSET_MIN, value))
+}
+
+function sanitizeAnchorOffset(raw: unknown): Point {
+  if (!raw || typeof raw !== 'object') return { x: 0, y: 0 }
+  const point = raw as { x?: unknown; y?: unknown }
+  return {
+    x: clampAnchorOffset(point.x),
+    y: clampAnchorOffset(point.y),
+  }
+}
+
 function sanitizeAnnotation(raw: Annotation): Annotation {
   return {
     id: raw.id,
@@ -130,6 +142,9 @@ function sanitizeAnnotation(raw: Annotation): Annotation {
     calloutPosition: raw.calloutPosition
       ? { ...raw.calloutPosition }
       : null,
+    anchorOffset: sanitizeAnchorOffset(
+      (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,
+    ),
   }
 }
 
@@ -147,7 +162,6 @@ function refreshDocumentAndLayouts(): void {
     state.calloutFontSize,
     state.defaultFontFamily,
     state.numberStyle,
-    state.dotOffset,
   )
   state.document = document
   state.calloutLayouts = layouts
@@ -189,6 +203,7 @@ watch(
       calloutPosition: annotation.calloutPosition
         ? { ...annotation.calloutPosition }
         : null,
+      anchorOffset: { ...annotation.anchorOffset },
     })),
   () => {
     refreshDocumentAndLayouts()
@@ -215,7 +230,6 @@ watch(
       state.imageHeight,
       state.calloutFontSize,
       state.numberStyle,
-      state.dotOffset,
     ] as const,
   () => {
     refreshDocumentAndLayouts()
@@ -234,7 +248,6 @@ interface RestorableFields {
   lineColor: string
   dotColor: string
   dotRadius: number
-  dotOffset?: number
   lineHaloWidth?: number
   lineHaloColor?: string
   /** @deprecated Prefer `lineHaloWidth`. */
@@ -266,10 +279,6 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.lineColor = fields.lineColor
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
-  state.dotOffset = Math.min(
-    DOT_OFFSET_MAX,
-    Math.max(DOT_OFFSET_MIN, fields.dotOffset ?? DEFAULT_DOT_OFFSET),
-  )
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
   state.calloutFontSize = fields.calloutFontSize
@@ -325,7 +334,6 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineColor: state.lineColor,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,
-    dotOffset: state.dotOffset,
     lineHaloWidth: state.lineHaloWidth,
     lineHaloColor: state.lineHaloColor,
     calloutFontSize: state.calloutFontSize,
@@ -396,7 +404,6 @@ watch(
     state.lineColor,
     state.dotColor,
     state.dotRadius,
-    state.dotOffset,
     state.lineHaloWidth,
     state.lineHaloColor,
     state.calloutFontSize,
@@ -578,10 +585,6 @@ export function useAnnotationStore() {
     state.dotRadius = Math.min(DOT_RADIUS_MAX, Math.max(DOT_RADIUS_MIN, radius))
   }
 
-  function setDotOffset(offset: number): void {
-    state.dotOffset = Math.min(DOT_OFFSET_MAX, Math.max(DOT_OFFSET_MIN, offset))
-  }
-
   function setLineHaloWidth(width: number): void {
     state.lineHaloWidth = normalizeLineHaloWidth(width)
   }
@@ -689,6 +692,7 @@ export function useAnnotationStore() {
       markerPosition: { ...center },
       calloutSide: 'auto',
       calloutPosition: null,
+      anchorOffset: { x: 0, y: 0 },
     }
     state.annotations.push(annotation)
     reindexOrders()
@@ -706,6 +710,7 @@ export function useAnnotationStore() {
       markerPosition: { ...point },
       calloutSide: 'auto',
       calloutPosition: null,
+      anchorOffset: { x: 0, y: 0 },
     }
     state.annotations.push(annotation)
     reindexOrders()
@@ -731,12 +736,19 @@ export function useAnnotationStore() {
         | 'markerPosition'
         | 'calloutSide'
         | 'calloutPosition'
+        | 'anchorOffset'
         | 'sectionId'
       >
     >,
   ): void {
     const annotation = state.annotations.find((item) => item.id === annotationId)
     if (!annotation) return
+    if (patch.anchorOffset) {
+      annotation.anchorOffset = sanitizeAnchorOffset(patch.anchorOffset)
+      const { anchorOffset: _ignored, ...rest } = patch
+      Object.assign(annotation, rest)
+      return
+    }
     Object.assign(annotation, patch)
   }
 
@@ -884,7 +896,6 @@ export function useAnnotationStore() {
     setLineWidth,
     setLineColor,
     setDotRadius,
-    setDotOffset,
     setLineHaloWidth,
     setLineHaloColor,
     setCalloutFontSize,

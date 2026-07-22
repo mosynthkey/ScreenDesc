@@ -21,9 +21,9 @@ import {
   CALLOUT_BORDER_WIDTH_MIN,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
-  DOT_OFFSET_MAX,
-  DOT_OFFSET_MIN,
-  DOT_OFFSET_STEP,
+  ANCHOR_OFFSET_MAX,
+  ANCHOR_OFFSET_MIN,
+  ANCHOR_OFFSET_STEP,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   DOT_RADIUS_STEP,
@@ -38,7 +38,6 @@ const props = withDefaults(
     lineWidth: number
     lineColor: string
     dotRadius: number
-    dotOffset: number
     lineHaloWidth: number
     lineHaloColor: string
     calloutFontSize: number
@@ -59,7 +58,6 @@ const emit = defineEmits<{
   'update:lineWidth': [width: number]
   'update:lineColor': [color: string]
   'update:dotRadius': [radius: number]
-  'update:dotOffset': [offset: number]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
   'update:calloutFontSize': [size: number]
@@ -69,6 +67,7 @@ const emit = defineEmits<{
     patch: Partial<{
       calloutSide: CalloutSide
       description: string
+      anchorOffset: { x: number; y: number }
     }>,
   ]
 }>()
@@ -166,21 +165,6 @@ watch(
           @input="emit('update:dotRadius', Number(($event.target as HTMLInputElement).value))"
         />
       </div>
-      <div class="field">
-        <label class="slider-label">
-          <span>{{ t('style.dotOffset') }}</span>
-          <span class="slider-value">{{ dotOffset }}px</span>
-        </label>
-        <input
-          class="size-slider"
-          type="range"
-          :min="DOT_OFFSET_MIN"
-          :max="DOT_OFFSET_MAX"
-          :step="DOT_OFFSET_STEP"
-          :value="dotOffset"
-          @input="emit('update:dotOffset', Number(($event.target as HTMLInputElement).value))"
-        />
-      </div>
       <div v-if="lineStyle !== 'invert'" class="field">
         <label class="slider-label">
           <span>{{ t('style.lineHalo') }}</span>
@@ -268,6 +252,50 @@ watch(
           <option value="left">{{ t('style.calloutSide.left') }}</option>
           <option value="right">{{ t('style.calloutSide.right') }}</option>
         </select>
+      </div>
+      <div class="field">
+        <label class="slider-label">
+          <span>{{ t('style.anchorOffsetX') }}</span>
+          <span class="slider-value">{{ annotation.anchorOffset.x }}px</span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="ANCHOR_OFFSET_MIN"
+          :max="ANCHOR_OFFSET_MAX"
+          :step="ANCHOR_OFFSET_STEP"
+          :value="annotation.anchorOffset.x"
+          @input="
+            emit('patch', {
+              anchorOffset: {
+                x: Number(($event.target as HTMLInputElement).value),
+                y: annotation.anchorOffset.y,
+              },
+            })
+          "
+        />
+      </div>
+      <div class="field">
+        <label class="slider-label">
+          <span>{{ t('style.anchorOffsetY') }}</span>
+          <span class="slider-value">{{ annotation.anchorOffset.y }}px</span>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="ANCHOR_OFFSET_MIN"
+          :max="ANCHOR_OFFSET_MAX"
+          :step="ANCHOR_OFFSET_STEP"
+          :value="annotation.anchorOffset.y"
+          @input="
+            emit('patch', {
+              anchorOffset: {
+                x: annotation.anchorOffset.x,
+                y: Number(($event.target as HTMLInputElement).value),
+              },
+            })
+          "
+        />
       </div>
       <div class="field" style="margin-bottom: 0">
         <label>{{ t('style.description') }}</label>

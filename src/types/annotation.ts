@@ -46,6 +46,8 @@ export interface Annotation {
   calloutSide: CalloutSide
   /** Manual override for callout label position (document coords including margin). */
   calloutPosition: Point | null
+  /** Extra X/Y shift of the anchor from its default position (image coords). */
+  anchorOffset: Point
 }
 
 export interface CalloutLayoutItem {
@@ -86,8 +88,6 @@ export interface ProjectState {
   lineColor: string
   dotColor: string
   dotRadius: number
-  /** Inset of the anchor from the section edge (px, toward center). */
-  dotOffset: number
   /** Extra outline underlay width in px (0 = none). */
   lineHaloWidth: number
   lineHaloColor: string

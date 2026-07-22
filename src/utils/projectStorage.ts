@@ -26,7 +26,6 @@ export interface ProjectSnapshot {
   lineColor: string
   dotColor: string
   dotRadius: number
-  dotOffset: number
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number

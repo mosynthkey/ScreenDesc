@@ -11,7 +11,6 @@ import { formatStepNumber } from './circledNumbers'
 import { measureTextWidth } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
 import { t } from '../i18n'
-import { DEFAULT_DOT_OFFSET } from './markerSize'
 
 /**
  * Cubic leader: short horizontal stubs at each end, then an S-curve.
@@ -27,6 +26,7 @@ export function buildLeaderPath(anchor: Point, endX: number, endY: number): stri
 }
 
 const LABEL_GAP_MIN = 12
+const LINE_INSET = 8
 const IMAGE_GUTTER = 14
 const PAGE_PAD = 8
 const MIN_LABEL_WIDTH = 120
@@ -106,25 +106,26 @@ function anchorForAnnotation(
   annotation: Annotation,
   sections: Section[],
   side: 'left' | 'right',
-  dotOffset: number,
+  imageWidth: number,
+  imageHeight: number,
 ): Point {
   const section = getSectionForAnnotation(annotation, sections)
+  const offset = annotation.anchorOffset
+  let baseX: number
+  let baseY: number
   if (section) {
-    const inset = Math.min(
-      Math.max(0, dotOffset),
-      Math.max(0, section.rect.width / 2),
-    )
-    return {
-      x:
-        side === 'left'
-          ? section.rect.x + inset
-          : section.rect.x + section.rect.width - inset,
-      y: rectCenter(section.rect).y,
-    }
+    baseX =
+      side === 'left'
+        ? section.rect.x + LINE_INSET
+        : section.rect.x + section.rect.width - LINE_INSET
+    baseY = rectCenter(section.rect).y
+  } else {
+    baseX = annotation.markerPosition.x
+    baseY = annotation.markerPosition.y
   }
   return {
-    x: annotation.markerPosition.x,
-    y: annotation.markerPosition.y,
+    x: clamp(baseX + offset.x, 0, imageWidth),
+    y: clamp(baseY + offset.y, 0, imageHeight),
   }
 }
 
@@ -194,12 +195,17 @@ function packSide(
   document: DocumentLayout,
   side: 'left' | 'right',
   gap: number,
-  dotOffset: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
   const anchors = items.map((annotation) =>
-    anchorForAnnotation(annotation, sections, side, dotOffset),
+    anchorForAnnotation(
+      annotation,
+      sections,
+      side,
+      document.imageWidth,
+      document.imageHeight,
+    ),
   )
 
   const documentHeight =
@@ -306,7 +312,6 @@ export function computeCalloutLayouts(
   fontSize: number,
   fontFamily: string,
   numberStyle: NumberStyleId,
-  dotOffset = DEFAULT_DOT_OFFSET,
 ): CalloutLayoutItem[] {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) return []
@@ -321,8 +326,8 @@ export function computeCalloutLayouts(
   )
 
   return [
-    ...packSide(leftItems, leftSizes, sections, document, 'left', gap, dotOffset),
-    ...packSide(rightItems, rightSizes, sections, document, 'right', gap, dotOffset),
+    ...packSide(leftItems, leftSizes, sections, document, 'left', gap),
+    ...packSide(rightItems, rightSizes, sections, document, 'right', gap),
   ]
 }
 
@@ -353,7 +358,6 @@ export function layoutCalloutsForImage(
   fontSize: number,
   fontFamily: string,
   numberStyle: NumberStyleId,
-  dotOffset = DEFAULT_DOT_OFFSET,
 ): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) {
@@ -404,8 +408,8 @@ export function layoutCalloutsForImage(
   return {
     document,
     layouts: [
-      ...packSide(leftItems, leftSizes, sections, document, 'left', gap, dotOffset),
-      ...packSide(rightItems, rightSizes, sections, document, 'right', gap, dotOffset),
+      ...packSide(leftItems, leftSizes, sections, document, 'left', gap),
+      ...packSide(rightItems, rightSizes, sections, document, 'right', gap),
     ],
   }
 }
