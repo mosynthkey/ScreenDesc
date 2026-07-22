@@ -13,6 +13,8 @@ import { useI18n, type MessageKey } from '../i18n'
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../utils/googleFonts'
 import {
   getLineStyleOptions,
+  LINE_HALO_WIDTH_MAX,
+  LINE_HALO_WIDTH_MIN,
   LINE_OPACITY_MAX,
   LINE_OPACITY_MIN,
   LINE_WIDTH_MAX,
@@ -37,7 +39,7 @@ withDefaults(
     lineColor: string
     lineOpacity: number
     dotRadius: number
-    lineHalo: boolean
+    lineHaloWidth: number
     calloutFontSize: number
     calloutBorderWidth: number
     numberStyle: NumberStyleId
@@ -60,7 +62,7 @@ const emit = defineEmits<{
   'update:lineColor': [color: string]
   'update:lineOpacity': [opacity: number]
   'update:dotRadius': [radius: number]
-  'update:lineHalo': [enabled: boolean]
+  'update:lineHaloWidth': [width: number]
   'update:calloutFontSize': [size: number]
   'update:calloutBorderWidth': [width: number]
   'update:numberStyle': [style: NumberStyleId]
@@ -198,14 +200,23 @@ onMounted(() => {
           @input="emit('update:dotRadius', Number(($event.target as HTMLInputElement).value))"
         />
       </div>
-      <label v-if="defaultAnnotationMode === 'callout' && lineStyle !== 'invert'" class="check field">
+      <div v-if="defaultAnnotationMode === 'callout' && lineStyle !== 'invert'" class="field">
+        <label class="slider-label">
+          <span>{{ t('style.lineHalo') }}</span>
+          <span class="slider-value">
+            {{ lineHaloWidth === 0 ? t('style.lineHalo.off') : `${lineHaloWidth}px` }}
+          </span>
+        </label>
         <input
-          type="checkbox"
-          :checked="lineHalo"
-          @change="emit('update:lineHalo', ($event.target as HTMLInputElement).checked)"
+          class="size-slider"
+          type="range"
+          :min="LINE_HALO_WIDTH_MIN"
+          :max="LINE_HALO_WIDTH_MAX"
+          :step="0.5"
+          :value="lineHaloWidth"
+          @input="emit('update:lineHaloWidth', Number(($event.target as HTMLInputElement).value))"
         />
-        {{ t('style.lineHalo') }}
-      </label>
+      </div>
       <div v-if="defaultAnnotationMode === 'callout'" class="field">
         <label class="slider-label">
           <span>{{ t('style.calloutFontSize') }}</span>

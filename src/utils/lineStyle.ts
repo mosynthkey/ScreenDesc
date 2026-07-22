@@ -21,6 +21,23 @@ export function normalizeLineOpacity(value: unknown): number {
   return Math.min(LINE_OPACITY_MAX, Math.max(LINE_OPACITY_MIN, value))
 }
 
+/** Extra stroke width for the white underlay (0 = off). Legacy `lineHalo: true` → 3. */
+export const DEFAULT_LINE_HALO_WIDTH = 0
+export const LEGACY_LINE_HALO_WIDTH = 3
+export const LINE_HALO_WIDTH_MIN = 0
+export const LINE_HALO_WIDTH_MAX = 12
+
+export function normalizeLineHaloWidth(
+  width: unknown,
+  legacyEnabled?: unknown,
+): number {
+  if (typeof width === 'number' && Number.isFinite(width)) {
+    return Math.min(LINE_HALO_WIDTH_MAX, Math.max(LINE_HALO_WIDTH_MIN, width))
+  }
+  if (legacyEnabled === true) return LEGACY_LINE_HALO_WIDTH
+  return DEFAULT_LINE_HALO_WIDTH
+}
+
 export function getLineStyleOptions(): Array<{ value: LineStyleId; label: string }> {
   return [
     { value: 'solid', label: t('lineStyle.solid') },

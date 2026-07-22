@@ -31,8 +31,10 @@ import {
 } from '../utils/googleFonts'
 import { CALLOUT_FONT_SIZE } from '../utils/markerSize'
 import {
+  DEFAULT_LINE_HALO_WIDTH,
   DEFAULT_LINE_OPACITY,
   DEFAULT_LINE_WIDTH,
+  normalizeLineHaloWidth,
   normalizeLineOpacity,
   normalizeLineStyle,
 } from '../utils/lineStyle'
@@ -69,7 +71,7 @@ const state = reactive<ProjectState>({
   lineOpacity: DEFAULT_LINE_OPACITY,
   dotColor: '#ffd60a',
   dotRadius: 4.5,
-  lineHalo: false,
+  lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   calloutFontSize: CALLOUT_FONT_SIZE,
   calloutBorderWidth: 0,
   numberStyle: DEFAULT_NUMBER_STYLE,
@@ -243,7 +245,9 @@ interface RestorableFields {
   lineOpacity?: number
   dotColor: string
   dotRadius: number
-  lineHalo: boolean
+  lineHaloWidth?: number
+  /** @deprecated Prefer `lineHaloWidth`. */
+  lineHalo?: boolean
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle?: NumberStyleId
@@ -279,7 +283,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.lineOpacity = normalizeLineOpacity(fields.lineOpacity)
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
-  state.lineHalo = fields.lineHalo
+  state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
   state.calloutFontSize = fields.calloutFontSize
   state.calloutBorderWidth = fields.calloutBorderWidth
   state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
@@ -339,7 +343,7 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineOpacity: state.lineOpacity,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,
-    lineHalo: state.lineHalo,
+    lineHaloWidth: state.lineHaloWidth,
     calloutFontSize: state.calloutFontSize,
     calloutBorderWidth: state.calloutBorderWidth,
     numberStyle: state.numberStyle,
@@ -412,7 +416,7 @@ watch(
     state.lineOpacity,
     state.dotColor,
     state.dotRadius,
-    state.lineHalo,
+    state.lineHaloWidth,
     state.calloutFontSize,
     state.calloutBorderWidth,
     state.numberStyle,
@@ -616,8 +620,8 @@ export function useAnnotationStore() {
     state.dotRadius = radius
   }
 
-  function setLineHalo(enabled: boolean): void {
-    state.lineHalo = enabled
+  function setLineHaloWidth(width: number): void {
+    state.lineHaloWidth = normalizeLineHaloWidth(width)
   }
 
   function setCalloutFontSize(size: number): void {
@@ -794,7 +798,7 @@ export function useAnnotationStore() {
         lineOpacity: state.lineOpacity,
         dotColor: state.lineColor,
         dotRadius: state.dotRadius,
-        lineHalo: state.lineHalo,
+        lineHaloWidth: state.lineHaloWidth,
         calloutFontSize: state.calloutFontSize,
         calloutBorderWidth: state.calloutBorderWidth,
         numberStyle: state.numberStyle,
@@ -910,7 +914,7 @@ export function useAnnotationStore() {
     setLineColor,
     setLineOpacity,
     setDotRadius,
-    setLineHalo,
+    setLineHaloWidth,
     setCalloutFontSize,
     setCalloutBorderWidth,
     setNumberStyle,

@@ -29,7 +29,7 @@ export const pngExporter: Exporter = {
       lineOpacity: scene.lineOpacity,
       dotColor: scene.dotColor,
       dotRadius: scene.dotRadius,
-      lineHalo: scene.lineHalo,
+      lineHaloWidth: scene.lineHaloWidth,
       calloutFontSize: scene.calloutFontSize,
       calloutBorderWidth: scene.calloutBorderWidth,
       numberStyle: scene.numberStyle,

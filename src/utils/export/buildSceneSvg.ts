@@ -77,7 +77,7 @@ function renderCallout(
   lineOpacity: number,
   dotColor: string,
   dotRadius: number,
-  lineHalo: boolean,
+  lineHaloWidth: number,
   calloutFontSize: number,
   calloutBorderWidth: number,
   fontFamily: string,
@@ -111,8 +111,8 @@ function renderCallout(
   const pathD = buildLeaderPath(anchorPoint, endX, elbowPoint.y)
   const opacityAttr = lineOpacity < 1 ? ` stroke-opacity="${lineOpacity}"` : ''
   const haloPath =
-    lineHalo && !isInvert
-      ? `<path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${spec.strokeWidth + 3}"${opacityAttr} />`
+    lineHaloWidth > 0 && !isInvert
+      ? `<path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${spec.strokeWidth + lineHaloWidth}"${opacityAttr} />`
       : ''
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
   // Blend on the group so overlapping line+dot invert the backdrop once.
@@ -145,7 +145,7 @@ export function buildSceneSvg(params: {
   lineOpacity: number
   dotColor: string
   dotRadius: number
-  lineHalo: boolean
+  lineHaloWidth: number
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
@@ -168,7 +168,7 @@ export function buildSceneSvg(params: {
     lineOpacity,
     dotColor,
     dotRadius,
-    lineHalo,
+    lineHaloWidth,
     calloutFontSize,
     calloutBorderWidth,
     numberStyle,
@@ -214,7 +214,7 @@ export function buildSceneSvg(params: {
               lineOpacity,
               dotColor,
               dotRadius,
-              lineHalo,
+              lineHaloWidth,
               calloutFontSize,
               calloutBorderWidth,
               fontFamily,

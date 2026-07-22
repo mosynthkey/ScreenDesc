@@ -48,7 +48,7 @@ const props = defineProps<{
   lineOpacity: number
   dotColor: string
   dotRadius: number
-  lineHalo: boolean
+  lineHaloWidth: number
   calloutFontSize: number
   calloutBorderWidth: number
   numberStyle: NumberStyleId
@@ -749,11 +749,11 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
       <g v-for="annotation in annotations" :key="annotation.id">
         <template v-if="layoutFor(annotation.id)">
           <path
-            v-if="lineHalo && lineStyle !== 'invert'"
+            v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
             class="leader-halo"
             :d="leaderPathFor(layoutFor(annotation.id)!)"
             :style="{
-              strokeWidth: activeLineStyle.strokeWidth + 3,
+              strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
               strokeOpacity: lineOpacity,
             }"
           />

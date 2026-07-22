@@ -38,7 +38,7 @@ const {
   setLineColor,
   setLineOpacity,
   setDotRadius,
-  setLineHalo,
+  setLineHaloWidth,
   setCalloutFontSize,
   setCalloutBorderWidth,
   setNumberStyle,
@@ -327,7 +327,7 @@ function onKeydown(event: KeyboardEvent): void {
               :line-color="state.lineColor"
               :line-opacity="state.lineOpacity"
               :dot-radius="state.dotRadius"
-              :line-halo="state.lineHalo"
+              :line-halo-width="state.lineHaloWidth"
               :callout-font-size="state.calloutFontSize"
               :callout-border-width="state.calloutBorderWidth"
               :number-style="state.numberStyle"
@@ -354,7 +354,7 @@ function onKeydown(event: KeyboardEvent): void {
           :line-opacity="state.lineOpacity"
           :dot-color="state.lineColor"
           :dot-radius="state.dotRadius"
-          :line-halo="state.lineHalo"
+          :line-halo-width="state.lineHaloWidth"
           :callout-font-size="state.calloutFontSize"
           :callout-border-width="state.calloutBorderWidth"
           :number-style="state.numberStyle"
@@ -389,7 +389,7 @@ function onKeydown(event: KeyboardEvent): void {
               :line-color="state.lineColor"
               :line-opacity="state.lineOpacity"
               :dot-radius="state.dotRadius"
-              :line-halo="state.lineHalo"
+              :line-halo-width="state.lineHaloWidth"
               :callout-font-size="state.calloutFontSize"
               :callout-border-width="state.calloutBorderWidth"
               :number-style="state.numberStyle"
@@ -402,7 +402,7 @@ function onKeydown(event: KeyboardEvent): void {
               @update:line-color="setLineColor"
               @update:line-opacity="setLineOpacity"
               @update:dot-radius="setDotRadius"
-              @update:line-halo="setLineHalo"
+              @update:line-halo-width="setLineHaloWidth"
               @update:callout-font-size="setCalloutFontSize"
               @update:callout-border-width="setCalloutBorderWidth"
               @update:number-style="setNumberStyle"
