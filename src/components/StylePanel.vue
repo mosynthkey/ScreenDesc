@@ -323,6 +323,98 @@ function resetLabelPosition(): void {
   emit('patch', { calloutPosition: null })
 }
 
+function parseBoundedNumber(
+  raw: string,
+  min: number,
+  max: number,
+  step?: number,
+): number | null {
+  const trimmed = raw.trim().replace(/%$/i, '').replace(/px$/i, '')
+  if (trimmed === '' || trimmed === '-' || trimmed === '+') return null
+  const value = Number(trimmed)
+  if (!Number.isFinite(value)) return null
+  let next = Math.min(max, Math.max(min, value))
+  if (step !== undefined && step > 0) {
+    const steps = Math.round((next - min) / step)
+    next = min + steps * step
+    const stepText = String(step)
+    const decimals = stepText.includes('.') ? stepText.split('.')[1]!.length : 0
+    next = Number(next.toFixed(decimals))
+  }
+  return Math.min(max, Math.max(min, next))
+}
+
+function onProjectPxChange(
+  event: Event,
+  min: number,
+  max: number,
+  step: number | undefined,
+  apply: (value: number) => void,
+  fallback: number,
+): void {
+  const input = event.target as HTMLInputElement
+  const parsed = parseBoundedNumber(input.value, min, max, step)
+  if (parsed === null) {
+    input.value = String(fallback)
+    return
+  }
+  input.value = String(parsed)
+  apply(parsed)
+}
+
+function onLineWidthChange(event: Event): void {
+  onProjectPxChange(event, LINE_WIDTH_MIN, LINE_WIDTH_MAX, 0.5, (value) => {
+    emit('update:lineWidth', value)
+  }, props.lineWidth)
+}
+
+function onLineHaloWidthChange(event: Event): void {
+  onProjectPxChange(
+    event,
+    LINE_HALO_WIDTH_MIN,
+    LINE_HALO_WIDTH_MAX,
+    0.5,
+    (value) => {
+      emit('update:lineHaloWidth', value)
+    },
+    props.lineHaloWidth,
+  )
+}
+
+function onDotRadiusChange(event: Event): void {
+  onProjectPxChange(event, DOT_RADIUS_MIN, DOT_RADIUS_MAX, DOT_RADIUS_STEP, (value) => {
+    emit('update:dotRadius', value)
+  }, props.dotRadius)
+}
+
+function onCalloutFontSizeChange(event: Event): void {
+  onProjectPxChange(
+    event,
+    CALLOUT_FONT_SIZE_MIN,
+    CALLOUT_FONT_SIZE_MAX,
+    1,
+    (value) => {
+      emit('update:calloutFontSize', value)
+    },
+    props.calloutFontSize,
+  )
+}
+
+function displayFillOpacityPercent(): string {
+  return String(Math.round(props.calloutFillOpacity * 100))
+}
+
+function onCalloutFillOpacityChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const percent = parseBoundedNumber(input.value, 0, 100, 5)
+  if (percent === null) {
+    input.value = displayFillOpacityPercent()
+    return
+  }
+  input.value = String(percent)
+  emit('update:calloutFillOpacity', percent / 100)
+}
+
 watch(
   () => props.defaultFontFamily,
   (family) => {
@@ -434,7 +526,16 @@ watch(
         <div class="field">
           <label class="slider-label">
             <span>{{ t('style.lineWidth') }}</span>
-            <span class="slider-value">{{ lineWidth }}px</span>
+            <div class="px-field px-field-compact">
+              <input
+                type="text"
+                inputmode="decimal"
+                :value="lineWidth"
+                @change="onLineWidthChange"
+                @keydown.enter.prevent="onLineWidthChange"
+              />
+              <span class="px-unit">px</span>
+            </div>
           </label>
           <input
             class="size-slider"
@@ -459,9 +560,16 @@ watch(
         <div v-if="lineStyle !== 'invert'" class="field">
           <label class="slider-label">
             <span>{{ t('style.lineHalo') }}</span>
-            <span class="slider-value">
-              {{ lineHaloWidth === 0 ? t('style.lineHalo.off') : `${lineHaloWidth}px` }}
-            </span>
+            <div class="px-field px-field-compact">
+              <input
+                type="text"
+                inputmode="decimal"
+                :value="lineHaloWidth"
+                @change="onLineHaloWidthChange"
+                @keydown.enter.prevent="onLineHaloWidthChange"
+              />
+              <span class="px-unit">px</span>
+            </div>
           </label>
           <input
             class="size-slider"
@@ -543,7 +651,16 @@ watch(
         <div class="field" style="margin-bottom: 0">
           <label class="slider-label">
             <span>{{ t('style.dotRadius') }}</span>
-            <span class="slider-value">{{ dotRadius }}px</span>
+            <div class="px-field px-field-compact">
+              <input
+                type="text"
+                inputmode="decimal"
+                :value="dotRadius"
+                @change="onDotRadiusChange"
+                @keydown.enter.prevent="onDotRadiusChange"
+              />
+              <span class="px-unit">px</span>
+            </div>
           </label>
           <input
             class="size-slider"
@@ -568,7 +685,16 @@ watch(
         <div class="field">
           <label class="slider-label">
             <span>{{ t('style.calloutFontSize') }}</span>
-            <span class="slider-value">{{ calloutFontSize }}px</span>
+            <div class="px-field px-field-compact">
+              <input
+                type="text"
+                inputmode="numeric"
+                :value="calloutFontSize"
+                @change="onCalloutFontSizeChange"
+                @keydown.enter.prevent="onCalloutFontSizeChange"
+              />
+              <span class="px-unit">px</span>
+            </div>
           </label>
           <input
             class="size-slider"
@@ -609,7 +735,16 @@ watch(
           <div class="field">
             <label class="slider-label">
               <span>{{ t('style.calloutFillOpacity') }}</span>
-              <span class="slider-value">{{ Math.round(calloutFillOpacity * 100) }}%</span>
+              <div class="px-field px-field-compact">
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  :value="displayFillOpacityPercent()"
+                  @change="onCalloutFillOpacityChange"
+                  @keydown.enter.prevent="onCalloutFillOpacityChange"
+                />
+                <span class="px-unit">%</span>
+              </div>
             </label>
             <input
               class="size-slider"
@@ -993,13 +1128,6 @@ watch(
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-}
-
-.slider-value {
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-muted);
-  font-weight: 600;
-  font-size: 0.78rem;
 }
 
 .size-slider {
