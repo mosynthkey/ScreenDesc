@@ -17,6 +17,8 @@ export type ToolMode = 'select' | 'add-section' | 'annotate' | 'crop'
 /** Line pattern only; stroke weight is `lineWidth`. */
 export type LineStyleId = 'solid' | 'dashed' | 'invert'
 
+export type AnchorStyleId = 'dot' | 'arrow' | 'chevron'
+
 export type NumberStyleId =
   | 'circled'
   | 'paren'
@@ -88,12 +90,19 @@ export interface ProjectState {
   lineColor: string
   dotColor: string
   dotRadius: number
+  /** Marker at the leader start: filled dot, filled arrow, or open chevron. */
+  anchorStyle: AnchorStyleId
   /** Extra outline underlay width in px (0 = none). */
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   /** When true, label box stroke uses `lineWidth`. */
   calloutBorderEnabled: boolean
+  /** When true, label box uses `calloutFillColor` / `calloutFillOpacity`. */
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  /** Label background opacity (0–1). */
+  calloutFillOpacity: number
   /** Project-wide step number style (① / (1) / …). */
   numberStyle: NumberStyleId
   showSections: boolean

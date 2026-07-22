@@ -13,16 +13,19 @@ import { fontFamilyCss } from './googleFonts'
 import { t } from '../i18n'
 
 /**
- * Cubic leader: short horizontal stubs at each end, then an S-curve.
- * Nearby control points keep parallel leaders from overlapping over a long run.
+ * Cubic leader with a single bend (C-curve): leave horizontally from the start,
+ * then curve into the label. Avoids the S-twist of opposing horizontal stubs.
  */
-export function buildLeaderPath(anchor: Point, endX: number, endY: number): string {
-  const dx = endX - anchor.x
+export function buildLeaderPath(start: Point, endX: number, endY: number): string {
+  const dx = endX - start.x
+  const dy = endY - start.y
   const direction = dx === 0 ? 1 : Math.sign(dx)
-  const bend = Math.min(60, Math.abs(dx) / 2)
-  const ctrl1X = anchor.x + direction * bend
-  const ctrl2X = endX - direction * bend
-  return `M ${anchor.x} ${anchor.y} C ${ctrl1X} ${anchor.y}, ${ctrl2X} ${endY}, ${endX} ${endY}`
+  const absDx = Math.abs(dx)
+  const absDy = Math.abs(dy)
+  // Prefer a clear horizontal run; shorten when the end is close or mostly vertical.
+  const stub = Math.min(absDx, Math.max(absDx * 0.55, Math.min(48, absDy * 0.35 + 12)))
+  const elbowX = start.x + direction * stub
+  return `M ${start.x} ${start.y} C ${elbowX} ${start.y}, ${elbowX} ${endY}, ${endX} ${endY}`
 }
 
 const LABEL_GAP_MIN = 12

@@ -1,5 +1,6 @@
 import type {
   Annotation,
+  AnchorStyleId,
   LineStyleId,
   NumberStyleId,
   Section,
@@ -26,12 +27,16 @@ export interface ProjectSnapshot {
   lineColor: string
   dotColor: string
   dotRadius: number
+  anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderEnabled: boolean
   /** @deprecated Prefer `calloutBorderEnabled`. */
   calloutBorderWidth?: number
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  calloutFillOpacity: number
   numberStyle: NumberStyleId
   showSections: boolean
   /** When set, edits auto-overwrite this named browser save. */

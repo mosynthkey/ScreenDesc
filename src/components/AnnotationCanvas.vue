@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type {
   Annotation,
+  AnchorStyleId,
   CalloutLayoutItem,
   DocumentLayout,
   LineStyleId,
@@ -13,7 +14,15 @@ import type {
 import { pointInRect } from '../utils/geometry'
 import { fontFamilyCss } from '../utils/googleFonts'
 import { getLineStyleSpec } from '../utils/lineStyle'
+import {
+  buildAnchorArrowGeometry,
+  buildAnchorHeadPath,
+  buildAnchorLeaderPath,
+  isArrowAnchorStyle,
+  leaderAttachPoint,
+} from '../utils/anchorStyle'
 import { buildLeaderPath } from '../utils/calloutLayout'
+import { resolveCalloutFill } from '../utils/commonSettings'
 import { useI18n } from '../i18n'
 
 const MIN_VIEW_ZOOM = 0.25
@@ -37,10 +46,14 @@ const props = defineProps<{
   lineColor: string
   dotColor: string
   dotRadius: number
+  anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  calloutFillOpacity: number
   fontFamily: string
   isDetecting?: boolean
   emptyHint?: boolean
@@ -591,6 +604,9 @@ function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
 const activeLineStyle = computed(() => getLineStyleSpec(props.lineStyle, props.lineWidth))
 const effectiveLineColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.lineColor))
 const effectiveDotColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.dotColor))
+const calloutFill = computed(() =>
+  resolveCalloutFill(props.calloutFillEnabled, props.calloutFillColor, props.calloutFillOpacity),
+)
 
 function leaderEndX(layout: CalloutLayoutItem): number {
   return layout.side === 'left' ? layout.labelPosition.x + layout.labelWidth : layout.labelPosition.x
@@ -600,7 +616,42 @@ function leaderPathFor(layout: CalloutLayoutItem): string {
   return buildLeaderPath(layout.anchorPoint, leaderEndX(layout), layout.elbowPoint.y)
 }
 
+function arrowLeaderPathFor(layout: CalloutLayoutItem): string {
+  const geometry = buildAnchorArrowGeometry(
+    layout.anchorPoint,
+    leaderEndX(layout),
+    props.dotRadius,
+  )
+  return buildLeaderPath(
+    leaderAttachPoint(props.anchorStyle, geometry),
+    leaderEndX(layout),
+    layout.elbowPoint.y,
+  )
+}
+
+function combinedAnchorLeaderPathFor(layout: CalloutLayoutItem): string {
+  if (!isArrowAnchorStyle(props.anchorStyle)) return leaderPathFor(layout)
+  return buildAnchorLeaderPath(
+    props.anchorStyle,
+    layout.anchorPoint,
+    leaderEndX(layout),
+    layout.elbowPoint.y,
+    props.dotRadius,
+  )
+}
+
+function anchorHeadPathFor(layout: CalloutLayoutItem): string {
+  if (!isArrowAnchorStyle(props.anchorStyle)) return ''
+  const geometry = buildAnchorArrowGeometry(
+    layout.anchorPoint,
+    leaderEndX(layout),
+    props.dotRadius,
+  )
+  return buildAnchorHeadPath(props.anchorStyle, geometry)
+}
+
 const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
+const isDashedLeader = computed(() => Boolean(activeLineStyle.value.dasharray))
 </script>
 
 <template>
@@ -699,40 +750,93 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
       <!-- Callouts -->
       <g v-for="annotation in annotations" :key="annotation.id">
         <template v-if="layoutFor(annotation.id)">
-          <path
-            v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
-            class="leader-halo"
-            :d="leaderPathFor(layoutFor(annotation.id)!)"
-            :style="{
-              stroke: lineHaloColor,
-              strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
-            }"
-          />
           <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
-            <path
-              class="leader"
-              :d="leaderPathFor(layoutFor(annotation.id)!)"
-              :style="{
-                stroke: effectiveLineColor,
-                strokeWidth: activeLineStyle.strokeWidth,
-                strokeDasharray: activeLineStyle.dasharray ?? 'none',
+            <template v-if="isArrowAnchorStyle(anchorStyle)">
+              <path
+                v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
+                class="leader-halo"
+                :d="combinedAnchorLeaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: lineHaloColor,
+                  strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
                 }"
-            />
-            <circle
-              v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
-              class="anchor-dot-halo"
-              :cx="layoutFor(annotation.id)!.anchorPoint.x"
-              :cy="layoutFor(annotation.id)!.anchorPoint.y"
-              :r="dotRadius + lineHaloWidth / 2"
-              :style="{ fill: lineHaloColor }"
-            />
-            <circle
-              class="anchor-dot"
-              :cx="layoutFor(annotation.id)!.anchorPoint.x"
-              :cy="layoutFor(annotation.id)!.anchorPoint.y"
-              :r="dotRadius"
-              :style="{ fill: effectiveDotColor }"
-            />
+              />
+              <template v-if="isDashedLeader">
+                <path
+                  class="anchor-head"
+                  :d="anchorHeadPathFor(layoutFor(annotation.id)!)"
+                  :fill="anchorStyle === 'arrow' ? effectiveDotColor : 'none'"
+                  :style="{
+                    stroke: effectiveLineColor,
+                    strokeWidth: activeLineStyle.strokeWidth,
+                    strokeLinecap: 'round',
+                    strokeLinejoin: 'round',
+                  }"
+                />
+                <path
+                  class="leader"
+                  :d="arrowLeaderPathFor(layoutFor(annotation.id)!)"
+                  fill="none"
+                  :style="{
+                    stroke: effectiveLineColor,
+                    strokeWidth: activeLineStyle.strokeWidth,
+                    strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                    strokeLinecap: 'round',
+                    strokeLinejoin: 'round',
+                  }"
+                />
+              </template>
+              <path
+                v-else
+                class="anchor-leader"
+                :d="combinedAnchorLeaderPathFor(layoutFor(annotation.id)!)"
+                :fill="anchorStyle === 'arrow' ? effectiveDotColor : 'none'"
+                :style="{
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
+              />
+            </template>
+            <template v-else>
+              <path
+                v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
+                class="leader-halo"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                :style="{
+                  stroke: lineHaloColor,
+                  strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
+                }"
+              />
+              <path
+                class="leader"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                :style="{
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                }"
+              />
+              <circle
+                v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
+                class="anchor-dot-halo"
+                :cx="layoutFor(annotation.id)!.anchorPoint.x"
+                :cy="layoutFor(annotation.id)!.anchorPoint.y"
+                :r="dotRadius + lineHaloWidth / 2"
+                :style="{ fill: lineHaloColor }"
+              />
+              <circle
+                class="anchor-dot"
+                :cx="layoutFor(annotation.id)!.anchorPoint.x"
+                :cy="layoutFor(annotation.id)!.anchorPoint.y"
+                :r="dotRadius"
+                :style="{ fill: effectiveDotColor }"
+              />
+            </template>
           </g>
           <g
             :data-callout-label="annotation.id"
@@ -747,6 +851,8 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               :height="layoutFor(annotation.id)!.labelHeight"
               rx="6"
               :style="{
+                fill: calloutFill.fill,
+                fillOpacity: calloutFill.fillOpacity,
                 stroke: effectiveDotColor,
                 strokeWidth: selectedAnnotationIds.includes(annotation.id)
                   ? calloutBorderWidth + 0.75
@@ -899,12 +1005,13 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 }
 
 .anchor-dot,
-.anchor-dot-halo {
+.anchor-dot-halo,
+.anchor-head,
+.anchor-leader {
   pointer-events: none;
 }
 
 .callout-label {
-  fill: #fff;
   cursor: text;
 }
 

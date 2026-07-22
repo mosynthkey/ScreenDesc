@@ -2,6 +2,7 @@
 import { computed, watch } from 'vue'
 import type {
   Annotation,
+  AnchorStyleId,
   CalloutSide,
   LineStyleId,
   NumberStyleId,
@@ -9,6 +10,7 @@ import type {
 import { useI18n, type MessageKey } from '../i18n'
 import FontFamilyPicker from './FontFamilyPicker.vue'
 import { loadGoogleFont } from '../utils/googleFonts'
+import { getAnchorStyleOptions } from '../utils/anchorStyle'
 import {
   getLineStyleOptions,
   LINE_HALO_WIDTH_MAX,
@@ -26,6 +28,10 @@ import {
   anchorOffsetExtent,
   clampAnchorOffsetAxis,
 } from '../utils/markerSize'
+import {
+  CALLOUT_FILL_OPACITY_MAX,
+  CALLOUT_FILL_OPACITY_MIN,
+} from '../utils/commonSettings'
 import { numberStyleIds } from '../utils/circledNumbers'
 
 const props = withDefaults(
@@ -36,10 +42,14 @@ const props = withDefaults(
     lineWidth: number
     lineColor: string
     dotRadius: number
+    anchorStyle: AnchorStyleId
     lineHaloWidth: number
     lineHaloColor: string
     calloutFontSize: number
     calloutBorderEnabled: boolean
+    calloutFillEnabled: boolean
+    calloutFillColor: string
+    calloutFillOpacity: number
     numberStyle: NumberStyleId
     imageWidth?: number
     imageHeight?: number
@@ -60,10 +70,14 @@ const emit = defineEmits<{
   'update:lineWidth': [width: number]
   'update:lineColor': [color: string]
   'update:dotRadius': [radius: number]
+  'update:anchorStyle': [style: AnchorStyleId]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
   'update:calloutFontSize': [size: number]
   'update:calloutBorderEnabled': [enabled: boolean]
+  'update:calloutFillEnabled': [enabled: boolean]
+  'update:calloutFillColor': [color: string]
+  'update:calloutFillOpacity': [opacity: number]
   'update:numberStyle': [style: NumberStyleId]
   openPresets: []
   patch: [
@@ -78,6 +92,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const lineStyleOptions = computed(() => getLineStyleOptions())
+const anchorStyleOptions = computed(() => getAnchorStyleOptions())
 const NUMBER_STYLE_LABEL_KEYS: Record<NumberStyleId, MessageKey> = {
   circled: 'style.numberStyle.circled',
   paren: 'style.numberStyle.paren',
@@ -284,6 +299,59 @@ watch(
 
       <div class="settings-group">
         <h4 class="section-title">{{ t('style.section.anchor') }}</h4>
+        <div class="field">
+          <label>{{ t('style.anchorStyle') }}</label>
+          <div class="anchor-style-buttons" role="group" :aria-label="t('style.anchorStyle')">
+            <button
+              v-for="option in anchorStyleOptions"
+              :key="option.value"
+              class="anchor-style-btn"
+              type="button"
+              :class="{ active: anchorStyle === option.value }"
+              :aria-pressed="anchorStyle === option.value"
+              @click="emit('update:anchorStyle', option.value)"
+            >
+              <svg
+                v-if="option.value === 'dot'"
+                class="anchor-style-icon"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="5" fill="currentColor" />
+              </svg>
+              <svg
+                v-else-if="option.value === 'arrow'"
+                class="anchor-style-icon"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+              >
+                <path d="M5 12 L19 5 L15 12 L19 19 Z" fill="currentColor" />
+              </svg>
+              <svg
+                v-else
+                class="anchor-style-icon"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+              >
+                <path
+                  d="M16 5 L8 12 L16 19"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span>{{ option.label }}</span>
+            </button>
+          </div>
+        </div>
         <div class="field" style="margin-bottom: 0">
           <label class="slider-label">
             <span>{{ t('style.dotRadius') }}</span>
@@ -325,6 +393,53 @@ watch(
             @input="emit('update:calloutFontSize', Number(($event.target as HTMLInputElement).value))"
           />
         </div>
+        <div class="field">
+          <label class="check">
+            <input
+              type="checkbox"
+              :checked="calloutFillEnabled"
+              @change="
+                emit(
+                  'update:calloutFillEnabled',
+                  ($event.target as HTMLInputElement).checked,
+                )
+              "
+            />
+            <span>{{ t('style.calloutFill') }}</span>
+          </label>
+        </div>
+        <template v-if="calloutFillEnabled">
+          <div class="field">
+            <label class="color-swatch color-swatch-inline">
+              {{ t('style.calloutFillColor') }}
+              <input
+                type="color"
+                :value="calloutFillColor"
+                @input="emit('update:calloutFillColor', ($event.target as HTMLInputElement).value)"
+              />
+            </label>
+          </div>
+          <div class="field">
+            <label class="slider-label">
+              <span>{{ t('style.calloutFillOpacity') }}</span>
+              <span class="slider-value">{{ Math.round(calloutFillOpacity * 100) }}%</span>
+            </label>
+            <input
+              class="size-slider"
+              type="range"
+              :min="CALLOUT_FILL_OPACITY_MIN"
+              :max="CALLOUT_FILL_OPACITY_MAX"
+              :step="0.05"
+              :value="calloutFillOpacity"
+              @input="
+                emit(
+                  'update:calloutFillOpacity',
+                  Number(($event.target as HTMLInputElement).value),
+                )
+              "
+            />
+          </div>
+        </template>
         <div class="field" style="margin-bottom: 0">
           <label class="check">
             <input
@@ -670,6 +785,47 @@ watch(
 }
 
 .line-style-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.anchor-style-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.anchor-style-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.anchor-style-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.anchor-style-btn.active {
+  border-color: rgba(0, 122, 255, 0.45);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
+}
+
+.anchor-style-icon {
   display: block;
   flex: 0 0 auto;
 }

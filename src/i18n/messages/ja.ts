@@ -124,12 +124,16 @@ export const ja: Record<MessageKey, string> = {
   'style.lineAndDotColor': '引き出し線・アンカーの色',
   'style.lineColor': '線',
   'style.dotRadius': 'アンカーの大きさ',
+  'style.anchorStyle': 'アンカーの形状',
   'style.anchorOffsetX': 'アンカーのオフセット X',
   'style.anchorOffsetY': 'アンカーのオフセット Y',
   'style.lineHalo': '縁取り',
   'style.lineHalo.off': 'なし',
   'style.lineHaloColor': '縁取りの色',
   'style.calloutFontSize': '説明の文字サイズ',
+  'style.calloutFill': '説明の背景',
+  'style.calloutFillColor': '背景色',
+  'style.calloutFillOpacity': '不透明度',
   'style.calloutBorder': '説明枠',
   'style.calloutBorderHint': 'オンのときは線の太さに合わせます',
   'style.numberStyle': '番号のスタイル',
@@ -177,6 +181,10 @@ export const ja: Record<MessageKey, string> = {
   'lineStyle.dashed': '破線',
   'lineStyle.invert': '反転',
   'lineStyle.invertHint': '背景を問わず見える',
+
+  'anchorStyle.dot': '丸',
+  'anchorStyle.arrow': '矢印',
+  'anchorStyle.chevron': '＜',
 
   'callout.emptyDescription': '説明',
 

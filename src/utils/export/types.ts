@@ -1,5 +1,6 @@
 import type {
   Annotation,
+  AnchorStyleId,
   CalloutLayoutItem,
   DocumentLayout,
   ExportOptions,
@@ -19,10 +20,14 @@ export interface ExportScene {
   lineColor: string
   dotColor: string
   dotRadius: number
+  anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  calloutFillOpacity: number
   fontFamily: string
 }
 

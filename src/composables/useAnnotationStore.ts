@@ -1,6 +1,7 @@
 import { computed, reactive, readonly, ref, watch } from 'vue'
 import type {
   Annotation,
+  AnchorStyleId,
   ExportOptions,
   LineStyleId,
   NumberStyleId,
@@ -12,6 +13,7 @@ import type {
 } from '../types/annotation'
 import { createId } from '../utils/id'
 import { DEFAULT_NUMBER_STYLE, sortByOrder } from '../utils/circledNumbers'
+import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from '../utils/anchorStyle'
 import { containmentRatio, normalizeRect, rectCenter } from '../utils/geometry'
 import { createManualSection, detectSectionsML } from '../utils/mlSectionDetection'
 import { recognizeTextFromImage, type OcrLineHit } from '../utils/ocr'
@@ -44,10 +46,15 @@ import {
   normalizeLineStyle,
 } from '../utils/lineStyle'
 import {
+  DEFAULT_CALLOUT_FILL_COLOR,
+  DEFAULT_CALLOUT_FILL_OPACITY,
   deleteCommonSettingsPreset,
   listCommonSettingsPresets,
   loadCommonSettingsPreset,
   normalizeCalloutBorderEnabled,
+  normalizeCalloutFillColor,
+  normalizeCalloutFillEnabled,
+  normalizeCalloutFillOpacity,
   normalizeCommonSettings,
   resolveCalloutBorderWidth,
   saveCommonSettingsPreset,
@@ -83,10 +90,14 @@ const state = reactive<ProjectState>({
   lineColor: '#ffd60a',
   dotColor: '#ffd60a',
   dotRadius: 4.5,
+  anchorStyle: DEFAULT_ANCHOR_STYLE,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
   calloutFontSize: CALLOUT_FONT_SIZE,
   calloutBorderEnabled: false,
+  calloutFillEnabled: true,
+  calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
+  calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
   numberStyle: DEFAULT_NUMBER_STYLE,
   showSections: true,
   calloutLayouts: [],
@@ -256,6 +267,7 @@ interface RestorableFields {
   lineColor: string
   dotColor: string
   dotRadius: number
+  anchorStyle?: AnchorStyleId
   lineHaloWidth?: number
   lineHaloColor?: string
   /** @deprecated Prefer `lineHaloWidth`. */
@@ -264,6 +276,9 @@ interface RestorableFields {
   calloutBorderEnabled?: boolean
   /** @deprecated Prefer `calloutBorderEnabled`. */
   calloutBorderWidth?: number
+  calloutFillEnabled?: boolean
+  calloutFillColor?: string
+  calloutFillOpacity?: number
   numberStyle?: NumberStyleId
   showSections: boolean
 }
@@ -289,6 +304,7 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
   state.lineColor = fields.lineColor
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
+  state.anchorStyle = normalizeAnchorStyle(fields.anchorStyle)
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
   state.calloutFontSize = fields.calloutFontSize
@@ -296,6 +312,9 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
     fields.calloutBorderEnabled,
     fields.calloutBorderWidth,
   )
+  state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
+  state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
+  state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
   state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
   state.showSections = fields.showSections
   state.selectedSectionIds = []
@@ -347,10 +366,14 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineColor: state.lineColor,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,
+    anchorStyle: state.anchorStyle,
     lineHaloWidth: state.lineHaloWidth,
     lineHaloColor: state.lineHaloColor,
     calloutFontSize: state.calloutFontSize,
     calloutBorderEnabled: state.calloutBorderEnabled,
+    calloutFillEnabled: state.calloutFillEnabled,
+    calloutFillColor: state.calloutFillColor,
+    calloutFillOpacity: state.calloutFillOpacity,
     numberStyle: state.numberStyle,
     showSections: state.showSections,
     activeNamedProjectId: activeNamedProject.value?.id ?? null,
@@ -417,10 +440,14 @@ watch(
     state.lineColor,
     state.dotColor,
     state.dotRadius,
+    state.anchorStyle,
     state.lineHaloWidth,
     state.lineHaloColor,
     state.calloutFontSize,
     state.calloutBorderEnabled,
+    state.calloutFillEnabled,
+    state.calloutFillColor,
+    state.calloutFillOpacity,
     state.numberStyle,
     state.showSections,
   ],
@@ -606,6 +633,10 @@ export function useAnnotationStore() {
     state.dotRadius = Math.min(DOT_RADIUS_MAX, Math.max(DOT_RADIUS_MIN, radius))
   }
 
+  function setAnchorStyle(style: AnchorStyleId): void {
+    state.anchorStyle = style
+  }
+
   function setLineHaloWidth(width: number): void {
     state.lineHaloWidth = normalizeLineHaloWidth(width)
   }
@@ -626,6 +657,18 @@ export function useAnnotationStore() {
 
   function setCalloutBorderEnabled(enabled: boolean): void {
     state.calloutBorderEnabled = enabled
+  }
+
+  function setCalloutFillEnabled(enabled: boolean): void {
+    state.calloutFillEnabled = enabled
+  }
+
+  function setCalloutFillColor(color: string): void {
+    state.calloutFillColor = normalizeCalloutFillColor(color)
+  }
+
+  function setCalloutFillOpacity(opacity: number): void {
+    state.calloutFillOpacity = normalizeCalloutFillOpacity(opacity)
   }
 
   function setNumberStyle(style: NumberStyleId): void {
@@ -752,10 +795,14 @@ export function useAnnotationStore() {
       lineWidth: state.lineWidth,
       lineColor: state.lineColor,
       dotRadius: state.dotRadius,
+      anchorStyle: state.anchorStyle,
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
       calloutFontSize: state.calloutFontSize,
       calloutBorderEnabled: state.calloutBorderEnabled,
+      calloutFillEnabled: state.calloutFillEnabled,
+      calloutFillColor: state.calloutFillColor,
+      calloutFillOpacity: state.calloutFillOpacity,
       numberStyle: state.numberStyle,
     }
   }
@@ -776,10 +823,14 @@ export function useAnnotationStore() {
     state.lineColor = settings.lineColor
     state.dotColor = settings.lineColor
     state.dotRadius = settings.dotRadius
+    state.anchorStyle = settings.anchorStyle
     state.lineHaloWidth = settings.lineHaloWidth
     state.lineHaloColor = settings.lineHaloColor
     state.calloutFontSize = settings.calloutFontSize
     state.calloutBorderEnabled = settings.calloutBorderEnabled
+    state.calloutFillEnabled = settings.calloutFillEnabled
+    state.calloutFillColor = settings.calloutFillColor
+    state.calloutFillOpacity = settings.calloutFillOpacity
     state.numberStyle = settings.numberStyle
 
     await ensureGoogleFontsLoaded([state.defaultFontFamily])
@@ -865,6 +916,7 @@ export function useAnnotationStore() {
       lineColor: state.lineColor,
       dotColor: state.lineColor,
       dotRadius: state.dotRadius,
+      anchorStyle: state.anchorStyle,
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
       calloutFontSize: state.calloutFontSize,
@@ -872,6 +924,9 @@ export function useAnnotationStore() {
         state.calloutBorderEnabled,
         state.lineWidth,
       ),
+      calloutFillEnabled: state.calloutFillEnabled,
+      calloutFillColor: state.calloutFillColor,
+      calloutFillOpacity: state.calloutFillOpacity,
       fontFamily: state.defaultFontFamily,
     })
   }
@@ -1022,10 +1077,14 @@ export function useAnnotationStore() {
     setLineWidth,
     setLineColor,
     setDotRadius,
+    setAnchorStyle,
     setLineHaloWidth,
     setLineHaloColor,
     setCalloutFontSize,
     setCalloutBorderEnabled,
+    setCalloutFillEnabled,
+    setCalloutFillColor,
+    setCalloutFillOpacity,
     setNumberStyle,
     toggleShowSections,
     clearSelection,

@@ -1,4 +1,5 @@
-import type { LineStyleId, NumberStyleId } from '../types/annotation'
+import type { AnchorStyleId, LineStyleId, NumberStyleId } from '../types/annotation'
+import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from './anchorStyle'
 import { DEFAULT_FONT_FAMILY } from './googleFonts'
 import {
   DEFAULT_LINE_HALO_COLOR,
@@ -19,16 +20,26 @@ import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
 
 const STORAGE_KEY = 'screendesc.commonSettingsPresets'
 
+export const DEFAULT_CALLOUT_FILL_COLOR = '#ffffff'
+export const DEFAULT_CALLOUT_FILL_OPACITY = 1
+export const CALLOUT_FILL_OPACITY_MIN = 0
+export const CALLOUT_FILL_OPACITY_MAX = 1
+
 export interface CommonSettings {
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
   dotRadius: number
+  anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderEnabled: boolean
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  /** 0–1 */
+  calloutFillOpacity: number
   numberStyle: NumberStyleId
 }
 
@@ -49,10 +60,14 @@ export function createDefaultCommonSettings(): CommonSettings {
     lineWidth: DEFAULT_LINE_WIDTH,
     lineColor: '#ffd60a',
     dotRadius: 4.5,
+    anchorStyle: DEFAULT_ANCHOR_STYLE,
     lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
     lineHaloColor: DEFAULT_LINE_HALO_COLOR,
     calloutFontSize: CALLOUT_FONT_SIZE,
     calloutBorderEnabled: false,
+    calloutFillEnabled: true,
+    calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
+    calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
     numberStyle: DEFAULT_NUMBER_STYLE,
   }
 }
@@ -73,6 +88,38 @@ export function normalizeCalloutBorderEnabled(
     return legacyWidth > 0
   }
   return false
+}
+
+/** Legacy projects keep a white fill when the field is missing. */
+export function normalizeCalloutFillEnabled(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : true
+}
+
+export function normalizeCalloutFillColor(value: unknown): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
+  }
+  return DEFAULT_CALLOUT_FILL_COLOR
+}
+
+export function normalizeCalloutFillOpacity(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(CALLOUT_FILL_OPACITY_MAX, Math.max(CALLOUT_FILL_OPACITY_MIN, value))
+  }
+  return DEFAULT_CALLOUT_FILL_OPACITY
+}
+
+export function resolveCalloutFill(
+  enabled: boolean,
+  color: string,
+  opacity: number,
+): { fill: string; fillOpacity: number } {
+  if (!enabled) return { fill: 'none', fillOpacity: 1 }
+  return {
+    fill: normalizeCalloutFillColor(color),
+    fillOpacity: normalizeCalloutFillOpacity(opacity),
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -112,6 +159,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     lineWidth: normalizedLine.lineWidth,
     lineColor,
     dotRadius,
+    anchorStyle: normalizeAnchorStyle(raw.anchorStyle),
     lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth, raw.lineHalo),
     lineHaloColor: normalizeLineHaloColor(raw.lineHaloColor),
     calloutFontSize,
@@ -119,6 +167,9 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
       raw.calloutBorderEnabled,
       raw.calloutBorderWidth,
     ),
+    calloutFillEnabled: normalizeCalloutFillEnabled(raw.calloutFillEnabled),
+    calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),
+    calloutFillOpacity: normalizeCalloutFillOpacity(raw.calloutFillOpacity),
     numberStyle,
   }
 }

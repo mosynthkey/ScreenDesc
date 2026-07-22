@@ -1,5 +1,6 @@
 import type {
   Annotation,
+  AnchorStyleId,
   LineStyleId,
   NumberStyleId,
   Section,
@@ -7,12 +8,18 @@ import type {
 import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
 import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
+import { normalizeAnchorStyle } from './anchorStyle'
 import {
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
   normalizeLineStyle,
 } from './lineStyle'
-import { normalizeCalloutBorderEnabled } from './commonSettings'
+import {
+  normalizeCalloutBorderEnabled,
+  normalizeCalloutFillColor,
+  normalizeCalloutFillEnabled,
+  normalizeCalloutFillOpacity,
+} from './commonSettings'
 import { clampAnchorOffsetAxis } from './markerSize'
 
 const FILE_VERSION = 1
@@ -32,12 +39,16 @@ export interface ProjectFileData {
   lineColor: string
   dotColor: string
   dotRadius: number
+  anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderEnabled: boolean
   /** @deprecated Prefer `calloutBorderEnabled`. */
   calloutBorderWidth?: number
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  calloutFillOpacity: number
   numberStyle: NumberStyleId
   showSections: boolean
 }
@@ -143,6 +154,18 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   project.calloutBorderEnabled = normalizeCalloutBorderEnabled(
     (project as { calloutBorderEnabled?: boolean }).calloutBorderEnabled,
     (project as { calloutBorderWidth?: number }).calloutBorderWidth,
+  )
+  project.calloutFillEnabled = normalizeCalloutFillEnabled(
+    (project as { calloutFillEnabled?: unknown }).calloutFillEnabled,
+  )
+  project.calloutFillColor = normalizeCalloutFillColor(
+    (project as { calloutFillColor?: unknown }).calloutFillColor,
+  )
+  project.calloutFillOpacity = normalizeCalloutFillOpacity(
+    (project as { calloutFillOpacity?: unknown }).calloutFillOpacity,
+  )
+  project.anchorStyle = normalizeAnchorStyle(
+    (project as { anchorStyle?: unknown }).anchorStyle,
   )
   project.annotations = (project.annotations ?? []).map((annotation) =>
     sanitizeAnnotation(annotation, project.imageWidth, project.imageHeight),

@@ -38,10 +38,14 @@ const {
   setLineWidth,
   setLineColor,
   setDotRadius,
+  setAnchorStyle,
   setLineHaloWidth,
   setLineHaloColor,
   setCalloutFontSize,
   setCalloutBorderEnabled,
+  setCalloutFillEnabled,
+  setCalloutFillColor,
+  setCalloutFillOpacity,
   setNumberStyle,
   toggleShowSections,
   clearSelection,
@@ -422,10 +426,14 @@ function onKeydown(event: KeyboardEvent): void {
               :line-width="state.lineWidth"
               :line-color="state.lineColor"
               :dot-radius="state.dotRadius"
+              :anchor-style="state.anchorStyle"
               :line-halo-width="state.lineHaloWidth"
               :line-halo-color="state.lineHaloColor"
               :callout-font-size="state.calloutFontSize"
               :callout-border-enabled="state.calloutBorderEnabled"
+              :callout-fill-enabled="state.calloutFillEnabled"
+              :callout-fill-color="state.calloutFillColor"
+              :callout-fill-opacity="state.calloutFillOpacity"
               :number-style="state.numberStyle"
               :image-width="state.imageWidth"
               :image-height="state.imageHeight"
@@ -449,10 +457,14 @@ function onKeydown(event: KeyboardEvent): void {
           :line-color="state.lineColor"
           :dot-color="state.lineColor"
           :dot-radius="state.dotRadius"
+          :anchor-style="state.anchorStyle"
           :line-halo-width="state.lineHaloWidth"
           :line-halo-color="state.lineHaloColor"
           :callout-font-size="state.calloutFontSize"
           :callout-border-width="effectiveCalloutBorderWidth"
+          :callout-fill-enabled="state.calloutFillEnabled"
+          :callout-fill-color="state.calloutFillColor"
+          :callout-fill-opacity="state.calloutFillOpacity"
           :font-family="state.defaultFontFamily"
           :is-detecting="isDetecting"
           :empty-hint="state.sections.length === 0"
@@ -479,10 +491,14 @@ function onKeydown(event: KeyboardEvent): void {
               :line-width="state.lineWidth"
               :line-color="state.lineColor"
               :dot-radius="state.dotRadius"
+              :anchor-style="state.anchorStyle"
               :line-halo-width="state.lineHaloWidth"
               :line-halo-color="state.lineHaloColor"
               :callout-font-size="state.calloutFontSize"
               :callout-border-enabled="state.calloutBorderEnabled"
+              :callout-fill-enabled="state.calloutFillEnabled"
+              :callout-fill-color="state.calloutFillColor"
+              :callout-fill-opacity="state.calloutFillOpacity"
               :number-style="state.numberStyle"
               :image-width="state.imageWidth"
               :image-height="state.imageHeight"
@@ -491,10 +507,14 @@ function onKeydown(event: KeyboardEvent): void {
               @update:line-width="setLineWidth"
               @update:line-color="setLineColor"
               @update:dot-radius="setDotRadius"
+              @update:anchor-style="setAnchorStyle"
               @update:line-halo-width="setLineHaloWidth"
               @update:line-halo-color="setLineHaloColor"
               @update:callout-font-size="setCalloutFontSize"
               @update:callout-border-enabled="setCalloutBorderEnabled"
+              @update:callout-fill-enabled="setCalloutFillEnabled"
+              @update:callout-fill-color="setCalloutFillColor"
+              @update:callout-fill-opacity="setCalloutFillOpacity"
               @update:number-style="setNumberStyle"
               @open-presets="onOpenCommonSettings"
             />

@@ -105,7 +105,24 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :data-tooltip="t('tooltip.projectMenu')"
           @click.stop="toggleProjectMenu"
         >
-          {{ t('button.project') }}
+          <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path
+              d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M3.5 7.5V6A1.5 1.5 0 0 1 5 4.5h4.2L11 6.2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>{{ t('button.project') }}</span>
         </button>
         <div v-if="projectMenuOpen" class="project-menu" @click.stop>
           <button class="project-menu-item" type="button" @click="chooseNewProject">
@@ -136,7 +153,26 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :disabled="!canExport"
         @click="emit('copyClipboard')"
       >
-        {{ copyJustSucceeded ? t('button.copied') : t('button.copyClipboard') }}
+        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <rect
+            x="8"
+            y="8"
+            width="11"
+            height="13"
+            rx="2"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          />
+          <path
+            d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span>{{ copyJustSucceeded ? t('button.copied') : t('button.copyClipboard') }}</span>
       </button>
       <button
         class="header-btn header-btn-primary"
@@ -145,7 +181,31 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :disabled="!canExport"
         @click="emit('export')"
       >
-        {{ t('button.export') }}
+        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path
+            d="M12 3v11"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+          <path
+            d="M8 10l4 4 4-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M5 18h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span>{{ t('button.export') }}</span>
       </button>
     </div>
   </header>
@@ -319,6 +379,10 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
 .header-btn {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: none;
   background: rgba(120, 120, 128, 0.12);
   color: var(--ink);
@@ -326,6 +390,11 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   padding: 7px 14px;
   font-size: 0.8rem;
   font-weight: 590;
+}
+
+.header-btn-icon {
+  flex: 0 0 auto;
+  display: block;
 }
 
 .header-btn:disabled {

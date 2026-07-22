@@ -1,13 +1,22 @@
 import type {
   Annotation,
+  AnchorStyleId,
   CalloutLayoutItem,
   DocumentLayout,
   LineStyleId,
   Section,
 } from '../../types/annotation'
+import {
+  buildAnchorArrowGeometry,
+  buildAnchorHeadPath,
+  buildAnchorLeaderPath,
+  isArrowAnchorStyle,
+  leaderAttachPoint,
+} from '../anchorStyle'
 import { fontFamilyCss } from '../googleFonts'
 import { getLineStyleSpec } from '../lineStyle'
 import { buildLeaderPath } from '../calloutLayout'
+import { resolveCalloutFill } from '../commonSettings'
 
 function escapeXml(value: string): string {
   return value
@@ -25,10 +34,14 @@ function renderCallout(
   lineColor: string,
   dotColor: string,
   dotRadius: number,
+  anchorStyle: AnchorStyleId,
   lineHaloWidth: number,
   lineHaloColor: string,
   calloutFontSize: number,
   calloutBorderWidth: number,
+  calloutFillEnabled: boolean,
+  calloutFillColor: string,
+  calloutFillOpacity: number,
   fontFamily: string,
 ): string {
   const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, elbowPoint } = layout
@@ -50,28 +63,63 @@ function renderCallout(
   const isInvert = lineStyle === 'invert'
   const effectiveLineColor = isInvert ? '#ffffff' : lineColor
   const effectiveDotColor = isInvert ? '#ffffff' : dotColor
-  const pathD = buildLeaderPath(anchorPoint, endX, elbowPoint.y)
-  const haloPath =
-    lineHaloWidth > 0 && !isInvert
-      ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
-      : ''
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
   const blendAttr = spec.blendMode ? ` style="mix-blend-mode:${spec.blendMode}"` : ''
+  const strokeJoin = 'stroke-linecap="round" stroke-linejoin="round"'
+  const fillPaint = resolveCalloutFill(calloutFillEnabled, calloutFillColor, calloutFillOpacity)
+  const fillAttr =
+    fillPaint.fill === 'none'
+      ? 'fill="none"'
+      : `fill="${fillPaint.fill}" fill-opacity="${fillPaint.fillOpacity}"`
 
-  const dotHalo =
-    lineHaloWidth > 0 && !isInvert
-      ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius + lineHaloWidth / 2}" fill="${lineHaloColor}" />`
-      : ''
+  let body: string
+  if (isArrowAnchorStyle(anchorStyle)) {
+    const combined = buildAnchorLeaderPath(
+      anchorStyle,
+      anchorPoint,
+      endX,
+      elbowPoint.y,
+      dotRadius,
+    )
+    const fill = anchorStyle === 'arrow' ? effectiveDotColor : 'none'
+    const halo =
+      lineHaloWidth > 0 && !isInvert
+        ? `<path d="${combined}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" ${strokeJoin} />`
+        : ''
+
+    if (spec.dasharray) {
+      const geometry = buildAnchorArrowGeometry(anchorPoint, endX, dotRadius)
+      const head = buildAnchorHeadPath(anchorStyle, geometry)
+      const leader = buildLeaderPath(leaderAttachPoint(anchorStyle, geometry), endX, elbowPoint.y)
+      body = `${halo}
+        <path d="${head}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />
+        <path d="${leader}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
+    } else {
+      body = `${halo}
+        <path d="${combined}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />`
+    }
+  } else {
+    const pathD = buildLeaderPath(anchorPoint, endX, elbowPoint.y)
+    const haloPath =
+      lineHaloWidth > 0 && !isInvert
+        ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
+        : ''
+    const dotHalo =
+      lineHaloWidth > 0 && !isInvert
+        ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius + lineHaloWidth / 2}" fill="${lineHaloColor}" />`
+        : ''
+    body = `${haloPath}
+      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} />
+      ${dotHalo}
+      <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />`
+  }
 
   return `
     <g data-callout="${annotation.id}">
-      ${haloPath}
       <g${blendAttr}>
-        <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} />
-        ${dotHalo}
-        <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />
+        ${body}
       </g>
-      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" fill="#ffffff" stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
+      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
       <text dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${calloutFontSize}" font-weight="700" fill="#111111">${tspans}</text>
     </g>
   `
@@ -89,10 +137,14 @@ export function buildSceneSvg(params: {
   lineColor: string
   dotColor: string
   dotRadius: number
+  anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
   calloutFontSize: number
   calloutBorderWidth: number
+  calloutFillEnabled: boolean
+  calloutFillColor: string
+  calloutFillOpacity: number
   fontFamily: string
   /** Optional embedded @font-face CSS (data URIs) for portable export */
   fontCss?: string
@@ -109,10 +161,14 @@ export function buildSceneSvg(params: {
     lineColor,
     dotColor,
     dotRadius,
+    anchorStyle,
     lineHaloWidth,
     lineHaloColor,
     calloutFontSize,
     calloutBorderWidth,
+    calloutFillEnabled,
+    calloutFillColor,
+    calloutFillOpacity,
     fontFamily,
     fontCss = '',
   } = params
@@ -140,10 +196,14 @@ export function buildSceneSvg(params: {
         lineColor,
         dotColor,
         dotRadius,
+        anchorStyle,
         lineHaloWidth,
         lineHaloColor,
         calloutFontSize,
         calloutBorderWidth,
+        calloutFillEnabled,
+        calloutFillColor,
+        calloutFillOpacity,
         fontFamily,
       )
     })

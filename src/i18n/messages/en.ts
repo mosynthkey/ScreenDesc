@@ -122,12 +122,16 @@ export const en = {
   'style.lineAndDotColor': 'Leader & anchor color',
   'style.lineColor': 'Line',
   'style.dotRadius': 'Anchor size',
+  'style.anchorStyle': 'Anchor shape',
   'style.anchorOffsetX': 'Anchor offset X',
   'style.anchorOffsetY': 'Anchor offset Y',
   'style.lineHalo': 'Outline',
   'style.lineHalo.off': 'Off',
   'style.lineHaloColor': 'Outline color',
   'style.calloutFontSize': 'Label font size',
+  'style.calloutFill': 'Label background',
+  'style.calloutFillColor': 'Background color',
+  'style.calloutFillOpacity': 'Background opacity',
   'style.calloutBorder': 'Label border',
   'style.calloutBorderHint': 'When on, uses the stroke line weight',
   'style.numberStyle': 'Number style',
@@ -175,6 +179,10 @@ export const en = {
   'lineStyle.dashed': 'Dashed',
   'lineStyle.invert': 'Invert',
   'lineStyle.invertHint': 'Visible on any background',
+
+  'anchorStyle.dot': 'Dot',
+  'anchorStyle.arrow': 'Arrow',
+  'anchorStyle.chevron': 'Chevron',
 
   'callout.emptyDescription': 'Description',
 
