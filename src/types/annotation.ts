@@ -84,8 +84,6 @@ export interface ProjectState {
   lineWidth: number
   /** Ignored when `lineStyle` is `invert`. */
   lineColor: string
-  /** Leader stroke opacity (0–1). Does not affect the anchor dot. */
-  lineOpacity: number
   dotColor: string
   dotRadius: number
   /** Extra outline underlay width in px (0 = none). */

@@ -13,8 +13,6 @@ import {
   getLineStyleOptions,
   LINE_HALO_WIDTH_MAX,
   LINE_HALO_WIDTH_MIN,
-  LINE_OPACITY_MAX,
-  LINE_OPACITY_MIN,
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
 } from '../utils/lineStyle'
@@ -36,7 +34,6 @@ const props = withDefaults(
     lineStyle: LineStyleId
     lineWidth: number
     lineColor: string
-    lineOpacity: number
     dotRadius: number
     lineHaloWidth: number
     lineHaloColor: string
@@ -57,7 +54,6 @@ const emit = defineEmits<{
   'update:lineStyle': [style: LineStyleId]
   'update:lineWidth': [width: number]
   'update:lineColor': [color: string]
-  'update:lineOpacity': [opacity: number]
   'update:dotRadius': [radius: number]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
@@ -149,21 +145,6 @@ watch(
             @input="emit('update:lineColor', ($event.target as HTMLInputElement).value)"
           />
         </label>
-      </div>
-      <div class="field">
-        <label class="slider-label">
-          <span>{{ t('style.lineOpacity') }}</span>
-          <span class="slider-value">{{ Math.round(lineOpacity * 100) }}%</span>
-        </label>
-        <input
-          class="size-slider"
-          type="range"
-          :min="LINE_OPACITY_MIN"
-          :max="LINE_OPACITY_MAX"
-          :step="0.05"
-          :value="lineOpacity"
-          @input="emit('update:lineOpacity', Number(($event.target as HTMLInputElement).value))"
-        />
       </div>
       <div class="field">
         <label class="slider-label">

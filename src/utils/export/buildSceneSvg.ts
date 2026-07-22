@@ -23,7 +23,6 @@ function renderCallout(
   lineStyle: LineStyleId,
   lineWidth: number,
   lineColor: string,
-  lineOpacity: number,
   dotColor: string,
   dotRadius: number,
   lineHaloWidth: number,
@@ -52,25 +51,23 @@ function renderCallout(
   const effectiveLineColor = isInvert ? '#ffffff' : lineColor
   const effectiveDotColor = isInvert ? '#ffffff' : dotColor
   const pathD = buildLeaderPath(anchorPoint, endX, elbowPoint.y)
-  const opacityAttr = lineOpacity < 1 ? ` stroke-opacity="${lineOpacity}"` : ''
   const haloPath =
     lineHaloWidth > 0 && !isInvert
-      ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}"${opacityAttr} />`
+      ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
       : ''
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
   const blendAttr = spec.blendMode ? ` style="mix-blend-mode:${spec.blendMode}"` : ''
 
-  const fillOpacityAttr = lineOpacity < 1 ? ` fill-opacity="${lineOpacity}"` : ''
   const dotHalo =
     lineHaloWidth > 0 && !isInvert
-      ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius + lineHaloWidth / 2}" fill="${lineHaloColor}"${fillOpacityAttr} />`
+      ? `<circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius + lineHaloWidth / 2}" fill="${lineHaloColor}" />`
       : ''
 
   return `
     <g data-callout="${annotation.id}">
       ${haloPath}
       <g${blendAttr}>
-        <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${opacityAttr} />
+        <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} />
         ${dotHalo}
         <circle cx="${anchorPoint.x}" cy="${anchorPoint.y}" r="${dotRadius}" fill="${effectiveDotColor}" />
       </g>
@@ -90,7 +87,6 @@ export function buildSceneSvg(params: {
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
-  lineOpacity: number
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
@@ -111,7 +107,6 @@ export function buildSceneSvg(params: {
     lineStyle,
     lineWidth,
     lineColor,
-    lineOpacity,
     dotColor,
     dotRadius,
     lineHaloWidth,
@@ -143,7 +138,6 @@ export function buildSceneSvg(params: {
         lineStyle,
         lineWidth,
         lineColor,
-        lineOpacity,
         dotColor,
         dotRadius,
         lineHaloWidth,

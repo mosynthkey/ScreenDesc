@@ -8,10 +8,8 @@ import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
 import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
 import {
-  DEFAULT_LINE_OPACITY,
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
-  normalizeLineOpacity,
   normalizeLineStyle,
 } from './lineStyle'
 
@@ -30,7 +28,6 @@ export interface ProjectFileData {
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
-  lineOpacity: number
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
@@ -104,9 +101,6 @@ export async function parseProjectFile(file: File): Promise<ProjectFileData> {
   const normalizedLine = normalizeLineStyle(project.lineStyle, (project as { lineWidth?: number }).lineWidth)
   project.lineStyle = normalizedLine.lineStyle
   project.lineWidth = normalizedLine.lineWidth
-  project.lineOpacity = normalizeLineOpacity(
-    (project as { lineOpacity?: number }).lineOpacity ?? DEFAULT_LINE_OPACITY,
-  )
   project.lineHaloWidth = normalizeLineHaloWidth(
     (project as { lineHaloWidth?: number }).lineHaloWidth,
     (project as { lineHalo?: boolean }).lineHalo,

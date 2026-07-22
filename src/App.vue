@@ -34,7 +34,6 @@ const {
   setLineStyle,
   setLineWidth,
   setLineColor,
-  setLineOpacity,
   setDotRadius,
   setLineHaloWidth,
   setLineHaloColor,
@@ -309,7 +308,6 @@ function onKeydown(event: KeyboardEvent): void {
               :line-style="state.lineStyle"
               :line-width="state.lineWidth"
               :line-color="state.lineColor"
-              :line-opacity="state.lineOpacity"
               :dot-radius="state.dotRadius"
               :line-halo-width="state.lineHaloWidth"
               :line-halo-color="state.lineHaloColor"
@@ -334,7 +332,6 @@ function onKeydown(event: KeyboardEvent): void {
           :line-style="state.lineStyle"
           :line-width="state.lineWidth"
           :line-color="state.lineColor"
-          :line-opacity="state.lineOpacity"
           :dot-color="state.lineColor"
           :dot-radius="state.dotRadius"
           :line-halo-width="state.lineHaloWidth"
@@ -366,7 +363,6 @@ function onKeydown(event: KeyboardEvent): void {
               :line-style="state.lineStyle"
               :line-width="state.lineWidth"
               :line-color="state.lineColor"
-              :line-opacity="state.lineOpacity"
               :dot-radius="state.dotRadius"
               :line-halo-width="state.lineHaloWidth"
               :line-halo-color="state.lineHaloColor"
@@ -377,7 +373,6 @@ function onKeydown(event: KeyboardEvent): void {
               @update:line-style="setLineStyle"
               @update:line-width="setLineWidth"
               @update:line-color="setLineColor"
-              @update:line-opacity="setLineOpacity"
               @update:dot-radius="setDotRadius"
               @update:line-halo-width="setLineHaloWidth"
               @update:line-halo-color="setLineHaloColor"

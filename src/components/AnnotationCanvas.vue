@@ -35,7 +35,6 @@ const props = defineProps<{
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
-  lineOpacity: number
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
@@ -707,7 +706,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
             :style="{
               stroke: lineHaloColor,
               strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
-              strokeOpacity: lineOpacity,
             }"
           />
           <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
@@ -718,8 +716,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                 stroke: effectiveLineColor,
                 strokeWidth: activeLineStyle.strokeWidth,
                 strokeDasharray: activeLineStyle.dasharray ?? 'none',
-                strokeOpacity: lineOpacity,
-              }"
+                }"
             />
             <circle
               v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
@@ -727,7 +724,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               :cx="layoutFor(annotation.id)!.anchorPoint.x"
               :cy="layoutFor(annotation.id)!.anchorPoint.y"
               :r="dotRadius + lineHaloWidth / 2"
-              :style="{ fill: lineHaloColor, fillOpacity: lineOpacity }"
+              :style="{ fill: lineHaloColor }"
             />
             <circle
               class="anchor-dot"

@@ -38,11 +38,9 @@ import {
 import {
   DEFAULT_LINE_HALO_COLOR,
   DEFAULT_LINE_HALO_WIDTH,
-  DEFAULT_LINE_OPACITY,
   DEFAULT_LINE_WIDTH,
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
-  normalizeLineOpacity,
   normalizeLineStyle,
 } from '../utils/lineStyle'
 import {
@@ -72,7 +70,6 @@ const state = reactive<ProjectState>({
   lineStyle: 'solid',
   lineWidth: DEFAULT_LINE_WIDTH,
   lineColor: '#ffd60a',
-  lineOpacity: DEFAULT_LINE_OPACITY,
   dotColor: '#ffd60a',
   dotRadius: 4.5,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
@@ -229,7 +226,6 @@ interface RestorableFields {
   lineStyle: LineStyleId
   lineWidth?: number
   lineColor: string
-  lineOpacity?: number
   dotColor: string
   dotRadius: number
   lineHaloWidth?: number
@@ -261,7 +257,6 @@ async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields):
     state.lineWidth = normalizedLine.lineWidth
   }
   state.lineColor = fields.lineColor
-  state.lineOpacity = normalizeLineOpacity(fields.lineOpacity)
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth, fields.lineHalo)
@@ -317,7 +312,6 @@ async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     lineStyle: state.lineStyle,
     lineWidth: state.lineWidth,
     lineColor: state.lineColor,
-    lineOpacity: state.lineOpacity,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,
     lineHaloWidth: state.lineHaloWidth,
@@ -388,7 +382,6 @@ watch(
     state.lineStyle,
     state.lineWidth,
     state.lineColor,
-    state.lineOpacity,
     state.dotColor,
     state.dotRadius,
     state.lineHaloWidth,
@@ -566,10 +559,6 @@ export function useAnnotationStore() {
   function setLineColor(color: string): void {
     state.lineColor = color
     state.dotColor = color
-  }
-
-  function setLineOpacity(opacity: number): void {
-    state.lineOpacity = normalizeLineOpacity(opacity)
   }
 
   function setDotRadius(radius: number): void {
@@ -764,7 +753,6 @@ export function useAnnotationStore() {
         lineStyle: state.lineStyle,
         lineWidth: state.lineWidth,
         lineColor: state.lineColor,
-        lineOpacity: state.lineOpacity,
         dotColor: state.lineColor,
         dotRadius: state.dotRadius,
         lineHaloWidth: state.lineHaloWidth,
@@ -878,7 +866,6 @@ export function useAnnotationStore() {
     setLineStyle,
     setLineWidth,
     setLineColor,
-    setLineOpacity,
     setDotRadius,
     setLineHaloWidth,
     setLineHaloColor,

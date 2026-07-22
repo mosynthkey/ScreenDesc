@@ -12,15 +12,6 @@ export const DEFAULT_LINE_WIDTH = 4.5
 export const LINE_WIDTH_MIN = 1
 export const LINE_WIDTH_MAX = 54
 
-export const DEFAULT_LINE_OPACITY = 1
-export const LINE_OPACITY_MIN = 0.05
-export const LINE_OPACITY_MAX = 1
-
-export function normalizeLineOpacity(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_LINE_OPACITY
-  return Math.min(LINE_OPACITY_MAX, Math.max(LINE_OPACITY_MIN, value))
-}
-
 /** Extra stroke width for the outline underlay (0 = off). Legacy `lineHalo: true` → 3. */
 export const DEFAULT_LINE_HALO_WIDTH = 0
 export const LEGACY_LINE_HALO_WIDTH = 3

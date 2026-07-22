@@ -24,7 +24,6 @@ export interface ProjectSnapshot {
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
-  lineOpacity: number
   dotColor: string
   dotRadius: number
   lineHaloWidth: number
