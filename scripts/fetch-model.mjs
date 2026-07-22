@@ -3,7 +3,7 @@
  * Ensures public/models/screenparser.onnx is present.
  *
  * Prefer an existing local file. Otherwise download via MODEL_DOWNLOAD_URL
- * or `gh release download` (tag MODEL_RELEASE_TAG, default model-v1).
+ * or `gh release download` (tag MODEL_RELEASE_TAG, default model).
  */
 import { spawnSync } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
@@ -16,9 +16,13 @@ import { fileURLToPath } from 'node:url'
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = path.join(rootDir, 'public', 'models')
 const outPath = path.join(outDir, 'screenparser.onnx')
-const releaseTag = process.env.MODEL_RELEASE_TAG || 'model-v1'
+const releaseTag = process.env.MODEL_RELEASE_TAG || 'model'
 const assetName = process.env.MODEL_ASSET_NAME || 'screenparser.onnx'
-const downloadUrl = process.env.MODEL_DOWNLOAD_URL?.trim() || ''
+const defaultDownloadUrl =
+  'https://github.com/mosynthkey/ScreenDesc/releases/download/model/screenparser.onnx'
+const downloadUrl =
+  process.env.MODEL_DOWNLOAD_URL?.trim() ||
+  (process.env.CI || process.env.GITHUB_ACTIONS ? defaultDownloadUrl : '')
 const force = process.env.MODEL_FORCE === '1'
 
 async function fileExists(filePath) {

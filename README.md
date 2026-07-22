@@ -37,7 +37,8 @@ npm run dev
    ```bash
    ./scripts/publish-model-release.sh
    ```
-   タグは既定で `model-v1`、アセット名は `screenparser.onnx`
+   タグは既定で `model`、アセット名は `screenparser.onnx`  
+   （CI 取得 URL: https://github.com/mosynthkey/ScreenDesc/releases/download/model/screenparser.onnx）
 3. GitHub → **Settings → Pages → Build and deployment → Source: GitHub Actions**
 4. （任意）Secrets に `VITE_CF_BEACON_TOKEN`、ユーザーサイトなら Variables に `BASE_PATH=/`
 

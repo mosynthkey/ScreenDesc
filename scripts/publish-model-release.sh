@@ -2,11 +2,11 @@
 # Publish (or replace) the ScreenParser ONNX on a GitHub Release.
 # Usage:
 #   ./scripts/publish-model-release.sh
-#   MODEL_RELEASE_TAG=model-v2 ./scripts/publish-model-release.sh path/to/screenparser.onnx
+#   MODEL_RELEASE_TAG=model ./scripts/publish-model-release.sh path/to/screenparser.onnx
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TAG="${MODEL_RELEASE_TAG:-model-v1}"
+TAG="${MODEL_RELEASE_TAG:-model}"
 ASSET="${1:-$ROOT/public/models/screenparser.onnx}"
 
 if [[ ! -f "$ASSET" ]]; then

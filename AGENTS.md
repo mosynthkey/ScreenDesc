@@ -44,10 +44,10 @@ Keep new logic near its existing home; prefer extending these modules over growi
 
 ### Deploy (GitHub Pages + Release model)
 
-- ONNX stays out of git (`public/models/*.onnx`). Store it on a GitHub Release (`model-v1` / `screenparser.onnx`).
-- Local: keep a copy under `public/models/`, or run `npm run fetch-model` (needs `gh`).
+- ONNX stays out of git (`public/models/*.onnx`). Store it on a GitHub Release (`model` / `screenparser.onnx`).
+- CI downloads https://github.com/mosynthkey/ScreenDesc/releases/download/model/screenparser.onnx at build time.
+- Local: keep a copy under `public/models/`, or run `npm run fetch-model` (needs `gh` or `MODEL_DOWNLOAD_URL`).
 - Publish/update the Release asset: `./scripts/publish-model-release.sh`
-- CI: `.github/workflows/deploy-pages.yml` downloads the Release asset at build time, then deploys `dist`.
 - Optional secrets/vars: `VITE_CF_BEACON_TOKEN` (secret), `BASE_PATH` (var, default `/<repo>/`).
 
 ## Style notes

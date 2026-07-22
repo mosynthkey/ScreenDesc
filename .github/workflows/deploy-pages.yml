@@ -18,8 +18,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Must match the Release tag that holds screenparser.onnx
-      MODEL_RELEASE_TAG: model-v1
+      # Public Release asset used at build time (not fetched by the browser).
+      MODEL_DOWNLOAD_URL: https://github.com/mosynthkey/ScreenDesc/releases/download/model/screenparser.onnx
       # Project site: https://<user>.github.io/<repo>/
       # For a user site (*.github.io repo), set repository variable BASE_PATH to /
       BASE_PATH: /${{ github.event.repository.name }}/
@@ -37,8 +37,6 @@ jobs:
         run: npm ci
 
       - name: Download ScreenParser model from Release
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: npm run fetch-model
 
       - name: Apply Pages base path override
