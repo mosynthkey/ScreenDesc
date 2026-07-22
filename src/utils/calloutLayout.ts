@@ -25,13 +25,14 @@ export function buildLeaderPath(anchor: Point, endX: number, endY: number): stri
   return `M ${anchor.x} ${anchor.y} C ${ctrl1X} ${anchor.y}, ${ctrl2X} ${endY}, ${endX} ${endY}`
 }
 
-const LABEL_GAP = 12
+const LABEL_GAP_MIN = 12
 const LINE_INSET = 8
 const IMAGE_GUTTER = 14
 const PAGE_PAD = 8
 const MIN_LABEL_WIDTH = 120
 const EMPTY_SIDE_MARGIN = 32
 const ELBOW_INSET = 10
+const MIN_VERTICAL_MARGIN = 24
 
 function lineHeightFor(fontSize: number): number {
   return Math.round(fontSize * 1.375)
@@ -41,8 +42,35 @@ function labelHPadding(fontSize: number): number {
   return Math.max(20, Math.round(fontSize * 0.55))
 }
 
+function labelVPadding(fontSize: number): number {
+  return Math.max(14, Math.round(fontSize * 0.35))
+}
+
+/** Keep gaps readable as font size grows so neighboring labels do not touch. */
+function labelGapFor(fontSize: number): number {
+  return Math.max(LABEL_GAP_MIN, Math.round(fontSize * 0.35))
+}
+
 function sideMarginFor(maxLabelWidth: number): number {
   return maxLabelWidth + IMAGE_GUTTER + PAGE_PAD
+}
+
+function stackHeight(heights: number[], gap: number): number {
+  if (heights.length === 0) return 0
+  const heightsSum = heights.reduce((sum, height) => sum + height, 0)
+  return heightsSum + Math.max(0, heights.length - 1) * gap
+}
+
+function verticalMarginsFor(imageHeight: number, maxStackHeight: number): {
+  marginTop: number
+  marginBottom: number
+} {
+  const minContentHeight = maxStackHeight + 2 * PAGE_PAD
+  const extra = Math.max(0, minContentHeight - imageHeight)
+  return {
+    marginTop: MIN_VERTICAL_MARGIN + Math.ceil(extra / 2),
+    marginBottom: MIN_VERTICAL_MARGIN + Math.floor(extra / 2),
+  }
 }
 
 /** Single-line label sized to measured text; canvas margins grow to fit. */
@@ -61,7 +89,7 @@ function estimateLabelSize(
   const textWidth = measureTextWidth(text, fontSize, fontCss) + labelHPadding(fontSize)
   return {
     width: Math.max(MIN_LABEL_WIDTH, Math.ceil(textWidth)),
-    height: Math.max(lineHeight + 14, Math.round(fontSize * 1.5)),
+    height: Math.max(lineHeight + labelVPadding(fontSize), Math.round(fontSize * 1.5)),
     lines: [text],
   }
 }
@@ -109,63 +137,49 @@ function preferredSide(
 }
 
 /**
- * Place labels as close as possible to each anchor's Y, stacked top-to-bottom
- * in the given input order (= annotation.order, not anchor Y) so the callout
- * numbers always read sequentially down the side of the image.
+ * Place labels as close as possible to each preferred Y, stacked top-to-bottom
+ * in input order (= annotation.order) so numbers read sequentially down the side.
+ * Caller must size vertical margins so the stack fits; gaps are never compressed.
  */
 function packLabelYs(
   preferredCenters: number[],
   heights: number[],
   minY: number,
   maxY: number,
+  gap: number,
 ): number[] {
   const count = preferredCenters.length
   if (count === 0) return []
 
-  const order = preferredCenters.map((_, itemIndex) => itemIndex)
-
-  const orderedHeights = order.map((itemIndex) => heights[itemIndex]!)
-  const preferredTops = order.map((itemIndex) => {
+  const preferredTops = preferredCenters.map((center, itemIndex) => {
     const height = heights[itemIndex]!
-    return clamp(
-      preferredCenters[itemIndex]! - height / 2,
-      minY,
-      Math.max(minY, maxY - height),
-    )
+    return clamp(center - height / 2, minY, Math.max(minY, maxY - height))
   })
 
   const packed = [...preferredTops]
-
-  for (let orderIndex = 1; orderIndex < count; orderIndex += 1) {
-    const minTop =
-      packed[orderIndex - 1]! + orderedHeights[orderIndex - 1]! + LABEL_GAP
-    packed[orderIndex] = Math.max(packed[orderIndex]!, minTop)
+  for (let itemIndex = 1; itemIndex < count; itemIndex += 1) {
+    const minTop = packed[itemIndex - 1]! + heights[itemIndex - 1]! + gap
+    packed[itemIndex] = Math.max(packed[itemIndex]!, minTop)
   }
 
-  const stackBottom = packed[count - 1]! + orderedHeights[count - 1]!
+  const stackBottom = packed[count - 1]! + heights[count - 1]!
   if (stackBottom > maxY) {
     const shift = stackBottom - maxY
-    for (let orderIndex = 0; orderIndex < count; orderIndex += 1) {
-      packed[orderIndex] = packed[orderIndex]! - shift
+    for (let itemIndex = 0; itemIndex < count; itemIndex += 1) {
+      packed[itemIndex] = packed[itemIndex]! - shift
     }
   }
 
+  // If still above the band (undersized document), stack from minY with full gaps.
   if (packed[0]! < minY) {
-    const heightsSum = orderedHeights.reduce((sum, height) => sum + height, 0)
-    const available = Math.max(0, maxY - minY - heightsSum)
-    const gap = count > 1 ? Math.max(2, available / (count - 1)) : 0
     let cursorY = minY
-    for (let orderIndex = 0; orderIndex < count; orderIndex += 1) {
-      packed[orderIndex] = cursorY
-      cursorY += orderedHeights[orderIndex]! + gap
+    for (let itemIndex = 0; itemIndex < count; itemIndex += 1) {
+      packed[itemIndex] = cursorY
+      cursorY += heights[itemIndex]! + gap
     }
   }
 
-  const result = new Array<number>(count)
-  for (let orderIndex = 0; orderIndex < count; orderIndex += 1) {
-    result[order[orderIndex]!] = packed[orderIndex]!
-  }
-  return result
+  return packed
 }
 
 function packSide(
@@ -174,6 +188,7 @@ function packSide(
   sections: Section[],
   document: DocumentLayout,
   side: 'left' | 'right',
+  gap: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -181,17 +196,25 @@ function packSide(
     anchorForAnnotation(annotation, sections, side),
   )
 
-  const minY = document.marginTop + PAGE_PAD
-  const maxY = document.marginTop + document.imageHeight - PAGE_PAD
+  const documentHeight =
+    document.marginTop + document.imageHeight + document.marginBottom
+  const minY = PAGE_PAD
+  const maxY = documentHeight - PAGE_PAD
 
-  const preferredCenters = anchors.map(
-    (anchor) => document.marginTop + anchor.y,
-  )
-  const autoTops = packLabelYs(
+  const preferredCenters = items.map((annotation, itemIndex) => {
+    const size = sizes[itemIndex]!
+    if (annotation.calloutPosition) {
+      return annotation.calloutPosition.y + size.height / 2
+    }
+    return document.marginTop + anchors[itemIndex]!.y
+  })
+
+  const packedTops = packLabelYs(
     preferredCenters,
     sizes.map((size) => size.height),
     minY,
     maxY,
+    gap,
   )
 
   const layouts: CalloutLayoutItem[] = []
@@ -209,11 +232,10 @@ function packSide(
         : imageRight + IMAGE_GUTTER
 
     let labelX = autoLabelX
-    let labelY = autoTops[itemIndex]!
+    const labelY = packedTops[itemIndex]!
 
     if (annotation.calloutPosition) {
       labelX = annotation.calloutPosition.x
-      labelY = annotation.calloutPosition.y
       // Keep dragged labels outside the screenshot when size/margins change.
       if (side === 'left') {
         labelX = Math.min(labelX, imageLeft - size.width - IMAGE_GUTTER)
@@ -282,6 +304,7 @@ export function computeCalloutLayouts(
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) return []
 
+  const gap = labelGapFor(fontSize)
   const { leftItems, rightItems } = splitBySide(callouts, sections, document.imageWidth)
   const leftSizes = leftItems.map((annotation) =>
     estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
@@ -291,8 +314,8 @@ export function computeCalloutLayouts(
   )
 
   return [
-    ...packSide(leftItems, leftSizes, sections, document, 'left'),
-    ...packSide(rightItems, rightSizes, sections, document, 'right'),
+    ...packSide(leftItems, leftSizes, sections, document, 'left', gap),
+    ...packSide(rightItems, rightSizes, sections, document, 'right', gap),
   ]
 }
 
@@ -309,12 +332,12 @@ export function createDefaultDocumentLayout(
     imageHeight,
     marginLeft: sideMargin,
     marginRight: sideMargin,
-    marginTop: 24,
-    marginBottom: 24,
+    marginTop: MIN_VERTICAL_MARGIN,
+    marginBottom: MIN_VERTICAL_MARGIN,
   }
 }
 
-/** Measure labels, size side margins to fit, then pack callout layouts. */
+/** Measure labels, size side/vertical margins to fit, then pack callout layouts. */
 export function layoutCalloutsForImage(
   annotations: Annotation[],
   sections: Section[],
@@ -332,6 +355,7 @@ export function layoutCalloutsForImage(
     }
   }
 
+  const gap = labelGapFor(fontSize)
   const { leftItems, rightItems } = splitBySide(callouts, sections, imageWidth)
   const leftSizes = leftItems.map((annotation) =>
     estimateLabelSize(annotation.description, annotation.order, fontFamily, fontSize, numberStyle),
@@ -348,21 +372,32 @@ export function layoutCalloutsForImage(
     (maxWidth, size) => Math.max(maxWidth, size.width),
     MIN_LABEL_WIDTH,
   )
+  const maxStack = Math.max(
+    stackHeight(
+      leftSizes.map((size) => size.height),
+      gap,
+    ),
+    stackHeight(
+      rightSizes.map((size) => size.height),
+      gap,
+    ),
+  )
+  const { marginTop, marginBottom } = verticalMarginsFor(imageHeight, maxStack)
 
   const document: DocumentLayout = {
     imageWidth,
     imageHeight,
     marginLeft: leftItems.length > 0 ? sideMarginFor(leftMax) : EMPTY_SIDE_MARGIN,
     marginRight: rightItems.length > 0 ? sideMarginFor(rightMax) : EMPTY_SIDE_MARGIN,
-    marginTop: 24,
-    marginBottom: 24,
+    marginTop,
+    marginBottom,
   }
 
   return {
     document,
     layouts: [
-      ...packSide(leftItems, leftSizes, sections, document, 'left'),
-      ...packSide(rightItems, rightSizes, sections, document, 'right'),
+      ...packSide(leftItems, leftSizes, sections, document, 'left', gap),
+      ...packSide(rightItems, rightSizes, sections, document, 'right', gap),
     ],
   }
 }
