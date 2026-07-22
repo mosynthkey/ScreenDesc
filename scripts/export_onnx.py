@@ -33,4 +33,5 @@ model.export(
     half=False,     # Set True to shrink the file if accuracy is acceptable
 )
 
-print("\nDone. Place the generated *.onnx as public/models/screenparser.onnx")
+print("\nDone. Move the generated *.onnx to public/models/screenparser.onnx")
+print("Then publish once for CI: ./scripts/publish-model-release.sh")

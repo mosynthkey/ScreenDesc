@@ -8,6 +8,7 @@ export const ja: Record<MessageKey, string> = {
   'about.title': 'ScreenDesc について',
   'about.openAria': 'ScreenDesc について',
   'about.version': 'バージョン {version}',
+  'about.appLicense': '{license} ライセンス',
   'about.librariesTitle': '使用ライブラリとライセンス',
   'about.licenseLabel': '{license} ライセンス',
   'about.close': '閉じる',

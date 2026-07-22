@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { APP_NAME, APP_VERSION } from '../appMeta'
+import { APP_LICENSE, APP_LICENSE_URL, APP_NAME, APP_VERSION } from '../appMeta'
 import { RUNTIME_LIBRARIES } from '../credits'
 import { useI18n } from '../i18n'
 
@@ -155,6 +155,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
         <h2 class="about-name">{{ APP_NAME }}</h2>
         <p class="about-tagline">{{ t('brand.tagline') }}</p>
         <p class="about-version">{{ t('about.version', { version: APP_VERSION }) }}</p>
+        <p class="about-app-license">
+          <a
+            class="about-app-license-link"
+            :href="APP_LICENSE_URL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ t('about.appLicense', { license: APP_LICENSE }) }}
+          </a>
+        </p>
 
         <section class="about-libraries" :aria-label="t('about.librariesTitle')">
           <h3 class="about-libraries-title">{{ t('about.librariesTitle') }}</h3>
@@ -325,6 +335,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
   color: var(--ink-muted);
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
+}
+
+.about-app-license {
+  margin: 6px 0 0;
+}
+
+.about-app-license-link {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.about-app-license-link:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
 }
 
 .about-libraries {

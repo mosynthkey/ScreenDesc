@@ -9,6 +9,8 @@ const packageJson = JSON.parse(
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages project sites need "/<repo>/"; set BASE_PATH in CI (see deploy-pages.yml).
+  base: process.env.BASE_PATH || '/',
   plugins: [vue()],
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),

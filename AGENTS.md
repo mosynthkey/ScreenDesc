@@ -42,6 +42,14 @@ Keep new logic near its existing home; prefer extending these modules over growi
 - Cloudflare Web Analytics loads when `VITE_CF_BEACON_TOKEN` is set (`src/analytics/cloudflareWebAnalytics.ts`).
 - Copy `.env.example` → `.env` / `.env.production` and paste the site token from the Cloudflare dashboard.
 
+### Deploy (GitHub Pages + Release model)
+
+- ONNX stays out of git (`public/models/*.onnx`). Store it on a GitHub Release (`model-v1` / `screenparser.onnx`).
+- Local: keep a copy under `public/models/`, or run `npm run fetch-model` (needs `gh`).
+- Publish/update the Release asset: `./scripts/publish-model-release.sh`
+- CI: `.github/workflows/deploy-pages.yml` downloads the Release asset at build time, then deploys `dist`.
+- Optional secrets/vars: `VITE_CF_BEACON_TOKEN` (secret), `BASE_PATH` (var, default `/<repo>/`).
+
 ## Style notes
 
 - Match existing patterns in nearby files.

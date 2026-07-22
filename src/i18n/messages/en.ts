@@ -6,6 +6,7 @@ export const en = {
   'about.title': 'About ScreenDesc',
   'about.openAria': 'About ScreenDesc',
   'about.version': 'Version {version}',
+  'about.appLicense': 'Licensed under {license}',
   'about.librariesTitle': 'Libraries & licenses',
   'about.licenseLabel': '{license} license',
   'about.close': 'Close',

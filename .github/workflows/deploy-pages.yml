@@ -1,0 +1,67 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Must match the Release tag that holds screenparser.onnx
+      MODEL_RELEASE_TAG: model-v1
+      # Project site: https://<user>.github.io/<repo>/
+      # For a user site (*.github.io repo), set repository variable BASE_PATH to /
+      BASE_PATH: /${{ github.event.repository.name }}/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Download ScreenParser model from Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run fetch-model
+
+      - name: Apply Pages base path override
+        if: ${{ vars.BASE_PATH != '' }}
+        run: echo "BASE_PATH=${{ vars.BASE_PATH }}" >> "$GITHUB_ENV"
+
+      - name: Build
+        env:
+          VITE_CF_BEACON_TOKEN: ${{ secrets.VITE_CF_BEACON_TOKEN }}
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
