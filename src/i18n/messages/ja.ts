@@ -3,8 +3,6 @@ import type { MessageKey } from './en'
 export const ja: Record<MessageKey, string> = {
   'document.title': 'ScreenDesc — 取扱説明書注釈',
 
-  'brand.tagline': '取扱説明書注釈',
-
   'about.title': 'ScreenDesc について',
   'about.openAria': 'ScreenDesc について',
   'about.version': 'バージョン {version}',
@@ -17,7 +15,7 @@ export const ja: Record<MessageKey, string> = {
   'nav.aria': 'メインナビゲーション',
   'nav.gallery': 'ギャラリー',
   'nav.edit': '編集',
-  'nav.editDisabledHint': 'モデル準備後にプロジェクトを開いてください',
+  'nav.editDisabledHint': '先にプロジェクトを開いてください',
 
   'status.modelLoadFailed': 'モデル読み込み失敗',
   'status.modelLoading': 'モデル読み込み中…',
@@ -106,6 +104,7 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.emptyDescription': '説明なし',
   'annotationList.removeTitle': '削除',
   'annotationList.multiSelectHint': 'Shift+クリックで複数選択',
+  'annotationList.resizePane': 'ドラッグして注釈一覧と編集パネルの高さを変更',
 
   'canvas.emptyHint':
     '注釈したい範囲をドラッグしてください。その範囲に合うセクションを1件提案します。',
@@ -190,6 +189,7 @@ export const ja: Record<MessageKey, string> = {
   'style.fontGroup.display': 'ディスプレイ',
   'style.selectedAnnotationTitle': '選択中の注釈',
   'style.selectedAnnotationsTitle': '{count}件の注釈を選択中',
+  'style.closeEditor': '編集を閉じる',
   'style.multiSelectionHint':
     '配置・ラベル座標・アンカーオフセットは、選択中の注釈すべてに適用されます。',
   'style.mixed': '混在',

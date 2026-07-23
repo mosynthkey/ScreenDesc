@@ -44,6 +44,7 @@ const emit = defineEmits<{
       calloutPositionY: number
     }>,
   ]
+  close: []
 }>()
 
 const { t } = useI18n()
@@ -283,10 +284,42 @@ function resetLabelPosition(): void {
       v-if="selectionCount > 0"
       class="settings-stack settings-stack-annotation"
     >
-      <h3 class="panel-title settings-stack-title">
-        <span class="title-icon" aria-hidden="true">✎</span>
-        {{ selectionTitle }}
-      </h3>
+      <div class="settings-stack-header">
+        <h3 class="panel-heading settings-stack-title">
+          <svg
+            class="panel-heading-icon"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 20l4.5-1.2L19 8.3a2.1 2.1 0 0 0 0-3l-.3-.3a2.1 2.1 0 0 0-3 0L5.2 15.5 4 20z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M14.5 6.5l3 3"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          {{ selectionTitle }}
+        </h3>
+        <button
+          class="close-editor-btn"
+          type="button"
+          :title="t('style.closeEditor')"
+          :aria-label="t('style.closeEditor')"
+          @click="emit('close')"
+        >
+          ×
+        </button>
+      </div>
       <p v-if="isMultiSelection" class="hint multi-hint">{{ t('style.multiSelectionHint') }}</p>
 
       <div v-if="!isMultiSelection && primaryAnnotation" class="settings-group">
@@ -445,7 +478,34 @@ function resetLabelPosition(): void {
         </div>
       </div>
     </div>
-    <p v-else class="hint">{{ t('style.noSelectionHint') }}</p>
+    <div v-else class="settings-stack-header settings-stack-header-idle">
+      <h3 class="panel-heading settings-stack-title">
+        <svg
+          class="panel-heading-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 20l4.5-1.2L19 8.3a2.1 2.1 0 0 0 0-3l-.3-.3a2.1 2.1 0 0 0-3 0L5.2 15.5 4 20z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M14.5 6.5l3 3"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+        {{ t('style.selectedAnnotationTitle') }}
+      </h3>
+    </div>
+    <p v-if="selectionCount === 0" class="hint">{{ t('style.noSelectionHint') }}</p>
   </div>
 </template>
 
@@ -465,8 +525,45 @@ function resetLabelPosition(): void {
   justify-content: center;
 }
 
+.settings-stack-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 2px 10px;
+}
+
+.settings-stack-header-idle {
+  margin-bottom: 8px;
+}
+
 .settings-stack-title {
-  margin: 0 2px;
+  margin: 0;
+  min-width: 0;
+}
+
+.close-editor-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close-editor-btn:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
 }
 
 .settings-group {
@@ -486,10 +583,6 @@ function resetLabelPosition(): void {
 .settings-stack + .settings-stack,
 .settings-stack + p.hint {
   margin-top: 14px;
-}
-
-.settings-stack-annotation .settings-stack-title {
-  color: var(--accent-strong);
 }
 
 .settings-stack-annotation .settings-group {
@@ -545,12 +638,6 @@ function resetLabelPosition(): void {
   color: var(--ink-muted);
   font-size: 0.72rem;
   line-height: 1.35;
-  opacity: 0.85;
-}
-
-.title-icon {
-  font-size: 1.15em;
-  line-height: 1;
   opacity: 0.85;
 }
 

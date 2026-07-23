@@ -204,8 +204,30 @@ watch(
 <template>
   <div class="settings-stack">
     <div class="settings-stack-header">
-      <h3 class="panel-title settings-stack-title">
-        <span class="title-icon" aria-hidden="true">⚙</span>
+      <h3 class="panel-heading settings-stack-title">
+        <svg
+          class="panel-heading-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="3"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6.1 6.1l1.6 1.6M16.3 16.3l1.6 1.6M17.9 6.1l-1.6 1.6M7.7 16.3l-1.6 1.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
         {{ t('style.projectSettingsTitle') }}
       </h3>
       <button class="presets-btn" type="button" @click="emit('openPresets')">
@@ -589,7 +611,7 @@ watch(
 }
 
 .settings-stack-title {
-  margin: 0 2px;
+  margin: 0;
 }
 
 .settings-stack-header {
@@ -697,12 +719,6 @@ watch(
   color: var(--ink-muted);
   font-size: 0.72rem;
   line-height: 1.35;
-  opacity: 0.85;
-}
-
-.title-icon {
-  font-size: 1.15em;
-  line-height: 1;
   opacity: 0.85;
 }
 

@@ -80,7 +80,27 @@ function onDrop(event: DragEvent): void {
 <template>
   <div class="annotation-list">
     <div class="list-header">
-      <h3 class="panel-title">{{ t('annotationList.title') }}</h3>
+      <h3 class="panel-heading">
+        <svg
+          class="panel-heading-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          aria-hidden="true"
+        >
+          <path
+            d="M8 6h12M8 12h12M8 18h12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle cx="4" cy="6" r="1.2" fill="currentColor" />
+          <circle cx="4" cy="12" r="1.2" fill="currentColor" />
+          <circle cx="4" cy="18" r="1.2" fill="currentColor" />
+        </svg>
+        {{ t('annotationList.title') }}
+      </h3>
       <button
         v-if="annotations.length > 1"
         class="sort-by-xy-btn"
@@ -164,8 +184,8 @@ function onDrop(event: DragEvent): void {
   margin-bottom: 10px;
 }
 
-.list-header .panel-title {
-  margin-bottom: 0;
+.list-header .panel-heading {
+  margin: 0;
 }
 
 .sort-by-xy-btn {

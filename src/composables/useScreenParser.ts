@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, readonly } from 'vue'
 import type { Detection, ModelStatus } from '../types/detection'
 import type { WorkerRequest, WorkerResponse } from '../workers/messages'
 
@@ -60,6 +60,8 @@ export function useScreenParser() {
   const pending = new Map<number, { resolve: (d: Detection[]) => void; reject: (e: unknown) => void }>()
   const modelWaiters: Array<{ resolve: () => void; reject: (e: unknown) => void }> = []
   let loadPromise: Promise<void> | null = null
+  /** True while a user-facing action is waiting on the model (shows the blocking dialog). */
+  const awaitingUse = ref(false)
 
   function ensureWorker(): Worker {
     if (worker) return worker
@@ -72,6 +74,7 @@ export function useScreenParser() {
         executionProvider.value = msg.provider
         status.value = 'ready'
         downloadProgress.value = 1
+        awaitingUse.value = false
         for (const { resolve } of modelWaiters) resolve()
         modelWaiters.length = 0
       } else if (msg.type === 'MODEL_ERROR') {
@@ -128,6 +131,18 @@ export function useScreenParser() {
     return loadPromise
   }
 
+  /** Prefer this from UI actions: blocks with the load dialog until ready (or error). */
+  function awaitModelForUse(): Promise<void> {
+    if (status.value === 'ready') {
+      awaitingUse.value = false
+      return Promise.resolve()
+    }
+    awaitingUse.value = true
+    return loadModel().then(() => {
+      awaitingUse.value = false
+    })
+  }
+
   function detect(bitmap: ImageBitmap, options: DetectOptions = {}): Promise<Detection[]> {
     if (status.value !== 'ready') {
       bitmap.close()
@@ -164,7 +179,9 @@ export function useScreenParser() {
     downloadProgress,
     executionProvider,
     inferenceMs,
+    awaitingUse: readonly(awaitingUse),
     loadModel,
+    awaitModelForUse,
     detect,
     dispose,
   }

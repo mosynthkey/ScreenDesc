@@ -1,8 +1,6 @@
 export const en = {
   'document.title': 'ScreenDesc — Manual Annotation',
 
-  'brand.tagline': 'Manual annotation',
-
   'about.title': 'About ScreenDesc',
   'about.openAria': 'About ScreenDesc',
   'about.version': 'Version {version}',
@@ -15,7 +13,7 @@ export const en = {
   'nav.aria': 'Main navigation',
   'nav.gallery': 'Gallery',
   'nav.edit': 'Edit',
-  'nav.editDisabledHint': 'Open a project once the model is ready',
+  'nav.editDisabledHint': 'Open a project first',
 
   'status.modelLoadFailed': 'Model failed to load',
   'status.modelLoading': 'Loading model…',
@@ -104,6 +102,7 @@ export const en = {
   'annotationList.emptyDescription': 'No description',
   'annotationList.removeTitle': 'Remove',
   'annotationList.multiSelectHint': 'Shift-click to select multiple',
+  'annotationList.resizePane': 'Drag to resize annotation list and editor',
 
   'canvas.emptyHint':
     'Drag the region you want to annotate. One matching section will be proposed.',
@@ -187,6 +186,7 @@ export const en = {
   'style.fontGroup.display': 'Display',
   'style.selectedAnnotationTitle': 'Selected annotation',
   'style.selectedAnnotationsTitle': '{count} annotations selected',
+  'style.closeEditor': 'Close editor',
   'style.multiSelectionHint':
     'Side, label position, and anchor offset apply to all selected annotations.',
   'style.mixed': 'Mixed',

@@ -30,7 +30,9 @@ const {
   modelStatus,
   modelDownloadProgress,
   modelError,
+  modelAwaitingUse,
   loadModel,
+  runSectionDetection,
   hasImage,
   sortedAnnotations,
   canUndoCrop,
@@ -110,6 +112,70 @@ const pendingCropRect = ref<Rect | null>(null)
 const replaceDetectOpen = ref(false)
 const appPage = ref<AppPageId>('gallery')
 
+const ANNOTATION_PANE_STORAGE_KEY = 'screendesc.annotationPanePercent'
+const ANNOTATION_PANE_MIN = 18
+const ANNOTATION_PANE_MAX = 72
+const ANNOTATION_PANE_DEFAULT = 42
+
+function readAnnotationPanePercent(): number {
+  try {
+    const raw = localStorage.getItem(ANNOTATION_PANE_STORAGE_KEY)
+    const value = Number(raw)
+    if (Number.isFinite(value) && value >= ANNOTATION_PANE_MIN && value <= ANNOTATION_PANE_MAX) {
+      return value
+    }
+  } catch {
+    // Ignore storage errors (private mode, etc.).
+  }
+  return ANNOTATION_PANE_DEFAULT
+}
+
+const leftPanelRef = ref<HTMLElement | null>(null)
+const annotationPanePercent = ref(readAnnotationPanePercent())
+const isResizingLeftPane = ref(false)
+
+function clampAnnotationPanePercent(value: number): number {
+  return Math.min(ANNOTATION_PANE_MAX, Math.max(ANNOTATION_PANE_MIN, value))
+}
+
+function persistAnnotationPanePercent(value: number): void {
+  try {
+    localStorage.setItem(ANNOTATION_PANE_STORAGE_KEY, String(value))
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+function onLeftPaneSplitterPointerDown(event: PointerEvent): void {
+  if (event.button !== 0) return
+  const panel = leftPanelRef.value
+  if (!panel) return
+  event.preventDefault()
+  isResizingLeftPane.value = true
+  const handle = event.currentTarget as HTMLElement
+  handle.setPointerCapture(event.pointerId)
+
+  const onPointerMove = (moveEvent: PointerEvent): void => {
+    const rect = panel.getBoundingClientRect()
+    if (rect.height <= 0) return
+    const fromBottom = ((rect.bottom - moveEvent.clientY) / rect.height) * 100
+    annotationPanePercent.value = clampAnnotationPanePercent(fromBottom)
+  }
+
+  const onPointerUp = (upEvent: PointerEvent): void => {
+    handle.releasePointerCapture(upEvent.pointerId)
+    handle.removeEventListener('pointermove', onPointerMove)
+    handle.removeEventListener('pointerup', onPointerUp)
+    handle.removeEventListener('pointercancel', onPointerUp)
+    isResizingLeftPane.value = false
+    persistAnnotationPanePercent(annotationPanePercent.value)
+  }
+
+  handle.addEventListener('pointermove', onPointerMove)
+  handle.addEventListener('pointerup', onPointerUp)
+  handle.addEventListener('pointercancel', onPointerUp)
+}
+
 const selectedAnnotations = computed(() =>
   state.selectedAnnotationIds
     .map((annotationId) => state.annotations.find((item) => item.id === annotationId))
@@ -122,7 +188,10 @@ const effectiveCalloutBorderWidth = computed(() =>
 
 const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
 const modelReady = computed(() => modelStatus.value === 'ready')
-const canOpenEdit = computed(() => hasImage.value && modelReady.value)
+const canOpenEdit = computed(() => hasImage.value)
+const modelGateBlocking = computed(
+  () => modelAwaitingUse.value && !modelReady.value,
+)
 
 function clearAppNotice(): void {
   appNotice.value = null
@@ -152,10 +221,6 @@ function showProjectLoadError(message: string): void {
 function goToPage(page: AppPageId): void {
   if (page === 'edit') {
     if (!hasImage.value) return
-    if (!modelReady.value) {
-      showAppNotice(t('status.modelEditBlocked'), 'info')
-      return
-    }
   }
   clearProjectLoadError()
   appPage.value = page
@@ -165,7 +230,7 @@ function goToPage(page: AppPageId): void {
 async function onFile(file: File): Promise<void> {
   clearProjectLoadError()
   await loadImageFile(file)
-  if (modelReady.value) appPage.value = 'edit'
+  appPage.value = 'edit'
 }
 
 async function onWindowPaste(event: ClipboardEvent): Promise<void> {
@@ -198,15 +263,14 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  [hasImage, modelReady],
-  ([open, ready], previous) => {
+  hasImage,
+  (open, wasOpen) => {
     if (!open) {
       void refreshSavedProjects()
-      const wasOpen = Array.isArray(previous) ? previous[0] : previous
       if (wasOpen) appPage.value = 'gallery'
       return
     }
-    if (ready) appPage.value = 'edit'
+    appPage.value = 'edit'
   },
   { immediate: true },
 )
@@ -214,6 +278,7 @@ watch(
 async function onRetryModelLoad(): Promise<void> {
   try {
     await loadModel()
+    if (hasImage.value) await runSectionDetection()
   } catch {
     showAppNotice(t('status.modelLoadFailed'), 'error')
   }
@@ -348,7 +413,7 @@ async function onProjectFileChange(event: Event): Promise<void> {
       }
       return
     }
-    appPage.value = modelReady.value ? 'edit' : 'gallery'
+    appPage.value = 'edit'
   } catch (err) {
     showProjectLoadError(err instanceof Error ? err.message : t('error.projectLoadFailed'))
   } finally {
@@ -407,7 +472,7 @@ async function onLoadSavedProject(id: string): Promise<void> {
   try {
     await loadSavedProject(id)
     projectStorageOpen.value = false
-    appPage.value = modelReady.value ? 'edit' : 'gallery'
+    appPage.value = 'edit'
   } catch (err) {
     const message = err instanceof Error ? err.message : t('error.projectLoadFailed')
     showProjectLoadError(message)
@@ -598,6 +663,7 @@ function onKeydown(event: KeyboardEvent): void {
     />
 
     <ModelLoadBanner
+      :blocking="modelGateBlocking"
       :status="modelStatus"
       :progress="modelDownloadProgress"
       :error-message="modelError"
@@ -673,7 +739,11 @@ function onKeydown(event: KeyboardEvent): void {
         />
 
         <div v-else class="workspace">
-          <aside class="panel panel-left">
+          <aside
+            ref="leftPanelRef"
+            class="panel panel-left"
+            :class="{ 'is-resizing-pane': isResizingLeftPane }"
+          >
             <div class="panel-section panel-section-list">
               <AnnotationList
                 :annotations="sortedAnnotations"
@@ -684,7 +754,22 @@ function onKeydown(event: KeyboardEvent): void {
                 @remove="(id) => removeAnnotations([id])"
               />
             </div>
-            <div class="panel-section panel-section-annotation">
+            <div
+              class="panel-splitter"
+              role="separator"
+              aria-orientation="horizontal"
+              :aria-valuenow="Math.round(annotationPanePercent)"
+              :aria-valuemin="ANNOTATION_PANE_MIN"
+              :aria-valuemax="ANNOTATION_PANE_MAX"
+              :aria-label="t('annotationList.resizePane')"
+              :title="t('annotationList.resizePane')"
+              tabindex="0"
+              @pointerdown="onLeftPaneSplitterPointerDown"
+            />
+            <div
+              class="panel-section panel-section-annotation"
+              :style="{ flex: `0 0 ${annotationPanePercent}%` }"
+            >
               <AnnotationStyleSettings
                 :selected-annotations="selectedAnnotations"
                 :image-width="state.imageWidth"
@@ -693,6 +778,7 @@ function onKeydown(event: KeyboardEvent): void {
                 :document-height="documentHeight"
                 :label-positions="labelPositions"
                 @patch="onPatchSelectedAnnotations"
+                @close="clearSelection"
               />
             </div>
           </aside>
@@ -830,18 +916,63 @@ function onKeydown(event: KeyboardEvent): void {
   overflow: hidden;
 }
 
+.panel-left.is-resizing-pane {
+  cursor: row-resize;
+  user-select: none;
+}
+
 .panel-section-list {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 1 1 0;
+  min-height: 72px;
   overflow: auto;
   border-bottom: none;
 }
 
-.panel-section-annotation {
-  flex: 0 0 auto;
-  margin-top: auto;
-  border-bottom: none;
+.panel-splitter {
+  flex: 0 0 7px;
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  border: none;
   border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(120, 120, 128, 0.08);
+  cursor: row-resize;
+  touch-action: none;
+}
+
+.panel-splitter::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.35);
+  transform: translate(-50%, -50%);
+}
+
+.panel-splitter:hover,
+.panel-left.is-resizing-pane .panel-splitter {
+  background: var(--accent-soft);
+}
+
+.panel-splitter:hover::after,
+.panel-left.is-resizing-pane .panel-splitter::after {
+  background: var(--accent);
+}
+
+.panel-splitter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.panel-section-annotation {
+  min-height: 96px;
+  overflow: auto;
+  border-bottom: none;
+  border-top: none;
 }
 
 .app-notice {

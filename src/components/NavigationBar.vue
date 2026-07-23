@@ -168,7 +168,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
           decoding="async"
         />
         <h2 class="about-name">{{ APP_NAME }}</h2>
-        <p class="about-tagline">{{ t('brand.tagline') }}</p>
         <p class="about-version">{{ t('about.version', { version: APP_VERSION }) }}</p>
         <p class="about-app-license">
           <a
@@ -335,13 +334,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-.about-tagline {
-  margin: 6px 0 0;
-  color: var(--ink-secondary);
-  font-size: 0.88rem;
-  line-height: 1.45;
 }
 
 .about-version {

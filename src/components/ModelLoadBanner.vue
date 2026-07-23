@@ -4,6 +4,8 @@ import type { ModelStatus } from '../types/detection'
 import { useI18n } from '../i18n'
 
 const props = defineProps<{
+  /** When false, load continues in the background without blocking the UI. */
+  blocking?: boolean
   status: ModelStatus
   progress: number
   errorMessage?: string | null
@@ -15,7 +17,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const visible = computed(() => props.status !== 'ready' && props.status !== 'idle')
+const visible = computed(
+  () => Boolean(props.blocking) && props.status !== 'ready',
+)
 
 const percent = computed(() => Math.round(Math.min(1, Math.max(0, props.progress)) * 100))
 

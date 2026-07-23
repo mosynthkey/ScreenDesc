@@ -57,7 +57,7 @@ export async function detectSectionsML(
   screenParser: ScreenParser,
   options: DetectSectionsMLOptions = {},
 ): Promise<Section[]> {
-  await screenParser.loadModel()
+  await screenParser.awaitModelForUse()
 
   const { bitmap, offsetX, offsetY } = await cropToBitmap(image, options.region)
   const detections = await screenParser.detect(bitmap, {
