@@ -154,20 +154,165 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 <template>
   <header class="app-header">
     <div class="header-title">
-      <h1 class="page-title">
-        {{ page === 'gallery' ? t('header.galleryTitle') : t('header.editTitle') }}
+      <h1 v-if="page === 'gallery'" class="page-title">
+        {{ t('header.galleryTitle') }}
       </h1>
-      <input
-        v-if="page === 'edit'"
-        ref="titleInputRef"
-        v-model="titleDraft"
-        class="project-name-input"
-        type="text"
-        :aria-label="t('header.projectNameAria')"
-        :placeholder="t('header.untitledProject')"
-        @keydown="onTitleKeydown"
-        @blur="commitTitle"
-      />
+      <template v-else>
+        <div class="project-menu-wrap">
+          <button
+            class="header-btn"
+            type="button"
+            :data-tooltip="t('tooltip.projectMenu')"
+            @click.stop="toggleProjectMenu"
+          >
+            <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path
+                d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M3.5 7.5V6A1.5 1.5 0 0 1 5 4.5h4.2L11 6.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>{{ t('button.project') }}</span>
+          </button>
+          <div v-if="projectMenuOpen" class="project-menu" @click.stop>
+            <button class="project-menu-item" type="button" @click="chooseNewProject">
+              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <path
+                  d="M12 5v14M5 12h14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span>{{ t('menu.newProject') }}</span>
+            </button>
+            <button class="project-menu-item" type="button" @click="chooseProjectStorage">
+              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <path
+                  d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span>{{ t('menu.projectStorage') }}</span>
+            </button>
+            <div class="project-menu-sep" />
+            <button
+              class="project-menu-item"
+              type="button"
+              :disabled="!hasImage"
+              @click="chooseExportProjectFile"
+            >
+              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <path
+                  d="M12 4v10"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M8 8l4-4 4 4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span>{{ t('menu.exportProjectFile') }}</span>
+            </button>
+            <button class="project-menu-item" type="button" @click="chooseImportProject">
+              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <path
+                  d="M12 14V4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M8 10l4 4 4-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span>{{ t('menu.importProjectFile') }}</span>
+            </button>
+            <div class="project-menu-sep" />
+            <button
+              class="project-menu-item"
+              type="button"
+              :disabled="!hasImage"
+              :title="t('tooltip.replaceImage')"
+              @click="chooseReplaceImage"
+            >
+              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <rect
+                  x="3.5"
+                  y="5.5"
+                  width="17"
+                  height="13"
+                  rx="2"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                />
+                <circle cx="9" cy="10.5" r="1.6" fill="currentColor" />
+                <path
+                  d="M4.5 16.5l4.2-4.2a1.2 1.2 0 0 1 1.7 0L14 16l2.2-2.2a1.2 1.2 0 0 1 1.7 0l1.6 1.6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span>{{ t('menu.replaceImage') }}</span>
+            </button>
+          </div>
+        </div>
+        <input
+          ref="titleInputRef"
+          v-model="titleDraft"
+          class="project-name-input"
+          type="text"
+          :aria-label="t('header.projectNameAria')"
+          :placeholder="t('header.untitledProject')"
+          @keydown="onTitleKeydown"
+          @blur="commitTitle"
+        />
+      </template>
     </div>
 
     <div v-if="page === 'gallery'" class="header-actions">
@@ -231,151 +376,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
     <div v-else class="header-actions">
       <span v-if="isDetecting" class="status-chip">{{ t('status.proposing') }}</span>
-
-      <div class="project-menu-wrap">
-        <button
-          class="header-btn"
-          type="button"
-          :data-tooltip="t('tooltip.projectMenu')"
-          @click.stop="toggleProjectMenu"
-        >
-          <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path
-              d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M3.5 7.5V6A1.5 1.5 0 0 1 5 4.5h4.2L11 6.2"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span>{{ t('button.project') }}</span>
-        </button>
-        <div v-if="projectMenuOpen" class="project-menu" @click.stop>
-          <button class="project-menu-item" type="button" @click="chooseNewProject">
-            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <path
-                d="M12 5v14M5 12h14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-            <span>{{ t('menu.newProject') }}</span>
-          </button>
-          <button class="project-menu-item" type="button" @click="chooseProjectStorage">
-            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <path
-                d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>{{ t('menu.projectStorage') }}</span>
-          </button>
-          <div class="project-menu-sep" />
-          <button
-            class="project-menu-item"
-            type="button"
-            :disabled="!hasImage"
-            @click="chooseExportProjectFile"
-          >
-            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <path
-                d="M12 4v10"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-              <path
-                d="M8 8l4-4 4 4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-            <span>{{ t('menu.exportProjectFile') }}</span>
-          </button>
-          <button class="project-menu-item" type="button" @click="chooseImportProject">
-            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <path
-                d="M12 14V4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-              <path
-                d="M8 10l4 4 4-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-            <span>{{ t('menu.importProjectFile') }}</span>
-          </button>
-          <div class="project-menu-sep" />
-          <button
-            class="project-menu-item"
-            type="button"
-            :disabled="!hasImage"
-            :title="t('tooltip.replaceImage')"
-            @click="chooseReplaceImage"
-          >
-            <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <rect
-                x="3.5"
-                y="5.5"
-                width="17"
-                height="13"
-                rx="2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-              <circle cx="9" cy="10.5" r="1.6" fill="currentColor" />
-              <path
-                d="M4.5 16.5l4.2-4.2a1.2 1.2 0 0 1 1.7 0L14 16l2.2-2.2a1.2 1.2 0 0 1 1.7 0l1.6 1.6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>{{ t('menu.replaceImage') }}</span>
-          </button>
-        </div>
-      </div>
 
       <button
         class="header-btn"
@@ -797,6 +797,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
 .project-menu-wrap {
   position: relative;
+  flex: 0 0 auto;
 }
 
 .project-menu {

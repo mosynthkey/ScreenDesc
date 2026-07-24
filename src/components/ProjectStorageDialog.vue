@@ -71,7 +71,6 @@ function submitSave(): void {
   <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal">
       <h2>{{ t('projectStorage.title') }}</h2>
-      <p class="hint">{{ t('projectStorage.description') }}</p>
       <p class="autosave-hint">{{ t('projectStorage.autosaveHint') }}</p>
 
       <div class="field">
@@ -149,6 +148,20 @@ function submitSave(): void {
         </div>
       </div>
 
+      <p class="hint storage-notice">
+        {{ t('storage.notice.before')
+        }}<button
+          class="storage-notice-link"
+          type="button"
+          :disabled="projects.length === 0 || isBusy"
+          :title="t('projectStorage.downloadBundleTitle')"
+          @click="emit('downloadBundle')"
+        >
+          {{ t('storage.notice.link') }}
+        </button
+        >{{ t('storage.notice.after') }}
+      </p>
+
       <div class="modal-actions">
         <button
           class="btn btn-ghost"
@@ -168,6 +181,35 @@ function submitSave(): void {
 </template>
 
 <style scoped>
+.storage-notice {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  line-height: 1.5;
+}
+
+.storage-notice-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-strong);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.storage-notice-link:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.storage-notice-link:disabled {
+  opacity: 0.45;
+  cursor: default;
+  text-decoration: none;
+}
+
 .autosave-hint {
   margin: -4px 0 14px;
   padding: 8px 10px;

@@ -31,7 +31,6 @@ export const en = {
   'button.importProject': 'Import',
 
   'header.galleryTitle': 'Gallery',
-  'header.editTitle': 'Project',
   'header.untitledProject': 'Untitled project',
   'header.projectNameAria': 'Project name',
 
@@ -65,7 +64,10 @@ export const en = {
   'menu.undoCrop': 'Undo crop',
 
   'confirm.newProject': 'Discard the current project and start a new one?',
+  'confirm.deleteSavedProjectTitle': 'Delete project?',
   'confirm.deleteSavedProject': 'Delete “{name}”? This cannot be undone.',
+  'confirm.cancel': 'Cancel',
+  'confirm.delete': 'Delete',
 
   'cropConfirm.title': 'Crop and start fresh?',
   'cropConfirm.body':
@@ -92,6 +94,10 @@ export const en = {
   'home.removeAria': 'Delete saved project',
   'home.downloadBundle': 'Download all',
   'home.downloadBundleTitle': 'Download all saved projects as one bundle file',
+  'storage.notice.before':
+    'This data is stored in this browser’s IndexedDB. It may be lost if you clear site data or leave private browsing. ',
+  'storage.notice.link': 'Download all data from here',
+  'storage.notice.after': '.',
 
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Click a section to add an annotation.',
@@ -121,8 +127,6 @@ export const en = {
 
   'projectStorage.defaultName': 'Project {stamp}',
   'projectStorage.title': 'Save / load in browser storage',
-  'projectStorage.description':
-    'Save and manage multiple projects in this browser. Use Download all for a single bundle file you can import elsewhere.',
   'projectStorage.autosaveHint':
     'Your current work is auto-saved in this browser as you edit.',
   'projectStorage.currentLabel': 'Current project',
@@ -151,7 +155,6 @@ export const en = {
   'style.presetsManage': 'Presets',
   'style.section.anchor': 'Anchor',
   'style.section.placement': 'Placement',
-  'style.section.description': 'Description',
   'style.axis.x': 'X',
   'style.axis.y': 'Y',
   'style.lineStyle': 'Line pattern',
@@ -199,10 +202,8 @@ export const en = {
   'style.calloutSide.bottom': 'Bottom',
   'style.labelPositionX': 'Label X',
   'style.labelPositionY': 'Label Y',
-  'style.labelPositionHint': 'Drag the label on the canvas, including over the image.',
   'style.labelPositionReset': 'Reset label position',
   'style.description': 'Description',
-  'style.descriptionPlaceholder': 'e.g. Click [Save]',
   'style.noSelectionHint':
     'Select an annotation to edit its style and description. Shift-click to select multiple.',
 

@@ -33,7 +33,6 @@ export const ja: Record<MessageKey, string> = {
   'button.importProject': 'インポート',
 
   'header.galleryTitle': 'ギャラリー',
-  'header.editTitle': 'プロジェクト',
   'header.untitledProject': '名称未設定のプロジェクト',
   'header.projectNameAria': 'プロジェクト名',
 
@@ -67,7 +66,10 @@ export const ja: Record<MessageKey, string> = {
   'menu.undoCrop': '切り抜きを元に戻す',
 
   'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
+  'confirm.deleteSavedProjectTitle': 'プロジェクトを削除しますか？',
   'confirm.deleteSavedProject': '「{name}」を削除しますか？この操作は取り消せません。',
+  'confirm.cancel': 'キャンセル',
+  'confirm.delete': '削除',
 
   'cropConfirm.title': '切り抜いて作り直しますか？',
   'cropConfirm.body':
@@ -94,6 +96,10 @@ export const ja: Record<MessageKey, string> = {
   'home.removeAria': '保存済みプロジェクトを削除',
   'home.downloadBundle': 'すべてダウンロード',
   'home.downloadBundleTitle': '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
+  'storage.notice.before':
+    'このデータはブラウザ内の IndexedDB に保存されます。サイトデータを削除した場合やプライベートブラウジングでは失われる可能性があります。',
+  'storage.notice.link': 'こちら',
+  'storage.notice.after': 'からデータを一括ダウンロードできます。',
 
   'annotationList.title': '注釈一覧',
   'annotationList.emptyHint': 'セクションをクリックして注釈を追加できます。',
@@ -123,8 +129,6 @@ export const ja: Record<MessageKey, string> = {
 
   'projectStorage.defaultName': 'プロジェクト {stamp}',
   'projectStorage.title': 'ブラウザ内ストレージに保存 / 読み込み',
-  'projectStorage.description':
-    'この端末のブラウザ内に複数のプロジェクトを保存・管理できます。「すべてダウンロード」で1つのバンドルファイルにまとめ、ほかの端末でインポートできます。',
   'projectStorage.autosaveHint':
     '編集中の内容は、このブラウザに自動保存されます。',
   'projectStorage.currentLabel': 'いまのプロジェクト',
@@ -154,7 +158,6 @@ export const ja: Record<MessageKey, string> = {
   'style.presetsManage': 'プリセット',
   'style.section.anchor': 'アンカー',
   'style.section.placement': '配置',
-  'style.section.description': '説明',
   'style.axis.x': 'X',
   'style.axis.y': 'Y',
   'style.lineStyle': '線種',
@@ -202,10 +205,8 @@ export const ja: Record<MessageKey, string> = {
   'style.calloutSide.bottom': '下',
   'style.labelPositionX': 'ラベル X',
   'style.labelPositionY': 'ラベル Y',
-  'style.labelPositionHint': 'キャンバス上でラベルをドラッグできます（画像の上にも配置可）。',
   'style.labelPositionReset': 'ラベル位置をリセット',
   'style.description': '説明',
-  'style.descriptionPlaceholder': '例: ［保存］をクリック',
   'style.noSelectionHint':
     '注釈を選択すると、スタイルと説明を編集できます。Shift+クリックで複数選択できます。',
 

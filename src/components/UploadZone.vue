@@ -165,13 +165,27 @@ defineExpose({ openFilePicker })
             :disabled="isBusy"
             :aria-label="t('home.removeAria')"
             :title="t('projectStorage.remove')"
-            @click="emit('remove', project.id)"
+            @click.stop="emit('remove', project.id)"
           >
             ×
           </button>
         </li>
       </ul>
     </section>
+
+    <p class="hint storage-notice">
+      {{ t('storage.notice.before')
+      }}<button
+        class="storage-notice-link"
+        type="button"
+        :disabled="projects.length === 0 || isBusy"
+        :title="t('home.downloadBundleTitle')"
+        @click="emit('downloadBundle')"
+      >
+        {{ t('storage.notice.link') }}
+      </button
+      >{{ t('storage.notice.after') }}
+    </p>
   </div>
 </template>
 
@@ -179,7 +193,9 @@ defineExpose({ openFilePicker })
 .home {
   height: 100%;
   overflow: auto;
-  padding: 28px 40px 48px;
+  padding: 28px 40px 0;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(900px 480px at 50% 0%, rgba(0, 122, 255, 0.08), transparent 60%),
     var(--bg);
@@ -222,7 +238,9 @@ defineExpose({ openFilePicker })
 
 .gallery {
   max-width: 920px;
+  width: 100%;
   margin: 0 auto;
+  flex: 1 1 auto;
 }
 
 .gallery-header {
@@ -244,6 +262,40 @@ defineExpose({ openFilePicker })
   margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
+}
+
+.storage-notice {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  max-width: 920px;
+  width: 100%;
+  margin: 24px auto 0;
+  padding: 14px 0 20px;
+  line-height: 1.5;
+  background: linear-gradient(to bottom, transparent, var(--bg) 28%);
+}
+
+.storage-notice-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-strong);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.storage-notice-link:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.storage-notice-link:disabled {
+  opacity: 0.45;
+  cursor: default;
+  text-decoration: none;
 }
 
 .gallery-empty {
@@ -367,7 +419,7 @@ defineExpose({ openFilePicker })
 
 @media (max-width: 720px) {
   .home {
-    padding: 24px 16px 36px;
+    padding: 24px 16px 0;
   }
 
   .new-card {

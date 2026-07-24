@@ -322,22 +322,22 @@ function resetLabelPosition(): void {
       </div>
       <p v-if="isMultiSelection" class="hint multi-hint">{{ t('style.multiSelectionHint') }}</p>
 
-      <div v-if="!isMultiSelection && primaryAnnotation" class="settings-group">
-        <h4 class="section-title">{{ t('style.section.description') }}</h4>
-        <div class="field" style="margin-bottom: 0">
+      <div v-if="!isMultiSelection && primaryAnnotation" class="settings-group settings-group-compact">
+        <div class="field field-tight" style="margin-bottom: 0">
           <textarea
+            class="description-input"
+            rows="2"
             :value="primaryAnnotation.description"
-            :placeholder="t('style.descriptionPlaceholder')"
+            :placeholder="t('style.description')"
             :aria-label="t('style.description')"
             @input="emit('patch', { description: ($event.target as HTMLTextAreaElement).value })"
           />
         </div>
       </div>
 
-      <div class="settings-group">
+      <div class="settings-group settings-group-compact">
         <h4 class="section-title">{{ t('style.section.placement') }}</h4>
-        <div class="field">
-          <label>{{ t('style.calloutSide') }}</label>
+        <div class="field field-tight">
           <div
             class="callout-side-buttons"
             role="group"
@@ -361,7 +361,7 @@ function resetLabelPosition(): void {
             </button>
           </div>
         </div>
-        <div class="field">
+        <div class="field field-tight">
           <label class="slider-label">
             <span>{{ t('style.labelPositionX') }}</span>
             <div class="px-field px-field-compact">
@@ -386,7 +386,7 @@ function resetLabelPosition(): void {
             @input="onLabelPositionSlider('x', $event)"
           />
         </div>
-        <div class="field">
+        <div class="field field-tight">
           <label class="slider-label">
             <span>{{ t('style.labelPositionY') }}</span>
             <div class="px-field px-field-compact">
@@ -411,7 +411,7 @@ function resetLabelPosition(): void {
             @input="onLabelPositionSlider('y', $event)"
           />
         </div>
-        <div class="field" style="margin-bottom: 0">
+        <div class="field field-tight field-reset" style="margin-bottom: 0">
           <button
             class="btn btn-ghost reset-label-btn"
             type="button"
@@ -420,13 +420,12 @@ function resetLabelPosition(): void {
           >
             {{ t('style.labelPositionReset') }}
           </button>
-          <p class="field-hint">{{ t('style.labelPositionHint') }}</p>
         </div>
       </div>
 
-      <div class="settings-group">
+      <div class="settings-group settings-group-compact">
         <h4 class="section-title">{{ t('style.section.anchor') }}</h4>
-        <div class="field">
+        <div class="field field-tight">
           <label class="slider-label">
             <span>{{ t('style.axis.x') }}</span>
             <div class="px-field px-field-compact">
@@ -451,7 +450,7 @@ function resetLabelPosition(): void {
             @input="onAnchorOffsetSlider('x', $event)"
           />
         </div>
-        <div class="field" style="margin-bottom: 0">
+        <div class="field field-tight" style="margin-bottom: 0">
           <label class="slider-label">
             <span>{{ t('style.axis.y') }}</span>
             <div class="px-field px-field-compact">
@@ -513,16 +512,25 @@ function resetLabelPosition(): void {
 .settings-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .multi-hint {
   margin: -4px 2px 0;
 }
 
-.reset-label-btn {
-  width: 100%;
+.field-reset {
+  display: flex;
   justify-content: center;
+  align-items: center;
+}
+
+.reset-label-btn {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 12px;
+  font-size: 0.75rem;
 }
 
 .settings-stack-header {
@@ -530,7 +538,7 @@ function resetLabelPosition(): void {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 0 2px 10px;
+  margin: 0 2px 6px;
 }
 
 .settings-stack-header-idle {
@@ -568,9 +576,13 @@ function resetLabelPosition(): void {
 
 .settings-group {
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 10px;
   background: rgba(120, 120, 128, 0.05);
+}
+
+.settings-group-compact {
+  padding: 8px 10px;
 }
 
 .settings-group + .settings-group,
@@ -597,12 +609,22 @@ function resetLabelPosition(): void {
 }
 
 .section-title {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: none;
+}
+
+.field-tight {
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.description-input {
+  min-height: 2.6em;
+  resize: vertical;
 }
 
 .px-field {
@@ -612,11 +634,11 @@ function resetLabelPosition(): void {
 }
 
 .px-field-compact {
-  width: 5.5rem;
+  width: 5rem;
 }
 
 .px-field-compact input {
-  padding: 5px 8px;
+  padding: 4px 6px;
   text-align: right;
 }
 
@@ -629,16 +651,8 @@ function resetLabelPosition(): void {
 .px-unit {
   flex: 0 0 auto;
   color: var(--ink-muted);
-  font-size: 0.78rem;
-  font-weight: 650;
-}
-
-.field-hint {
-  margin: 4px 0 0;
-  color: var(--ink-muted);
   font-size: 0.72rem;
-  line-height: 1.35;
-  opacity: 0.85;
+  font-weight: 650;
 }
 
 .slider-label {
@@ -646,11 +660,12 @@ function resetLabelPosition(): void {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  font-size: 0.72rem;
 }
 
 .size-slider {
   width: 100%;
-  margin: 2px 0 0;
+  margin: 0;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -671,7 +686,7 @@ function resetLabelPosition(): void {
     '. top .'
     'left auto right'
     '. bottom .';
-  gap: 6px;
+  gap: 4px;
 }
 
 .callout-side-top {
@@ -699,12 +714,12 @@ function resetLabelPosition(): void {
   align-items: center;
   justify-content: center;
   margin: 0;
-  padding: 8px 6px;
+  padding: 5px 4px;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 650;
   line-height: 1.2;
   cursor: pointer;

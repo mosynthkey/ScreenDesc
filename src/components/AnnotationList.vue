@@ -21,6 +21,11 @@ const draggingId = ref<string | null>(null)
 const dropIndex = ref<number | null>(null)
 
 function onDragStart(id: string, event: DragEvent): void {
+  const target = event.target as HTMLElement | null
+  if (target?.closest('.remove-btn')) {
+    event.preventDefault()
+    return
+  }
   draggingId.value = id
   dropIndex.value = null
   event.dataTransfer?.setData('text/plain', id)
@@ -138,21 +143,13 @@ function onDrop(event: DragEvent): void {
             selected: selectedIds.includes(annotation.id),
             dragging: draggingId === annotation.id,
           }"
+          draggable="true"
+          :title="t('annotationList.dragTitle')"
           @click="emit('select', annotation.id, $event.shiftKey)"
+          @dragstart="onDragStart(annotation.id, $event)"
+          @dragend="onDragEnd"
           @dragover="onItemDragOver(itemIndex, $event)"
         >
-          <button
-            class="drag-handle"
-            type="button"
-            draggable="true"
-            :title="t('annotationList.dragTitle')"
-            :aria-label="t('annotationList.dragTitle')"
-            @click.stop
-            @dragstart="onDragStart(annotation.id, $event)"
-            @dragend="onDragEnd"
-          >
-            ⠿
-          </button>
           <span class="desc-text">
             {{ annotation.description || t('annotationList.emptyDescription') }}
           </span>
@@ -161,6 +158,7 @@ function onDrop(event: DragEvent): void {
             type="button"
             :title="t('annotationList.removeTitle')"
             @click.stop="emit('remove', annotation.id)"
+            @pointerdown.stop
           >
             ×
           </button>
@@ -176,12 +174,17 @@ function onDrop(event: DragEvent): void {
 </template>
 
 <style scoped>
+.annotation-list {
+  width: 100%;
+}
+
 .list-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 10px;
+  padding: 0 16px;
 }
 
 .list-header .panel-heading {
@@ -211,6 +214,11 @@ function onDrop(event: DragEvent): void {
   color: var(--ink);
 }
 
+.hint,
+.multi-hint {
+  padding: 0 16px;
+}
+
 .multi-hint {
   margin: -2px 0 10px;
 }
@@ -219,86 +227,70 @@ function onDrop(event: DragEvent): void {
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
+  border: solid var(--line);
+  border-width: 1px 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .drop-indicator {
-  height: 3px;
-  margin: -2px 8px;
-  border-radius: 2px;
+  flex: 0 0 auto;
+  height: 2px;
+  margin: 0;
+  padding: 0;
+  border: none;
   background: var(--accent);
   pointer-events: none;
 }
 
 .annotation-item {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
-  gap: 8px;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
   align-items: center;
-  padding: 10px 10px 10px 6px;
+  padding: 8px 8px 8px 12px;
   margin: 0;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.72);
-  cursor: pointer;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
   transition:
     background var(--spring),
-    border-color var(--spring),
-    box-shadow var(--spring),
     opacity var(--spring);
 }
 
+.list > .annotation-item:last-child {
+  border-bottom: none;
+}
+
 .annotation-item:hover {
-  border-color: var(--line-strong);
-  background: #fff;
+  background: rgba(120, 120, 128, 0.06);
 }
 
 .annotation-item:active {
-  transform: none;
+  cursor: grabbing;
 }
 
 .annotation-item.selected {
-  border-color: rgba(0, 122, 255, 0.35);
   background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .annotation-item.dragging {
   opacity: 0.4;
 }
 
-.drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink-muted);
-  font-size: 0.95rem;
-  line-height: 1;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
-.drag-handle:hover {
-  color: var(--ink);
-  background: #fff;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
 .desc-text {
   min-width: 0;
-  padding: 6px 8px;
+  padding: 2px 0;
   font-size: 0.86rem;
   font-weight: 500;
   line-height: 1.35;
@@ -309,11 +301,13 @@ function onDrop(event: DragEvent): void {
 }
 
 .remove-btn {
-  opacity: 0.55;
+  opacity: 0.45;
   width: 28px;
   height: 28px;
   background: transparent;
   color: var(--ink-muted);
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .annotation-item:hover .remove-btn,

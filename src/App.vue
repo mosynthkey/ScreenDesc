@@ -10,6 +10,7 @@ import ExportDialog from './components/ExportDialog.vue'
 import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
+import DeleteSavedProjectDialog from './components/DeleteSavedProjectDialog.vue'
 import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
 import ModelLoadBanner from './components/ModelLoadBanner.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
@@ -110,6 +111,8 @@ const commonSettingsBusy = ref(false)
 const cropConfirmOpen = ref(false)
 const pendingCropRect = ref<Rect | null>(null)
 const replaceDetectOpen = ref(false)
+const pendingDeleteProjectId = ref<string | null>(null)
+const pendingDeleteProjectName = ref('')
 const appPage = ref<AppPageId>('gallery')
 
 const ANNOTATION_PANE_STORAGE_KEY = 'screendesc.annotationPanePercent'
@@ -489,10 +492,21 @@ async function onLoadSavedProject(id: string): Promise<void> {
   }
 }
 
-async function onRemoveSavedProject(id: string): Promise<void> {
+function onRemoveSavedProject(id: string): void {
   const target = savedProjects.value.find((item) => item.id === id)
-  const name = target?.name?.trim() || t('header.untitledProject')
-  if (!window.confirm(t('confirm.deleteSavedProject', { name }))) return
+  pendingDeleteProjectId.value = id
+  pendingDeleteProjectName.value = target?.name?.trim() || t('header.untitledProject')
+}
+
+function closeDeleteSavedProject(): void {
+  pendingDeleteProjectId.value = null
+  pendingDeleteProjectName.value = ''
+}
+
+async function confirmDeleteSavedProject(): Promise<void> {
+  const id = pendingDeleteProjectId.value
+  if (!id) return
+  closeDeleteSavedProject()
   projectStorageBusy.value = true
   try {
     await removeSavedProject(id)
@@ -900,6 +914,12 @@ function onKeydown(event: KeyboardEvent): void {
         @as-new-project="confirmCropAsNewProject"
         @overwrite="confirmCropOverwrite"
       />
+      <DeleteSavedProjectDialog
+        :open="pendingDeleteProjectId !== null"
+        :project-name="pendingDeleteProjectName"
+        @close="closeDeleteSavedProject"
+        @confirm="confirmDeleteSavedProject"
+      />
       <ReplaceDetectDialog
         :open="replaceDetectOpen"
         @close="replaceDetectOpen = false"
@@ -926,6 +946,8 @@ function onKeydown(event: KeyboardEvent): void {
   min-height: 72px;
   overflow: auto;
   border-bottom: none;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .panel-splitter {
