@@ -1,12 +1,13 @@
 import { fromFileUrl, isAbsolute, join } from "jsr:@std/path";
 
 const repoRoot = fromFileUrl(new URL("..", import.meta.url));
+const defaultRunOutput = join(repoRoot, "dist-desktop", "ScreenDesc");
 
 // deno desktop embeds everything reachable from its cwd (following symlinks),
 // not just what --include names. Building from the repo root risks sweeping in
 // unrelated files, so build from an isolated temp dir containing only what the
 // app actually needs.
-export async function buildDesktopApp(outputPath?: string) {
+export async function buildDesktopApp(outputPath: string) {
   const sourceDir = await Deno.makeTempDir({ prefix: "screendesc-desktop-" });
   try {
     await Deno.mkdir(join(sourceDir, "desktop"), { recursive: true });
@@ -20,25 +21,34 @@ export async function buildDesktopApp(outputPath?: string) {
     await Deno.copyFile(join(repoRoot, "deno.lock"), join(sourceDir, "deno.lock"));
     await Deno.copyFile(join(repoRoot, "public", "icon.png"), join(sourceDir, "icon.png"));
 
-    // Documents/ScreenDesc persistence needs home-dir read/write; dist is served read-only.
+    // Documents/ScreenDesc persistence needs home-dir read/write.
+    // Do not combine `--allow-read=dist` with bare `--allow-read`: deno desktop
+    // keeps the scoped grant and then denies ~/Documents/ScreenDesc.
     // Reveal uses `open -R` (macOS) or Explorer (Windows).
     const allowRun = Deno.build.os === "windows" ? "explorer" : "open";
     const args = [
       "desktop",
       "--include",
       "./dist",
-      "--allow-read=dist",
       "--allow-read",
       "--allow-write",
       "--allow-env=HOME,USERPROFILE",
+      // node:os.homedir() — .app launches often have no HOME in the environment.
+      "--allow-sys=homedir",
       `--allow-run=${allowRun}`,
       "--icon",
       "icon.png",
+      "-o",
+      outputPath,
+      "desktop/main.ts",
     ];
-    if (outputPath) args.push("-o", outputPath);
-    args.push("desktop/main.ts");
 
-    const command = new Deno.Command("deno", { args, cwd: sourceDir, stdout: "inherit", stderr: "inherit" });
+    const command = new Deno.Command("deno", {
+      args,
+      cwd: sourceDir,
+      stdout: "inherit",
+      stderr: "inherit",
+    });
     const { code } = await command.output();
     if (code !== 0) throw new Error(`deno desktop exited with code ${code}`);
   } finally {
@@ -46,8 +56,63 @@ export async function buildDesktopApp(outputPath?: string) {
   }
 }
 
+/** Resolve the platform path that `deno desktop -o <stem>` actually wrote. */
+export function resolveDesktopBundlePath(outputStem: string): string {
+  if (Deno.build.os === "darwin") {
+    if (outputStem.endsWith(".app") || outputStem.endsWith(".dmg")) return outputStem;
+    return `${outputStem}.app`;
+  }
+  if (Deno.build.os === "windows") {
+    if (outputStem.endsWith(".exe")) return outputStem;
+    return `${outputStem}.exe`;
+  }
+  return outputStem;
+}
+
+export async function launchDesktopApp(outputStem: string): Promise<void> {
+  const bundlePath = resolveDesktopBundlePath(outputStem);
+  if (!(await Deno.stat(bundlePath).catch(() => null))) {
+    throw new Error(`Desktop bundle not found: ${bundlePath}`);
+  }
+
+  if (Deno.build.os === "darwin") {
+    const command = new Deno.Command("open", {
+      args: [bundlePath],
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    const { code } = await command.output();
+    if (code !== 0) throw new Error(`open exited with code ${code}`);
+    return;
+  }
+
+  if (Deno.build.os === "windows") {
+    const command = new Deno.Command(bundlePath, {
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    // Detach: do not wait for the GUI process to exit.
+    command.spawn();
+    return;
+  }
+
+  const command = new Deno.Command(bundlePath, {
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  command.spawn();
+}
+
 if (import.meta.main) {
   const arg = Deno.args[0];
-  const outputPath = arg ? (isAbsolute(arg) ? arg : join(Deno.cwd(), arg)) : undefined;
-  await buildDesktopApp(outputPath);
+  if (arg) {
+    const outputPath = isAbsolute(arg) ? arg : join(Deno.cwd(), arg);
+    await buildDesktopApp(outputPath);
+  } else {
+    // desktop:run — compile to dist-desktop/ then launch (deno desktop itself only builds).
+    await Deno.mkdir(join(repoRoot, "dist-desktop"), { recursive: true });
+    await buildDesktopApp(defaultRunOutput);
+    await launchDesktopApp(defaultRunOutput);
+    console.log(`Launched ${resolveDesktopBundlePath(defaultRunOutput)}`);
+  }
 }

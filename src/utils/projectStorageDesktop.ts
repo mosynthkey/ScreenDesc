@@ -80,7 +80,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_PREFIX}${path}`, init)
   if (!response.ok) {
     const detail = await response.text().catch(() => '')
-    throw new Error(`Desktop storage ${path} failed (${response.status}): ${detail}`)
+    let message = detail
+    try {
+      const parsed = JSON.parse(detail) as { error?: string }
+      if (parsed.error) message = parsed.error
+    } catch {
+      // keep raw body
+    }
+    throw new Error(`Desktop storage ${path} failed (${response.status}): ${message}`)
   }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T

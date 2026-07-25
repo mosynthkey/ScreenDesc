@@ -32,7 +32,7 @@ npm run dev
 Wraps the built app in a native window via Deno's experimental [`deno desktop`](https://docs.deno.com/runtime/desktop/) (requires Deno ≥ 2.9; `deno upgrade` to update).
 
 ```bash
-npm run desktop:run      # build:desktop + launch a native window
+npm run desktop:run      # build:desktop, write dist-desktop/ScreenDesc.app, then open it
 npm run desktop:package  # build:desktop + output a distributable binary to dist-desktop/
 ```
 

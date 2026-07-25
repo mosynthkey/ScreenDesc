@@ -1,6 +1,7 @@
 import { ensureDir } from "jsr:@std/fs/ensure-dir";
 import { exists } from "jsr:@std/fs/exists";
 import { dirname, join } from "jsr:@std/path";
+import { homedir } from "node:os";
 
 const API_PREFIX = "/__screendesc/storage";
 
@@ -43,7 +44,9 @@ export interface StoredSnapshot {
 }
 
 function documentsRoot(): string {
-  const home = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE");
+  // GUI-launched .app bundles often omit HOME from the process environment.
+  // node:os.homedir() uses the OS account database (needs --allow-sys=homedir).
+  const home = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE") ?? homedir();
   if (!home) throw new Error("Cannot resolve home directory for Documents/ScreenDesc");
   return join(home, "Documents", "ScreenDesc");
 }
@@ -62,7 +65,12 @@ function projectDir(root: string, id: string): string {
 
 async function readJson<T>(path: string): Promise<T | null> {
   if (!(await exists(path))) return null;
-  return JSON.parse(await Deno.readTextFile(path)) as T;
+  try {
+    return JSON.parse(await Deno.readTextFile(path)) as T;
+  } catch (error) {
+    console.error("[ScreenDesc desktop storage] invalid JSON:", path, error);
+    return null;
+  }
 }
 
 async function writeJson(path: string, value: unknown): Promise<void> {
@@ -147,6 +155,16 @@ async function revealPath(targetPath: string): Promise<void> {
   }
 }
 
+/** Reveal a named project folder in the OS file manager. */
+export async function revealProjectById(projectId: string): Promise<void> {
+  const root = documentsRoot();
+  const metaPath = join(projectDir(root, projectId), "meta.json");
+  if (!(await exists(metaPath))) {
+    throw new Error(`Project not found: ${projectId}`);
+  }
+  await revealPath(metaPath);
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -165,11 +183,12 @@ async function readBodySnapshot(req: Request): Promise<StoredSnapshot> {
 export async function handleStorageRequest(req: Request, url: URL): Promise<Response | null> {
   if (!url.pathname.startsWith(API_PREFIX)) return null;
 
-  const root = documentsRoot();
-  await ensureDir(root);
   const path = url.pathname.slice(API_PREFIX.length); // e.g. /autosave, /projects, /projects/:id
 
   try {
+    const root = documentsRoot();
+    await ensureDir(root);
+
     if (path === "/autosave" && req.method === "GET") {
       const snapshot = await readSnapshotFiles(autosaveDir(root));
       return snapshot ? jsonResponse(snapshot) : emptyResponse(404);
@@ -231,9 +250,11 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
       }
 
       if (subResource === "reveal" && req.method === "POST") {
-        const metaPath = join(dir, "meta.json");
-        if (!(await exists(metaPath))) return emptyResponse(404);
-        await revealPath(metaPath);
+        try {
+          await revealProjectById(projectId);
+        } catch {
+          return emptyResponse(404);
+        }
         return emptyResponse(204);
       }
 

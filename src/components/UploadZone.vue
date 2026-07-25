@@ -30,7 +30,8 @@ function closeContextMenu(): void {
 }
 
 function onProjectContextMenu(projectId: string, event: MouseEvent): void {
-  if (!isDesktopApp) return
+  // Deno Desktop shows a native menu from the host (page events are unreliable).
+  if (isDesktopApp) return
   event.preventDefault()
   event.stopPropagation()
   contextMenu.value = { projectId, x: event.clientX, y: event.clientY }
@@ -183,6 +184,7 @@ defineExpose({ openFilePicker })
           v-for="project in projects"
           :key="project.id"
           class="files-item"
+          :data-project-id="project.id"
           @contextmenu="onProjectContextMenu(project.id, $event)"
         >
           <button

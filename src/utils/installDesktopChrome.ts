@@ -1,18 +1,30 @@
 import { isDesktopApp } from '../runtime'
 
 /**
- * Suppress CEF/webview browser chrome (Reload, Inspect, etc.) on right-click.
- * App-owned overlays (e.g. Files "Show in Finder") still work; they are not
- * the native context menu.
+ * Best-effort page-side suppression of the browser context menu.
+ * On Deno Desktop / CEF this often never runs — the host replaces the menu
+ * via `BrowserWindow.showContextMenu` in `desktop/main.ts` instead.
+ * @see https://docs.deno.com/runtime/desktop/menus/
  */
 export function installDesktopChrome(): void {
   if (!isDesktopApp || typeof window === 'undefined') return
 
-  window.addEventListener(
-    'contextmenu',
-    (event) => {
-      event.preventDefault()
+  const block = (event: Event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  window.addEventListener('contextmenu', block, { capture: true })
+  document.addEventListener('contextmenu', block, { capture: true })
+  // Older CEF builds honor body oncontextmenu more reliably than addEventListener.
+  document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+      document.body?.setAttribute('oncontextmenu', 'return false')
     },
-    { capture: true },
+    { once: true },
   )
+  if (document.body) {
+    document.body.setAttribute('oncontextmenu', 'return false')
+  }
 }
