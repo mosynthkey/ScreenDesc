@@ -16,7 +16,7 @@ const props = withDefaults(
     canExport: boolean
     copyJustSucceeded?: boolean
     hasImage: boolean
-    /** When false, hide the floating edit dock (e.g. gallery while a project remains open). */
+    /** When false, hide the floating edit dock (e.g. files page while a project remains open). */
     showToolDock?: boolean
     canUndoCrop: boolean
   }>(),
@@ -154,8 +154,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 <template>
   <header class="app-header">
     <div class="header-title">
-      <h1 v-if="page === 'gallery'" class="page-title">
-        {{ t('header.galleryTitle') }}
+      <h1 v-if="page === 'files'" class="page-title">
+        {{ t('header.filesTitle') }}
       </h1>
       <template v-else>
         <div class="project-menu-wrap">
@@ -315,7 +315,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
       </template>
     </div>
 
-    <div v-if="page === 'gallery'" class="header-actions">
+    <div v-if="page === 'files'" class="header-actions">
       <button
         class="header-btn"
         type="button"

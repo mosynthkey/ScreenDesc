@@ -17,7 +17,7 @@ export const ja: Record<MessageKey, string> = {
   'about.close': '閉じる',
 
   'nav.aria': 'メインナビゲーション',
-  'nav.gallery': 'ファイル',
+  'nav.files': 'ファイル',
   'nav.edit': '編集',
   'nav.editDisabledHint': '先にプロジェクトを開いてください',
 
@@ -36,7 +36,7 @@ export const ja: Record<MessageKey, string> = {
   'button.newProject': '新規作成',
   'button.importProject': 'インポート',
 
-  'header.galleryTitle': 'ファイル',
+  'header.filesTitle': 'ファイル',
   'header.untitledProject': '名称未設定のプロジェクト',
   'header.projectNameAria': 'プロジェクト名',
 
@@ -94,9 +94,9 @@ export const ja: Record<MessageKey, string> = {
   'home.newHint.formats': 'PNG / JPEG / WebP',
   'home.newHint.dnd': 'ドラッグ&ドロップまたは貼り付け(⌘V)でも開始できます',
   'home.newButton': 'スクリーンショットを選ぶ',
-  'home.galleryTitle': '保存済みのプロジェクト',
-  'home.galleryCount': '{count} 件',
-  'home.galleryEmpty': 'まだ保存がありません。作成後、プロジェクト → 保存 / 読み込み で残せます。',
+  'home.filesTitle': '保存済みのプロジェクト',
+  'home.filesCount': '{count} 件',
+  'home.filesEmpty': 'まだ保存がありません。作成後、プロジェクト → 保存 / 読み込み で残せます。',
   'home.removeAria': '保存済みプロジェクトを削除',
   'home.downloadBundle': 'すべてダウンロード',
   'home.downloadBundleTitle': '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',

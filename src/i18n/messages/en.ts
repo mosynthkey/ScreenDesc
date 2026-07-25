@@ -15,7 +15,7 @@ export const en = {
   'about.close': 'Close',
 
   'nav.aria': 'Main navigation',
-  'nav.gallery': 'Files',
+  'nav.files': 'Files',
   'nav.edit': 'Edit',
   'nav.editDisabledHint': 'Open a project first',
 
@@ -34,7 +34,7 @@ export const en = {
   'button.newProject': 'New project',
   'button.importProject': 'Import',
 
-  'header.galleryTitle': 'Files',
+  'header.filesTitle': 'Files',
   'header.untitledProject': 'Untitled project',
   'header.projectNameAria': 'Project name',
 
@@ -92,9 +92,9 @@ export const en = {
   'home.newHint.formats': 'PNG / JPEG / WebP',
   'home.newHint.dnd': 'Drag & drop or paste (⌘V) a screenshot to start',
   'home.newButton': 'Choose screenshot',
-  'home.galleryTitle': 'Saved projects',
-  'home.galleryCount': '{count} saved',
-  'home.galleryEmpty': 'No saved projects yet. Create one and use Project → Save / load.',
+  'home.filesTitle': 'Saved projects',
+  'home.filesCount': '{count} saved',
+  'home.filesEmpty': 'No saved projects yet. Create one and use Project → Save / load.',
   'home.removeAria': 'Delete saved project',
   'home.downloadBundle': 'Download all',
   'home.downloadBundleTitle': 'Download all saved projects as one bundle file',

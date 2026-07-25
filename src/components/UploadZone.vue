@@ -121,11 +121,11 @@ defineExpose({ openFilePicker })
       />
     </section>
 
-    <section class="gallery">
-      <div class="gallery-header">
-        <div class="gallery-heading">
-          <h2>{{ t('home.galleryTitle') }}</h2>
-          <span class="hint">{{ t('home.galleryCount', { count: projects.length }) }}</span>
+    <section class="files">
+      <div class="files-header">
+        <div class="files-heading">
+          <h2>{{ t('home.filesTitle') }}</h2>
+          <span class="hint">{{ t('home.filesCount', { count: projects.length }) }}</span>
         </div>
         <button
           class="btn btn-ghost"
@@ -137,30 +137,30 @@ defineExpose({ openFilePicker })
           {{ t('home.downloadBundle') }}
         </button>
       </div>
-      <p v-if="projects.length === 0" class="hint gallery-empty">{{ t('home.galleryEmpty') }}</p>
-      <ul v-else class="gallery-grid">
-        <li v-for="project in projects" :key="project.id" class="gallery-item">
+      <p v-if="projects.length === 0" class="hint files-empty">{{ t('home.filesEmpty') }}</p>
+      <ul v-else class="files-grid">
+        <li v-for="project in projects" :key="project.id" class="files-item">
           <button
-            class="gallery-card"
+            class="files-card"
             type="button"
             :disabled="isBusy"
             @click="emit('open', project.id)"
           >
-            <div class="gallery-thumb">
+            <div class="files-thumb">
               <img
                 v-if="thumbUrls[project.id]"
                 :src="thumbUrls[project.id]"
                 :alt="project.name"
               />
-              <div v-else class="gallery-thumb-fallback" aria-hidden="true" />
+              <div v-else class="files-thumb-fallback" aria-hidden="true" />
             </div>
-            <div class="gallery-meta">
+            <div class="files-meta">
               <strong>{{ project.name }}</strong>
               <span>{{ formatDate(project.updatedAt) }}</span>
             </div>
           </button>
           <button
-            class="gallery-remove"
+            class="files-remove"
             type="button"
             :disabled="isBusy"
             :aria-label="t('home.removeAria')"
@@ -236,14 +236,14 @@ defineExpose({ openFilePicker })
   font-weight: 700;
 }
 
-.gallery {
+.files {
   max-width: 920px;
   width: 100%;
   margin: 0 auto;
   flex: 1 1 auto;
 }
 
-.gallery-header {
+.files-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -251,14 +251,14 @@ defineExpose({ openFilePicker })
   margin-bottom: 14px;
 }
 
-.gallery-heading {
+.files-heading {
   display: flex;
   align-items: baseline;
   gap: 12px;
   min-width: 0;
 }
 
-.gallery-header h2 {
+.files-header h2 {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
@@ -298,7 +298,7 @@ defineExpose({ openFilePicker })
   text-decoration: none;
 }
 
-.gallery-empty {
+.files-empty {
   margin: 0;
   padding: 28px 16px;
   text-align: center;
@@ -307,7 +307,7 @@ defineExpose({ openFilePicker })
   background: var(--bg-panel);
 }
 
-.gallery-grid {
+.files-grid {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -316,11 +316,11 @@ defineExpose({ openFilePicker })
   gap: 14px;
 }
 
-.gallery-item {
+.files-item {
   position: relative;
 }
 
-.gallery-card {
+.files-card {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -335,30 +335,30 @@ defineExpose({ openFilePicker })
   color: inherit;
 }
 
-.gallery-card:hover:not(:disabled) {
+.files-card:hover:not(:disabled) {
   border-color: var(--line-strong);
   box-shadow: var(--shadow);
 }
 
-.gallery-card:disabled {
+.files-card:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.gallery-thumb {
+.files-thumb {
   aspect-ratio: 16 / 10;
   background: #e8e8ed;
   overflow: hidden;
 }
 
-.gallery-thumb img {
+.files-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.gallery-thumb-fallback {
+.files-thumb-fallback {
   width: 100%;
   height: 100%;
   background:
@@ -366,7 +366,7 @@ defineExpose({ openFilePicker })
     #e8e8ed;
 }
 
-.gallery-meta {
+.files-meta {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -374,7 +374,7 @@ defineExpose({ openFilePicker })
   min-width: 0;
 }
 
-.gallery-meta strong {
+.files-meta strong {
   font-size: 0.86rem;
   font-weight: 650;
   white-space: nowrap;
@@ -382,12 +382,12 @@ defineExpose({ openFilePicker })
   text-overflow: ellipsis;
 }
 
-.gallery-meta span {
+.files-meta span {
   font-size: 0.72rem;
   color: var(--ink-muted);
 }
 
-.gallery-remove {
+.files-remove {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -403,16 +403,16 @@ defineExpose({ openFilePicker })
   transition: opacity var(--spring), background var(--press);
 }
 
-.gallery-item:hover .gallery-remove,
-.gallery-remove:focus-visible {
+.files-item:hover .files-remove,
+.files-remove:focus-visible {
   opacity: 1;
 }
 
-.gallery-remove:hover:not(:disabled) {
+.files-remove:hover:not(:disabled) {
   background: var(--danger);
 }
 
-.gallery-remove:disabled {
+.files-remove:disabled {
   opacity: 0;
   cursor: default;
 }

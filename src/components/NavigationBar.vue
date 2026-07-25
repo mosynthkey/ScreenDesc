@@ -5,7 +5,7 @@ import { RUNTIME_LIBRARIES } from '../credits'
 import { useI18n } from '../i18n'
 import { useTheme, type ThemePreference } from '../composables/useTheme'
 
-export type AppPageId = 'gallery' | 'edit'
+export type AppPageId = 'files' | 'edit'
 
 defineProps<{
   active: AppPageId
@@ -53,11 +53,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
       <button
         class="nav-btn"
         type="button"
-        :class="{ active: active === 'gallery' }"
-        :aria-current="active === 'gallery' ? 'page' : undefined"
-        :aria-label="t('nav.gallery')"
-        :title="t('nav.gallery')"
-        @click="emit('navigate', 'gallery')"
+        :class="{ active: active === 'files' }"
+        :aria-current="active === 'files' ? 'page' : undefined"
+        :aria-label="t('nav.files')"
+        :title="t('nav.files')"
+        @click="emit('navigate', 'files')"
       >
         <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <rect
@@ -101,7 +101,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
             stroke-width="1.8"
           />
         </svg>
-        <span class="nav-label">{{ t('nav.gallery') }}</span>
+        <span class="nav-label">{{ t('nav.files') }}</span>
       </button>
 
       <button

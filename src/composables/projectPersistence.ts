@@ -83,7 +83,7 @@ export async function persistActiveNamedProject(): Promise<void> {
 
 let ensuringNamedProject = false
 
-/** Give untitled work a date-based gallery name so it is kept with other saves. */
+/** Give untitled work a date-based name so it appears with other saved files. */
 export async function ensureActiveNamedProject(): Promise<void> {
   if (!state.imageUrl || activeNamedProject.value || ensuringNamedProject) return
   ensuringNamedProject = true

@@ -115,7 +115,7 @@ const pendingCropRect = ref<Rect | null>(null)
 const replaceDetectOpen = ref(false)
 const pendingDeleteProjectId = ref<string | null>(null)
 const pendingDeleteProjectName = ref('')
-const appPage = ref<AppPageId>('gallery')
+const appPage = ref<AppPageId>('files')
 
 const ANNOTATION_PANE_STORAGE_KEY = 'screendesc.annotationPanePercent'
 const ANNOTATION_PANE_MIN = 18
@@ -229,7 +229,7 @@ function goToPage(page: AppPageId): void {
   }
   clearProjectLoadError()
   appPage.value = page
-  if (page === 'gallery') void refreshSavedProjects()
+  if (page === 'files') void refreshSavedProjects()
 }
 
 async function onFile(file: File): Promise<void> {
@@ -240,7 +240,7 @@ async function onFile(file: File): Promise<void> {
 }
 
 async function onWindowPaste(event: ClipboardEvent): Promise<void> {
-  if (appPage.value !== 'gallery') return
+  if (appPage.value !== 'files') return
   const items = event.clipboardData?.items
   if (!items) return
   for (const item of items) {
@@ -268,7 +268,7 @@ watch(
   (open, wasOpen) => {
     if (!open) {
       void refreshSavedProjects()
-      if (wasOpen) appPage.value = 'gallery'
+      if (wasOpen) appPage.value = 'files'
       return
     }
     appPage.value = 'edit'
@@ -287,7 +287,7 @@ async function onRetryModelLoad(): Promise<void> {
 
 async function onNewProject(): Promise<void> {
   if (!hasImage.value) {
-    appPage.value = 'gallery'
+    appPage.value = 'files'
     await nextTick()
     homeRef.value?.openFilePicker()
     return
@@ -295,7 +295,7 @@ async function onNewProject(): Promise<void> {
   if (!window.confirm(t('confirm.newProject'))) return
   clearProjectLoadError()
   await clearCurrentProject()
-  appPage.value = 'gallery'
+  appPage.value = 'files'
   await refreshSavedProjects()
 }
 
@@ -395,7 +395,7 @@ async function onProjectFileChange(event: Event): Promise<void> {
     const result = await openProjectFile(file)
     if (result.kind === 'bundle') {
       await refreshSavedProjects()
-      appPage.value = 'gallery'
+      appPage.value = 'files'
       if (result.skipped > 0 && result.imported > 0) {
         showAppNotice(
           t('status.bundleImportResult', {
@@ -482,7 +482,7 @@ async function onLoadSavedProject(id: string): Promise<void> {
         await removeSavedProject(id)
         await refreshSavedProjects()
       } catch {
-        // Keep the toast; gallery refresh is best-effort.
+        // Keep the toast; files list refresh is best-effort.
       }
     }
   } finally {
@@ -749,9 +749,9 @@ function onKeydown(event: KeyboardEvent): void {
         </button>
       </div>
 
-      <main class="app-main" :class="{ 'is-gallery': appPage === 'gallery' }">
+      <main class="app-main" :class="{ 'is-files': appPage === 'files' }">
         <UploadZone
-          v-if="appPage === 'gallery'"
+          v-if="appPage === 'files'"
           ref="homeRef"
           :projects="savedProjects"
           :is-busy="projectStorageBusy"

@@ -24,7 +24,7 @@ Keep new logic near its existing home; prefer extending these modules over growi
 - `annotationStoreCore.ts` — shared reactive state, layout refresh, edit undo, snapshot restore.
 - `projectPersistence.ts` — autosave / named-project overwrite scheduling.
 - `projectImageLifecycle.ts` — load, replace, crop, section detection kickoff.
-- `projectFileIO.ts` — `.screendesc.json` / bundle download and import, gallery load/save.
+- `projectFileIO.ts` — `.screendesc.json` / bundle download and import, files page load/save.
 
 ### Style panels (`src/components/`)
 
