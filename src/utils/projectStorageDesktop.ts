@@ -195,3 +195,7 @@ export async function deleteNamedProject(id: string): Promise<void> {
     throw new Error(`Desktop storage delete failed (${response.status})`)
   }
 }
+
+export async function revealNamedProject(id: string): Promise<void> {
+  await requestJson(`/projects/${encodeURIComponent(id)}/reveal`, { method: 'POST' })
+}

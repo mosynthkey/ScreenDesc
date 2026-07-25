@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { SavedProjectMeta } from '../utils/projectStorage'
+import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
 import { defaultProjectName } from '../utils/projectName'
 
@@ -148,8 +149,8 @@ function submitSave(): void {
         </div>
       </div>
 
-      <p class="hint storage-notice">
-        {{ tr('storage.notice.before')
+      <p v-if="!isDesktopApp" class="hint storage-notice">
+        {{ t('storage.notice.before')
         }}<button
           class="storage-notice-link"
           type="button"

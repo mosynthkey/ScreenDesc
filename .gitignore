@@ -16,6 +16,7 @@ installer/macos/build
 .env
 .env.*
 !.env.example
+!.env.desktop
 
 # ScreenParser(YOLO11)の重みファイル(97MB)。scripts/export_onnx.py で再生成する
 public/models/*.onnx

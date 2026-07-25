@@ -31,10 +31,22 @@ async function removeIfExists(path: string) {
   });
 }
 
+async function fixBundleDisplayName(appPath: string) {
+  const plist = join(appPath, "Contents", "Info.plist");
+  // Safety net if a future -o stem still leaks into the bundle display name.
+  await run("plutil", ["-replace", "CFBundleName", "-string", appName, plist]);
+}
+
 async function build() {
   await Deno.mkdir(buildDir, { recursive: true });
   await run("npm", ["run", "build:desktop"], repoRoot);
-  await buildDesktopApp(unsignedDmg);
+  // Build as ScreenDesc.dmg so CFBundleName / window title stay "ScreenDesc",
+  // then rename the artifact to *-unsigned.dmg for the pre-sign stage.
+  const namedDmg = join(buildDir, `${appName}.dmg`);
+  await removeIfExists(namedDmg);
+  await removeIfExists(unsignedDmg);
+  await buildDesktopApp(namedDmg);
+  await Deno.rename(namedDmg, unsignedDmg);
 }
 
 async function sign() {
@@ -45,13 +57,14 @@ async function sign() {
 
   await run("hdiutil", ["attach", unsignedDmg, "-mountpoint", mountDir, "-readonly", "-nobrowse"]);
   try {
-    await copy(join(mountDir, `${appName}-unsigned.app`), join(stagingDir, `${appName}.app`));
+    await copy(join(mountDir, `${appName}.app`), join(stagingDir, `${appName}.app`));
   } finally {
     await run("hdiutil", ["detach", mountDir]);
   }
   await Deno.symlink("/Applications", join(stagingDir, "Applications"));
 
   const appPath = join(stagingDir, `${appName}.app`);
+  await fixBundleDisplayName(appPath);
   await run("codesign", [
     "--force",
     "--deep",

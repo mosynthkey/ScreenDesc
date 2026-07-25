@@ -18,3 +18,4 @@ export const loadAllNamedProjects = backend.loadAllNamedProjects
 export const loadNamedProjectImageBlob = backend.loadNamedProjectImageBlob
 export const renameNamedProject = backend.renameNamedProject
 export const deleteNamedProject = backend.deleteNamedProject
+export const revealNamedProject = backend.revealNamedProject

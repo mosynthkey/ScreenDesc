@@ -102,10 +102,10 @@ export const ja: Record<MessageKey, string> = {
   'home.removeAria': '保存済みプロジェクトを削除',
   'home.downloadBundle': 'すべてダウンロード',
   'home.downloadBundleTitle': '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
+  'home.openLocation': 'ファイルの場所を開く',
+  'home.openLocationTitle': 'このプロジェクトのフォルダを Finder で表示',
   'storage.notice.before':
     'このデータはブラウザ内に保存されます。サイトデータを削除した場合やプライベートブラウジングでは失われる可能性があります。',
-  'storage.notice.before.desktop':
-    'このデータは書類（Documents）フォルダ内の ScreenDesc に保存されます。',
   'storage.notice.link': 'こちら',
   'storage.notice.after': 'からデータを一括ダウンロードできます。',
 
@@ -268,6 +268,8 @@ export const ja: Record<MessageKey, string> = {
   'error.projectBundleEmpty': 'バンドルに含める保存済みプロジェクトがありません',
   'error.projectBundleDownloadFailed': 'プロジェクトバンドルのダウンロードに失敗しました',
   'error.savedProjectNotFound': '保存済みのプロジェクトが見つかりませんでした',
+  'error.projectRenameFailed': 'プロジェクト名の変更に失敗しました',
+  'error.projectRevealFailed': 'プロジェクトのフォルダを開けませんでした',
   'error.clipboardCopyFailed': 'クリップボードにコピーできませんでした',
   'error.commonSettingsNotFound': '保存済みの共通設定が見つかりませんでした',
 }

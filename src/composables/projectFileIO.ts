@@ -153,7 +153,11 @@ export async function setProjectName(rawName: string): Promise<void> {
   if (active) {
     if (active.name === name) return
     const renamed = await renameNamedProject(active.id, name)
-    if (!renamed) return
+    if (!renamed) {
+      // Disk entry missing (e.g. ephemeral session); create under the new name.
+      await saveProjectAs(name)
+      return
+    }
     activeNamedProject.value = { id: active.id, name }
     await persistCurrentProject()
     return

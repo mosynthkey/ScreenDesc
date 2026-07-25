@@ -123,6 +123,30 @@ async function listMetas(root: string): Promise<SavedProjectMeta[]> {
   return metas.sort((left, right) => right.updatedAt - left.updatedAt);
 }
 
+async function revealPath(targetPath: string): Promise<void> {
+  if (Deno.build.os === "darwin") {
+    const command = new Deno.Command("open", { args: ["-R", targetPath] });
+    const { code, stderr } = await command.output();
+    if (code !== 0) {
+      throw new Error(new TextDecoder().decode(stderr) || `open -R failed (${code})`);
+    }
+    return;
+  }
+  if (Deno.build.os === "windows") {
+    const command = new Deno.Command("explorer", { args: [`/select,${targetPath}`] });
+    const { code, stderr } = await command.output();
+    if (code !== 0) {
+      throw new Error(new TextDecoder().decode(stderr) || `explorer failed (${code})`);
+    }
+    return;
+  }
+  const command = new Deno.Command("xdg-open", { args: [dirname(targetPath)] });
+  const { code, stderr } = await command.output();
+  if (code !== 0) {
+    throw new Error(new TextDecoder().decode(stderr) || `xdg-open failed (${code})`);
+  }
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -188,13 +212,13 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
       return jsonResponse({ id: projectId });
     }
 
-    const projectMatch = path.match(/^\/projects\/([^/]+)(\/image)?$/);
+    const projectMatch = path.match(/^\/projects\/([^/]+)(\/(image|reveal))?$/);
     if (projectMatch) {
       const projectId = decodeURIComponent(projectMatch[1]!);
-      const isImage = Boolean(projectMatch[2]);
+      const subResource = projectMatch[3] ?? null;
       const dir = projectDir(root, projectId);
 
-      if (isImage && req.method === "GET") {
+      if (subResource === "image" && req.method === "GET") {
         const imagePath = join(dir, "image.bin");
         const data = await readJson<{ imageMimeType?: string }>(join(dir, "data.json"));
         if (!(await exists(imagePath))) return emptyResponse(404);
@@ -206,12 +230,19 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
         });
       }
 
-      if (req.method === "GET") {
+      if (subResource === "reveal" && req.method === "POST") {
+        const metaPath = join(dir, "meta.json");
+        if (!(await exists(metaPath))) return emptyResponse(404);
+        await revealPath(metaPath);
+        return emptyResponse(204);
+      }
+
+      if (!subResource && req.method === "GET") {
         const snapshot = await readSnapshotFiles(dir);
         return snapshot ? jsonResponse(snapshot) : emptyResponse(404);
       }
 
-      if (req.method === "PATCH") {
+      if (!subResource && req.method === "PATCH") {
         const patch = (await req.json()) as Partial<Pick<SavedProjectMeta, "name" | "contentHash">>;
         const existing = await readJson<SavedProjectMeta>(join(dir, "meta.json"));
         if (!existing) return emptyResponse(404);
@@ -225,7 +256,7 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
         return jsonResponse(next);
       }
 
-      if (req.method === "DELETE") {
+      if (!subResource && req.method === "DELETE") {
         try {
           await Deno.remove(dir, { recursive: true });
         } catch (error) {

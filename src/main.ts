@@ -5,8 +5,10 @@ import './i18n'
 import { DEFAULT_FONT_FAMILY, loadGoogleFont } from './utils/googleFonts'
 import { initCloudflareWebAnalytics } from './analytics/cloudflareWebAnalytics'
 import { installAppViewportSync } from './utils/syncAppViewport'
+import { installDesktopChrome } from './utils/installDesktopChrome'
 
 installAppViewportSync()
+installDesktopChrome()
 loadGoogleFont(DEFAULT_FONT_FAMILY)
 initCloudflareWebAnalytics()
 

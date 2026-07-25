@@ -21,6 +21,8 @@ export async function buildDesktopApp(outputPath?: string) {
     await Deno.copyFile(join(repoRoot, "public", "icon.png"), join(sourceDir, "icon.png"));
 
     // Documents/ScreenDesc persistence needs home-dir read/write; dist is served read-only.
+    // Reveal uses `open -R` (macOS) or Explorer (Windows).
+    const allowRun = Deno.build.os === "windows" ? "explorer" : "open";
     const args = [
       "desktop",
       "--include",
@@ -29,6 +31,7 @@ export async function buildDesktopApp(outputPath?: string) {
       "--allow-read",
       "--allow-write",
       "--allow-env=HOME,USERPROFILE",
+      `--allow-run=${allowRun}`,
       "--icon",
       "icon.png",
     ];

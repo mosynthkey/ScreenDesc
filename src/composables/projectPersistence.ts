@@ -1,6 +1,7 @@
 import { watch } from 'vue'
 import {
   clearAutosavedProject,
+  deleteNamedProject,
   loadProject,
   saveNamedProject,
   saveProject,
@@ -68,13 +69,17 @@ export async function persistCurrentProject(): Promise<void> {
 }
 
 export async function persistActiveNamedProject(): Promise<void> {
-  const active = activeNamedProject.value
-  if (!active || !state.imageUrl) return
+  if (!activeNamedProject.value || !state.imageUrl) return
   try {
     const snapshot = await buildCurrentSnapshot()
     if (!snapshot) return
+    // Re-read after awaits so a rename during snapshot build is not overwritten.
+    const active = activeNamedProject.value
+    if (!active) return
     const contentHash = await contentHashFromSnapshot(snapshot)
-    await saveNamedProject(active.name, snapshot, active.id, contentHash)
+    const latest = activeNamedProject.value
+    if (!latest || latest.id !== active.id) return
+    await saveNamedProject(latest.name, snapshot, latest.id, contentHash)
     namedSaveDirty = false
   } catch (err) {
     console.warn('[ScreenDesc] failed to auto-overwrite named project', err)
@@ -93,6 +98,14 @@ export async function ensureActiveNamedProject(): Promise<void> {
     const name = defaultProjectName()
     const contentHash = await contentHashFromSnapshot(snapshot)
     const projectId = await saveNamedProject(name, snapshot, undefined, contentHash)
+    // Re-read via .value after awaits; TS control-flow still thinks it is null here.
+    const concurrent = activeNamedProject.value as { id: string; name: string } | null
+    if (concurrent) {
+      if (concurrent.id !== projectId) {
+        await deleteNamedProject(projectId).catch(() => {})
+      }
+      return
+    }
     activeNamedProject.value = { id: projectId, name }
     namedSaveDirty = false
     await persistCurrentProject()

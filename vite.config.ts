@@ -48,12 +48,17 @@ function servePublicOrtModules(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   // GitHub Pages project sites need "/<repo>/"; set BASE_PATH in CI (see deploy-pages.yml).
   base: process.env.BASE_PATH || '/',
   plugins: [vue(), servePublicOrtModules()],
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
+    // Belt-and-suspenders: desktop builds must not fall back to ephemeral IndexedDB
+    // even if `.env.desktop` is missing from the checkout.
+    ...(mode === 'desktop'
+      ? { 'import.meta.env.VITE_APP_RUNTIME': JSON.stringify('desktop') }
+      : {}),
   },
   assetsInclude: ['**/*.wasm'],
   optimizeDeps: {
@@ -64,4 +69,4 @@ export default defineConfig({
     // deps, so force those to still get the CJS→ESM interop shim.
     include: ['clipper-lib', 'js-yaml', '@techstark/opencv-js'],
   },
-})
+}))

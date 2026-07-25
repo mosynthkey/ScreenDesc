@@ -204,3 +204,7 @@ export async function deleteNamedProject(id: string): Promise<void> {
   })
   db.close()
 }
+
+export async function revealNamedProject(_id: string): Promise<void> {
+  throw new Error('Reveal in file manager is only available in the desktop app')
+}

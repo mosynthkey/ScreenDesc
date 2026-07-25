@@ -17,6 +17,7 @@ import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
 import type { Annotation, ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
+import { revealNamedProject } from './utils/projectStorage'
 import type { CommonSettingsPresetMeta } from './utils/commonSettings'
 import { resolveCalloutBorderWidth } from './utils/commonSettings'
 import { useI18n } from './i18n'
@@ -455,6 +456,29 @@ async function onSaveNamedProject(name: string): Promise<void> {
   }
 }
 
+async function onRenameProject(name: string): Promise<void> {
+  try {
+    await setProjectName(name)
+    await refreshSavedProjects()
+  } catch (err) {
+    showAppNotice(
+      err instanceof Error ? err.message : t('error.projectRenameFailed'),
+      'error',
+    )
+  }
+}
+
+async function onRevealSavedProject(id: string): Promise<void> {
+  try {
+    await revealNamedProject(id)
+  } catch (err) {
+    showAppNotice(
+      err instanceof Error ? err.message : t('error.projectRevealFailed'),
+      'error',
+    )
+  }
+}
+
 async function onOverwriteSavedProject(id: string): Promise<void> {
   const target = savedProjects.value.find((item) => item.id === id)
   if (!target) return
@@ -716,7 +740,7 @@ function onKeydown(event: KeyboardEvent): void {
         @replace-image="onReplaceImage"
         @open-project-storage="onOpenProjectStorage"
         @new-project="onNewProject"
-        @rename-project="setProjectName"
+        @rename-project="onRenameProject"
       />
 
       <input
@@ -761,6 +785,7 @@ function onKeydown(event: KeyboardEvent): void {
           @open="onLoadSavedProject"
           @remove="onRemoveSavedProject"
           @download-bundle="onDownloadAllProjectsBundle"
+          @reveal="onRevealSavedProject"
         />
 
         <div v-else class="workspace">

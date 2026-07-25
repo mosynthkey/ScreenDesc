@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { SavedProjectMeta } from '../utils/projectStorage'
 import { loadNamedProjectImageBlob } from '../utils/projectStorage'
+import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
 
 const props = defineProps<{
@@ -15,12 +16,43 @@ const emit = defineEmits<{
   open: [id: string]
   remove: [id: string]
   downloadBundle: []
+  reveal: [id: string]
 }>()
 
-const { t, tr } = useI18n()
+const { t } = useI18n()
 const isDragging = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 const thumbUrls = ref<Record<string, string>>({})
+const contextMenu = ref<{ projectId: string; x: number; y: number } | null>(null)
+
+function closeContextMenu(): void {
+  contextMenu.value = null
+}
+
+function onProjectContextMenu(projectId: string, event: MouseEvent): void {
+  if (!isDesktopApp) return
+  event.preventDefault()
+  event.stopPropagation()
+  contextMenu.value = { projectId, x: event.clientX, y: event.clientY }
+}
+
+function onRevealFromMenu(): void {
+  const projectId = contextMenu.value?.projectId
+  closeContextMenu()
+  if (projectId) emit('reveal', projectId)
+}
+
+function onWindowPointerDown(event: PointerEvent): void {
+  // CEF may fire pointerdown after contextmenu; ignore non-primary buttons.
+  if (event.button !== 0) return
+  const target = event.target
+  if (!(target instanceof Element)) {
+    closeContextMenu()
+    return
+  }
+  if (target.closest('.files-context-menu')) return
+  closeContextMenu()
+}
 
 function dateLocale(): string {
   return locale.value === 'ja' ? 'ja-JP' : 'en-US'
@@ -88,7 +120,14 @@ watch(
   { immediate: true, deep: true },
 )
 
-onBeforeUnmount(() => revokeThumbs(thumbUrls.value))
+onMounted(() => {
+  window.addEventListener('pointerdown', onWindowPointerDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerdown', onWindowPointerDown)
+  revokeThumbs(thumbUrls.value)
+})
 
 defineExpose({ openFilePicker })
 </script>
@@ -140,7 +179,12 @@ defineExpose({ openFilePicker })
       </div>
       <p v-if="projects.length === 0" class="hint files-empty">{{ t('home.filesEmpty') }}</p>
       <ul v-else class="files-grid">
-        <li v-for="project in projects" :key="project.id" class="files-item">
+        <li
+          v-for="project in projects"
+          :key="project.id"
+          class="files-item"
+          @contextmenu="onProjectContextMenu(project.id, $event)"
+        >
           <button
             class="files-card"
             type="button"
@@ -179,8 +223,8 @@ defineExpose({ openFilePicker })
       </ul>
     </section>
 
-    <p class="hint storage-notice">
-      {{ tr('storage.notice.before')
+    <p v-if="!isDesktopApp" class="hint storage-notice">
+      {{ t('storage.notice.before')
       }}<button
         class="storage-notice-link"
         type="button"
@@ -192,6 +236,24 @@ defineExpose({ openFilePicker })
       </button
       >{{ t('storage.notice.after') }}
     </p>
+
+    <div
+      v-if="contextMenu"
+      class="files-context-menu"
+      role="menu"
+      :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+    >
+      <button
+        class="files-context-item"
+        type="button"
+        role="menuitem"
+        :disabled="isBusy"
+        :title="t('home.openLocationTitle')"
+        @click="onRevealFromMenu"
+      >
+        {{ t('home.openLocation') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -199,7 +261,7 @@ defineExpose({ openFilePicker })
 .home {
   height: 100%;
   overflow: auto;
-  padding: 28px 40px 0;
+  padding: 28px 40px 28px;
   display: flex;
   flex-direction: column;
   background:
@@ -449,9 +511,44 @@ defineExpose({ openFilePicker })
   cursor: default;
 }
 
+.files-context-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 180px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+.files-context-item {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+}
+
+.files-context-item:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.files-context-item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 @media (max-width: 720px) {
   .home {
-    padding: 24px 16px 0;
+    padding: 24px 16px 24px;
   }
 
   .new-card {

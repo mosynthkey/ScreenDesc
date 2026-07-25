@@ -100,10 +100,10 @@ export const en = {
   'home.removeAria': 'Delete saved project',
   'home.downloadBundle': 'Download all',
   'home.downloadBundleTitle': 'Download all saved projects as one bundle file',
+  'home.openLocation': 'Show in Finder',
+  'home.openLocationTitle': 'Reveal this project folder on disk',
   'storage.notice.before':
     'This data is stored in this browser. It may be lost if you clear site data or leave private browsing. ',
-  'storage.notice.before.desktop':
-    'This data is saved under Documents/ScreenDesc on this computer. ',
   'storage.notice.link': 'Download all data from here',
   'storage.notice.after': '.',
 
@@ -265,6 +265,8 @@ export const en = {
   'error.projectBundleEmpty': 'No saved projects to include in the bundle',
   'error.projectBundleDownloadFailed': 'Failed to download the project bundle',
   'error.savedProjectNotFound': 'Saved project not found',
+  'error.projectRenameFailed': 'Failed to rename the project',
+  'error.projectRevealFailed': 'Could not open the project folder',
   'error.clipboardCopyFailed': 'Could not copy the image to the clipboard',
   'error.commonSettingsNotFound': 'Saved settings preset not found',
 } as const
