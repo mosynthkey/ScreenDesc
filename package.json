@@ -11,7 +11,10 @@
     "fetch-ocr-model": "node scripts/fetch-ocr-model.mjs",
     "build": "vue-tsc -b && vite build",
     "build:pages": "npm run fetch-model && npm run fetch-ocr-model && npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "desktop:run": "npm run build && deno desktop --include ./dist --exclude node_modules --allow-read=dist --icon public/icon.png desktop/main.ts",
+    "desktop:package": "npm run build && deno desktop --include ./dist --exclude node_modules --allow-read=dist --icon public/icon.png -o dist-desktop/ScreenDesc desktop/main.ts",
+    "desktop:release:macos": "deno run -A installer/macos/release.ts"
   },
   "dependencies": {
     "@paddleocr/paddleocr-js": "^0.4.2",

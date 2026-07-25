@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-desktop
+installer/macos/build
 *.local
 .env
 .env.*

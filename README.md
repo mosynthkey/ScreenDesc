@@ -27,6 +27,19 @@ npm run dev
 
 `npm install` also runs `postinstall` (`scripts/copy-ort-assets.mjs`), which copies the ONNX Runtime Web WASM binary from `node_modules` into `public/ort/` so OCR can load it same-origin instead of from a CDN.
 
+## Desktop app (experimental)
+
+Wraps the built app in a native window via Deno's experimental [`deno desktop`](https://docs.deno.com/runtime/desktop/) (requires Deno ≥ 2.9; `deno upgrade` to update).
+
+```bash
+npm run desktop:run      # build + launch a native window
+npm run desktop:package  # build + output a distributable binary to dist-desktop/
+```
+
+There's no dev-server/HMR integration; after code changes, rerun `npm run desktop:run`.
+
+For a signed & notarized `.dmg` (requires the `Developer ID Application: Masaki Ono` certificate and the `Melissa` notarytool keychain profile): `npm run desktop:release:macos`. Run a single step with `deno run -A installer/macos/release.ts <build|sign|dmg|notarize|staple|verify|clean>`.
+
 ## Model licenses
 
 Section detection uses weights from [docling-project/ScreenParser](https://huggingface.co/docling-project/ScreenParser) (a YOLO11-L UI detector) exported to ONNX (`screenparser.onnx`). The file is not kept in git; it is distributed via a GitHub Release.
