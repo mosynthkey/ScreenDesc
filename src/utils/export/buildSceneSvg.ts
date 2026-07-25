@@ -57,7 +57,7 @@ function renderCallout(
   const tspans = lines
     .map((line, lineIndex) => {
       const y = blockTop + lineHeight * lineIndex + lineHeight / 2
-      return `<tspan x="${textX}" y="${y}">${escapeXml(line)}</tspan>`
+      return `<tspan x="${textX}" y="${y}" dominant-baseline="middle">${escapeXml(line)}</tspan>`
     })
     .join('')
 

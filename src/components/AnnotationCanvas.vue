@@ -782,6 +782,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                 :data-callout-label="annotation.id"
                 :x="layoutFor(annotation.id)!.labelPosition.x + Math.max(10, calloutFontSize * 0.28)"
                 :y="calloutLineY(layoutFor(annotation.id)!, lineIndex)"
+                dominant-baseline="middle"
               >{{ line }}</tspan>
             </text>
           </g>
