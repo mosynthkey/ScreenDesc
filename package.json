@@ -6,14 +6,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "postinstall": "node scripts/copy-ort-assets.mjs",
     "fetch-model": "node scripts/fetch-model.mjs",
+    "fetch-ocr-model": "node scripts/fetch-ocr-model.mjs",
     "build": "vue-tsc -b && vite build",
-    "build:pages": "npm run fetch-model && npm run build",
+    "build:pages": "npm run fetch-model && npm run fetch-ocr-model && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@paddleocr/paddleocr-js": "^0.4.2",
     "onnxruntime-web": "^1.27.0",
-    "tesseract-wasm": "^0.11.0",
     "vue": "^3.5.39"
   },
   "devDependencies": {

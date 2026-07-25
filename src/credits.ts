@@ -17,8 +17,8 @@ export const RUNTIME_LIBRARIES: LibraryCredit[] = [
     url: 'https://github.com/microsoft/onnxruntime',
   },
   {
-    name: 'tesseract-wasm',
-    license: 'BSD-2-Clause',
-    url: 'https://github.com/robertknight/tesseract-wasm',
+    name: 'PaddleOCR.js',
+    license: 'Apache-2.0',
+    url: 'https://github.com/PaddlePaddle/PaddleOCR/tree/main/paddleocr-js',
   },
 ]

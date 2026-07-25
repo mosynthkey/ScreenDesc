@@ -1,4 +1,4 @@
-import { OCRClient } from 'tesseract-wasm'
+import { PaddleOCR } from '@paddleocr/paddleocr-js'
 import type { Rect } from '../types/annotation'
 
 export interface OcrLineHit {
@@ -8,38 +8,34 @@ export interface OcrLineHit {
 }
 
 export interface OcrRunResult {
-  /** Separated text groups (words clustered only when horizontally close) */
+  /** Text lines as detected by PaddleOCR (already grouped, no word clustering needed) */
   lines: OcrLineHit[]
   fullText: string
 }
 
 const baseUrl = import.meta.env.BASE_URL
 
-let clientPromise: Promise<OCRClient> | null = null
-let wasmBinaryPromise: Promise<ArrayBuffer> | null = null
+type OcrClient = Awaited<ReturnType<typeof PaddleOCR.create>>
 
-async function loadWasmBinary(): Promise<ArrayBuffer> {
-  if (!wasmBinaryPromise) {
-    wasmBinaryPromise = fetch(`${baseUrl}tesseract/tesseract-core.wasm`).then(async (response) => {
-      if (!response.ok) throw new Error(`Failed to fetch tesseract wasm (${response.status})`)
-      return response.arrayBuffer()
-    })
-  }
-  return wasmBinaryPromise
-}
+let clientPromise: Promise<OcrClient> | null = null
 
-async function getOcrClient(): Promise<OCRClient> {
+async function getOcrClient(): Promise<OcrClient> {
   if (!clientPromise) {
-    clientPromise = (async () => {
-      const wasmBinary = await loadWasmBinary()
-      const client = new OCRClient({
-        workerURL: `${baseUrl}tesseract/tesseract-worker.js`,
-        wasmBinary,
-      })
-      // Japanese UI screenshots; jpn model also covers common Latin glyphs
-      await client.loadModel(`${baseUrl}tessdata/jpn.traineddata`)
-      return client
-    })().catch((error) => {
+    clientPromise = PaddleOCR.create({
+      // PP-OCRv6_small; Japanese UI screenshots (also covers Latin glyphs).
+      lang: 'japan',
+      worker: true,
+      ortOptions: {
+        backend: 'wasm',
+        wasmPaths: `${baseUrl}ort/`,
+      },
+      textDetectionModelAsset: {
+        url: `${baseUrl}models/paddleocr/PP-OCRv6_small_det_onnx_infer.tar`,
+      },
+      textRecognitionModelAsset: {
+        url: `${baseUrl}models/paddleocr/PP-OCRv6_small_rec_onnx_infer.tar`,
+      },
+    }).catch((error) => {
       clientPromise = null
       throw error
     })
@@ -47,12 +43,18 @@ async function getOcrClient(): Promise<OCRClient> {
   return clientPromise
 }
 
-function intRectToRect(rect: { left: number; top: number; right: number; bottom: number }): Rect {
+function polygonToRect(poly: [number, number][]): Rect {
+  const xs = poly.map(([x]) => x)
+  const ys = poly.map(([, y]) => y)
+  const left = Math.min(...xs)
+  const top = Math.min(...ys)
+  const right = Math.max(...xs)
+  const bottom = Math.max(...ys)
   return {
-    x: rect.left,
-    y: rect.top,
-    width: Math.max(1, rect.right - rect.left),
-    height: Math.max(1, rect.bottom - rect.top),
+    x: left,
+    y: top,
+    width: Math.max(1, right - left),
+    height: Math.max(1, bottom - top),
   }
 }
 
@@ -63,62 +65,29 @@ function isUsefulOcrText(text: string): boolean {
   return true
 }
 
-function unionRects(left: Rect, right: Rect): Rect {
-  const x = Math.min(left.x, right.x)
-  const y = Math.min(left.y, right.y)
-  const rightEdge = Math.max(left.x + left.width, right.x + right.width)
-  const bottomEdge = Math.max(left.y + left.height, right.y + right.height)
+async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunResult> {
+  const empty: OcrRunResult = { lines: [], fullText: '' }
+  if (imageData.width < 8 || imageData.height < 8) return empty
+
+  const client = await getOcrClient()
+  const [result] = await client.predict(imageData)
+  if (!result) return empty
+
+  const lines: OcrLineHit[] = []
+  for (const item of result.items) {
+    if (item.score < 0.35) continue
+    if (!isUsefulOcrText(item.text)) continue
+    lines.push({
+      rect: polygonToRect(item.poly),
+      text: item.text.replace(/\s+/g, ' ').trim(),
+      confidence: item.score,
+    })
+  }
+
   return {
-    x,
-    y,
-    width: Math.max(1, rightEdge - x),
-    height: Math.max(1, bottomEdge - y),
+    lines,
+    fullText: lines.map((line) => line.text).join('\n'),
   }
-}
-
-function sameTextRow(left: Rect, right: Rect): boolean {
-  const leftCenterY = left.y + left.height * 0.5
-  const rightCenterY = right.y + right.height * 0.5
-  const rowTolerance = Math.max(6, Math.min(left.height, right.height) * 0.7)
-  return Math.abs(leftCenterY - rightCenterY) <= rowTolerance
-}
-
-/**
- * Merge neighboring words when the gap looks like spacing inside a phrase.
- * Wider gaps (toolbar buttons, table columns) stay separate.
- */
-function clusterNearbyWords(words: OcrLineHit[]): OcrLineHit[] {
-  if (words.length === 0) return []
-
-  const ordered = [...words].sort(
-    (left, right) => left.rect.y - right.rect.y || left.rect.x - right.rect.x,
-  )
-  const clusters: OcrLineHit[] = []
-  let current = { ...ordered[0]!, rect: { ...ordered[0]!.rect } }
-
-  for (let wordIndex = 1; wordIndex < ordered.length; wordIndex += 1) {
-    const word = ordered[wordIndex]!
-    const gapX = word.rect.x - (current.rect.x + current.rect.width)
-    const fontSize = Math.min(current.rect.height, word.rect.height)
-    // Prefer keeping phrases / labels on one row together; only split very wide gaps
-    const maxGap = Math.max(48, fontSize * 5)
-    const canMerge =
-      sameTextRow(current.rect, word.rect) && gapX >= -4 && gapX <= maxGap
-
-    if (canMerge) {
-      current = {
-        rect: unionRects(current.rect, word.rect),
-        text: `${current.text} ${word.text}`.replace(/\s+/g, ' ').trim(),
-        confidence: Math.min(current.confidence, word.confidence),
-      }
-      continue
-    }
-
-    clusters.push(current)
-    current = { ...word, rect: { ...word.rect } }
-  }
-  clusters.push(current)
-  return clusters
 }
 
 function imageElementToImageData(image: HTMLImageElement): ImageData | null {
@@ -134,34 +103,6 @@ function imageElementToImageData(image: HTMLImageElement): ImageData | null {
   context.imageSmoothingEnabled = false
   context.drawImage(image, 0, 0)
   return context.getImageData(0, 0, width, height)
-}
-
-async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunResult> {
-  const empty: OcrRunResult = { lines: [], fullText: '' }
-  if (imageData.width < 8 || imageData.height < 8) return empty
-
-  const client = await getOcrClient()
-  await client.loadImage(imageData)
-
-  const boxes = await client.getTextBoxes('word')
-  const fullText = await client.getText()
-  await client.clearImage()
-
-  const words: OcrLineHit[] = []
-  for (const item of boxes) {
-    if (item.confidence < 0.35) continue
-    if (!isUsefulOcrText(item.text)) continue
-    words.push({
-      rect: intRectToRect(item.rect),
-      text: item.text.replace(/\s+/g, ' ').trim(),
-      confidence: item.confidence,
-    })
-  }
-
-  return {
-    lines: clusterNearbyWords(words),
-    fullText: fullText.trim(),
-  }
 }
 
 export async function recognizeTextFromImage(

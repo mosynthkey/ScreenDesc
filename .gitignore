@@ -18,6 +18,12 @@ dist-ssr
 # ScreenParser(YOLO11)の重みファイル(97MB)。scripts/export_onnx.py で再生成する
 public/models/*.onnx
 
+# PaddleOCR PP-OCRv6_small モデル(約30MB)。npm run fetch-ocr-model で取得する
+public/models/paddleocr/*.tar
+
+# onnxruntime-web wasm。node_modules から npm install (postinstall) でコピーされる
+public/ort/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

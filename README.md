@@ -20,18 +20,27 @@ npm install
 #   python scripts/export_onnx.py
 #   → place at public/models/screenparser.onnx
 # Or fetch from the Release: npm run fetch-model
+# PaddleOCR text detection/recognition models (first time only; gitignored)
+npm run fetch-ocr-model
 npm run dev
 ```
+
+`npm install` also runs `postinstall` (`scripts/copy-ort-assets.mjs`), which copies the ONNX Runtime Web WASM binary from `node_modules` into `public/ort/` so OCR can load it same-origin instead of from a CDN.
 
 ## Model licenses
 
 Section detection uses weights from [docling-project/ScreenParser](https://huggingface.co/docling-project/ScreenParser) (a YOLO11-L UI detector) exported to ONNX (`screenparser.onnx`). The file is not kept in git; it is distributed via a GitHub Release.
+
+OCR uses [PaddleOCR.js](https://github.com/PaddlePaddle/PaddleOCR/tree/main/paddleocr-js) (`@paddleocr/paddleocr-js`) running the official **PP-OCRv6_small** text detection + recognition ONNX models in-browser (`lang: "japan"`). The model files are not kept in git; `npm run fetch-ocr-model` downloads them directly from PaddlePaddle's official model host into `public/models/paddleocr/`:
+- `PP-OCRv6_small_det_onnx_infer.tar` — https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv6_small_det_onnx_infer.tar
+- `PP-OCRv6_small_rec_onnx_infer.tar` — https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv6_small_rec_onnx_infer.tar
 
 | Item | License (upstream) | Reference |
 |---|---|---|
 | ScreenParser weights | Apache-2.0 | [Hugging Face model card](https://huggingface.co/docling-project/ScreenParser) |
 | ScreenParse training data | CC-BY-4.0 | [docling-project/screenparse](https://huggingface.co/datasets/docling-project/screenparse) |
 | Ultralytics (YOLO train/export tooling) | AGPL-3.0 | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) |
+| PaddleOCR / PaddleOCR.js / PP-OCRv6 weights | Apache-2.0 | [PaddlePaddle/PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) |
 
 ## Layout
 
@@ -46,7 +55,9 @@ src/
     calloutLayout.ts
     export/       PNG / SVG
 scripts/
-  fetch-model.mjs           Fetch ONNX from a Release / URL
+  fetch-model.mjs           Fetch section-detection ONNX from a Release / URL
+  fetch-ocr-model.mjs       Fetch PaddleOCR det/rec models
+  copy-ort-assets.mjs       Copy onnxruntime-web WASM into public/ort (postinstall)
   publish-model-release.sh  Publish ONNX to a Release
   export_onnx.py            Trained weights → ONNX
 ```
