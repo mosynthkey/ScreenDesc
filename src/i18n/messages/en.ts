@@ -15,7 +15,7 @@ export const en = {
   'about.close': 'Close',
 
   'nav.aria': 'Main navigation',
-  'nav.gallery': 'Gallery',
+  'nav.gallery': 'Files',
   'nav.edit': 'Edit',
   'nav.editDisabledHint': 'Open a project first',
 
@@ -34,7 +34,7 @@ export const en = {
   'button.newProject': 'New project',
   'button.importProject': 'Import',
 
-  'header.galleryTitle': 'Gallery',
+  'header.galleryTitle': 'Files',
   'header.untitledProject': 'Untitled project',
   'header.projectNameAria': 'Project name',
 
@@ -144,7 +144,7 @@ export const en = {
   'projectStorage.currentUntitledHint':
     'Untitled work is saved automatically with a date-based name.',
   'projectStorage.saveAsLabel': 'Save as',
-  'projectStorage.saveAsHint': 'Creates another named copy in the gallery.',
+  'projectStorage.saveAsHint': 'Creates another named copy in Files.',
   'projectStorage.namePlaceholder': 'Project name',
   'projectStorage.save': 'Save',
   'projectStorage.needImageHint': 'Open an image before saving.',
@@ -248,9 +248,9 @@ export const en = {
   'error.projectFileInvalidJson': 'Invalid project file format (JSON parse error)',
   'error.projectFileUnsupported': 'Unsupported project file',
   'status.bundleImportResult':
-    'Imported {imported}. Skipped {skipped} identical projects already in the gallery.',
+    'Imported {imported}. Skipped {skipped} identical projects already in Files.',
   'status.bundleImportSkippedAll':
-    'Skipped {skipped} projects — identical content already exists in the gallery.',
+    'Skipped {skipped} projects — identical content already exists in Files.',
   'status.bundleImportOk': 'Imported {imported} projects.',
 
   'error.projectBundleInvalid': 'Invalid project bundle file',

@@ -17,7 +17,7 @@ export const ja: Record<MessageKey, string> = {
   'about.close': '閉じる',
 
   'nav.aria': 'メインナビゲーション',
-  'nav.gallery': 'ギャラリー',
+  'nav.gallery': 'ファイル',
   'nav.edit': '編集',
   'nav.editDisabledHint': '先にプロジェクトを開いてください',
 
@@ -36,7 +36,7 @@ export const ja: Record<MessageKey, string> = {
   'button.newProject': '新規作成',
   'button.importProject': 'インポート',
 
-  'header.galleryTitle': 'ギャラリー',
+  'header.galleryTitle': 'ファイル',
   'header.untitledProject': '名称未設定のプロジェクト',
   'header.projectNameAria': 'プロジェクト名',
 
@@ -146,7 +146,7 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.currentUntitledHint':
     '名称未設定の作業は、日時付きの名前で自動保存されます。',
   'projectStorage.saveAsLabel': '名前を付けて保存',
-  'projectStorage.saveAsHint': 'ギャラリーに別名のコピーを作ります。',
+  'projectStorage.saveAsHint': 'ファイルに別名のコピーを作ります。',
   'projectStorage.namePlaceholder': 'プロジェクト名',
   'projectStorage.save': '保存',
   'projectStorage.needImageHint': '画像を開いてから保存できます。',
@@ -253,7 +253,7 @@ export const ja: Record<MessageKey, string> = {
   'status.bundleImportResult':
     '{imported}件を取り込みました。内容が同一のため{skipped}件はスキップしました。',
   'status.bundleImportSkippedAll':
-    '内容が同一のプロジェクトがギャラリーにあるため、{skipped}件すべてスキップしました。',
+    '内容が同一のプロジェクトがファイルにあるため、{skipped}件すべてスキップしました。',
   'status.bundleImportOk': '{imported}件のプロジェクトを取り込みました。',
 
   'error.projectBundleInvalid': 'プロジェクトバンドルの形式が正しくありません',
