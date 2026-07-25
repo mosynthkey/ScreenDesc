@@ -29,6 +29,7 @@ import {
 import {
   CALLOUT_FONT_SIZE,
   clampAnchorOffsetAxis,
+  normalizeAnchorOutsideGap,
 } from '../utils/markerSize'
 import {
   DEFAULT_LINE_HALO_COLOR,
@@ -145,6 +146,9 @@ export function sanitizeAnnotation(raw: Annotation): Annotation {
       (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,
     ),
     anchorOutside: (raw as Annotation & { anchorOutside?: unknown }).anchorOutside === true,
+    anchorOutsideGap: normalizeAnchorOutsideGap(
+      (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
+    ),
   }
 }
 
@@ -163,7 +167,6 @@ export function refreshDocumentAndLayouts(): void {
     state.defaultFontFamily,
     state.calloutFontWeight,
     state.calloutFontItalic,
-    state.lineHaloWidth,
   )
   state.document = document
   state.calloutLayouts = layouts
@@ -264,6 +267,7 @@ watch(
         : null,
       anchorOffset: { ...annotation.anchorOffset },
       anchorOutside: annotation.anchorOutside,
+      anchorOutsideGap: annotation.anchorOutsideGap,
     })),
   () => {
     refreshDocumentAndLayouts()

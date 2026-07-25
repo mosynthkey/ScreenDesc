@@ -623,6 +623,7 @@ function onPatchSelectedAnnotations(
     anchorOffsetX: number
     anchorOffsetY: number
     anchorOutside: boolean
+    anchorOutsideGap: number
     calloutPosition: Point | null
     calloutPositionX: number
     calloutPositionY: number
@@ -754,6 +755,7 @@ function onKeydown(event: KeyboardEvent): void {
           v-if="appPage === 'files'"
           ref="homeRef"
           :projects="savedProjects"
+          :active-project-id="activeNamedProject?.id ?? null"
           :is-busy="projectStorageBusy"
           @file="onFile"
           @open="onLoadSavedProject"

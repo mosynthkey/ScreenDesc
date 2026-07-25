@@ -187,14 +187,11 @@ function anchorForAnnotation(
   side: ResolvedCalloutSide,
   imageWidth: number,
   imageHeight: number,
-  lineHaloWidth: number,
 ): Point {
   const section = getSectionForAnnotation(annotation, sections)
   const offset = annotation.anchorOffset
-  // When the anchor sits outside the section, leave room for the leader's
-  // halo stroke so it doesn't paint back over the section border.
   const inset = annotation.anchorOutside
-    ? -(LINE_INSET + Math.max(0, lineHaloWidth))
+    ? -Math.max(0, annotation.anchorOutsideGap)
     : LINE_INSET
   let baseX: number
   let baseY: number
@@ -410,7 +407,6 @@ function packSide(
   document: DocumentLayout,
   side: 'left' | 'right',
   gap: number,
-  lineHaloWidth: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -421,7 +417,6 @@ function packSide(
       side,
       document.imageWidth,
       document.imageHeight,
-      lineHaloWidth,
     ),
   )
 
@@ -513,7 +508,6 @@ function packBand(
   document: DocumentLayout,
   side: 'top' | 'bottom',
   gap: number,
-  lineHaloWidth: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -524,7 +518,6 @@ function packBand(
       side,
       document.imageWidth,
       document.imageHeight,
-      lineHaloWidth,
     ),
   )
 
@@ -673,7 +666,6 @@ export function layoutCalloutsForImage(
   fontFamily: string,
   fontWeight: number,
   fontItalic: boolean,
-  lineHaloWidth: number,
 ): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) {
@@ -766,10 +758,10 @@ export function layoutCalloutsForImage(
   return {
     document,
     layouts: [
-      ...packSide(groups.left, leftSizes, sections, document, 'left', gap, lineHaloWidth),
-      ...packSide(groups.right, rightSizes, sections, document, 'right', gap, lineHaloWidth),
-      ...packBand(groups.top, topSizes, sections, document, 'top', gap, lineHaloWidth),
-      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap, lineHaloWidth),
+      ...packSide(groups.left, leftSizes, sections, document, 'left', gap),
+      ...packSide(groups.right, rightSizes, sections, document, 'right', gap),
+      ...packBand(groups.top, topSizes, sections, document, 'top', gap),
+      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap),
     ],
   }
 }

@@ -8,8 +8,13 @@ import type {
 import { useI18n } from '../i18n'
 import {
   ANCHOR_OFFSET_STEP,
+  ANCHOR_OUTSIDE_GAP_MAX,
+  ANCHOR_OUTSIDE_GAP_MIN,
+  ANCHOR_OUTSIDE_GAP_STEP,
+  DEFAULT_ANCHOR_OUTSIDE_GAP,
   anchorOffsetExtent,
   clampAnchorOffsetAxis,
+  normalizeAnchorOutsideGap,
 } from '../utils/markerSize'
 
 const props = withDefaults(
@@ -40,6 +45,7 @@ const emit = defineEmits<{
       anchorOffsetX: number
       anchorOffsetY: number
       anchorOutside: boolean
+      anchorOutsideGap: number
       calloutPosition: Point | null
       calloutPositionX: number
       calloutPositionY: number
@@ -120,9 +126,63 @@ const sharedAnchorOutside = computed<boolean | null>(() => {
     : null
 })
 
+const sharedAnchorOutsideGap = computed<number | null>(() => {
+  const first = activeAnnotations.value[0]
+  if (!first) return null
+  return activeAnnotations.value.every(
+    (item) => item.anchorOutsideGap === first.anchorOutsideGap,
+  )
+    ? first.anchorOutsideGap
+    : null
+})
+
+const showAnchorOutsideGap = computed(
+  () => sharedAnchorOutside.value === true || sharedAnchorOutside.value === null,
+)
+
 function onAnchorOutsideChange(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
   emit('patch', { anchorOutside: checked })
+}
+
+function parseAnchorOutsideGapPx(raw: string): number | null {
+  const trimmed = raw.trim().replace(/px$/i, '')
+  if (trimmed === '' || trimmed === '-' || trimmed === '+') return null
+  const value = Number(trimmed)
+  if (!Number.isFinite(value)) return null
+  return normalizeAnchorOutsideGap(value)
+}
+
+function emitAnchorOutsideGap(raw: string): void {
+  if (selectionCount.value === 0) return
+  const parsed = parseAnchorOutsideGapPx(raw)
+  if (parsed === null) return
+  emit('patch', { anchorOutsideGap: parsed })
+}
+
+function onAnchorOutsideGapChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const parsed = parseAnchorOutsideGapPx(input.value)
+  if (parsed === null) {
+    input.value =
+      sharedAnchorOutsideGap.value === null ? '' : String(sharedAnchorOutsideGap.value)
+    return
+  }
+  input.value = String(parsed)
+  emitAnchorOutsideGap(String(parsed))
+}
+
+function onAnchorOutsideGapSlider(event: Event): void {
+  emitAnchorOutsideGap((event.target as HTMLInputElement).value)
+}
+
+function displayAnchorOutsideGap(): string {
+  return sharedAnchorOutsideGap.value === null ? '' : String(sharedAnchorOutsideGap.value)
+}
+
+function sliderAnchorOutsideGap(): number {
+  if (sharedAnchorOutsideGap.value !== null) return sharedAnchorOutsideGap.value
+  return primaryAnnotation.value?.anchorOutsideGap ?? DEFAULT_ANCHOR_OUTSIDE_GAP
 }
 
 function resolvedLabelPosition(annotation: Annotation): Point {
@@ -444,6 +504,31 @@ function resetLabelPosition(): void {
             />
             <span>{{ t('style.anchorOutside') }}</span>
           </label>
+        </div>
+        <div v-if="showAnchorOutsideGap" class="field field-tight">
+          <label class="slider-label">
+            <span>{{ t('style.anchorOutsideGap') }}</span>
+            <div class="px-field px-field-compact">
+              <input
+                type="text"
+                inputmode="numeric"
+                :value="displayAnchorOutsideGap()"
+                :placeholder="sharedAnchorOutsideGap === null ? t('style.mixed') : undefined"
+                @change="onAnchorOutsideGapChange"
+                @keydown.enter.prevent="onAnchorOutsideGapChange"
+              />
+              <span class="px-unit">px</span>
+            </div>
+          </label>
+          <input
+            class="size-slider"
+            type="range"
+            :min="ANCHOR_OUTSIDE_GAP_MIN"
+            :max="ANCHOR_OUTSIDE_GAP_MAX"
+            :step="ANCHOR_OUTSIDE_GAP_STEP"
+            :value="sliderAnchorOutsideGap()"
+            @input="onAnchorOutsideGapSlider"
+          />
         </div>
         <div class="field field-tight">
           <label class="slider-label">

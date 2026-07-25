@@ -44,8 +44,10 @@ export interface Annotation {
   calloutPosition: Point | null
   /** Extra X/Y shift of the anchor from its default position (image coords). */
   anchorOffset: Point
-  /** When true, the anchor sits just outside the section border instead of inside it. */
+  /** When true, the anchor sits outside the section border instead of inside it. */
   anchorOutside: boolean
+  /** Distance in px from the section border when `anchorOutside` is true. */
+  anchorOutsideGap: number
 }
 
 export interface CalloutLayoutItem {

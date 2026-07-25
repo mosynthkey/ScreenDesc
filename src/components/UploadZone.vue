@@ -6,6 +6,7 @@ import { locale, useI18n } from '../i18n'
 
 const props = defineProps<{
   projects: SavedProjectMeta[]
+  activeProjectId?: string | null
   isBusy: boolean
 }>()
 
@@ -143,7 +144,9 @@ defineExpose({ openFilePicker })
           <button
             class="files-card"
             type="button"
+            :class="{ 'is-editing': project.id === activeProjectId }"
             :disabled="isBusy"
+            :aria-current="project.id === activeProjectId ? 'true' : undefined"
             @click="emit('open', project.id)"
           >
             <div class="files-thumb">
@@ -153,6 +156,9 @@ defineExpose({ openFilePicker })
                 :alt="project.name"
               />
               <div v-else class="files-thumb-fallback" aria-hidden="true" />
+              <span v-if="project.id === activeProjectId" class="files-editing-badge">
+                {{ t('home.editingBadge') }}
+              </span>
             </div>
             <div class="files-meta">
               <strong>{{ project.name }}</strong>
@@ -340,15 +346,41 @@ defineExpose({ openFilePicker })
   box-shadow: var(--shadow);
 }
 
+.files-card.is-editing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+}
+
+.files-card.is-editing:hover:not(:disabled) {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 1px var(--accent-strong), var(--shadow);
+}
+
 .files-card:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
 .files-thumb {
+  position: relative;
   aspect-ratio: 16 / 10;
   background: #e8e8ed;
   overflow: hidden;
+}
+
+.files-editing-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .files-thumb img {

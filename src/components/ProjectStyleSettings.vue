@@ -197,21 +197,16 @@ watch(
           height="18"
           aria-hidden="true"
         >
-          <circle
-            cx="12"
-            cy="12"
-            r="3"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          />
           <path
-            d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6.1 6.1l1.6 1.6M16.3 16.3l1.6 1.6M17.9 6.1l-1.6 1.6M7.7 16.3l-1.6 1.6"
+            d="M4 7h8M16 7h4M4 12h4M12 12h8M4 17h10M18 17h2"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
           />
+          <circle cx="14" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2" />
+          <circle cx="10" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="2" />
+          <circle cx="16" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2" />
         </svg>
         {{ t('style.projectSettingsTitle') }}
       </h3>

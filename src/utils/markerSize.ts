@@ -10,6 +10,22 @@ export const DOT_RADIUS_STEP = 0.5
 export const ANCHOR_OFFSET_FALLBACK = 200
 export const ANCHOR_OFFSET_STEP = 1
 
+/** Default gap outside the section border when `anchorOutside` is on. */
+export const DEFAULT_ANCHOR_OUTSIDE_GAP = 8
+export const ANCHOR_OUTSIDE_GAP_MIN = 0
+export const ANCHOR_OUTSIDE_GAP_MAX = 120
+export const ANCHOR_OUTSIDE_GAP_STEP = 1
+
+export function normalizeAnchorOutsideGap(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(
+      ANCHOR_OUTSIDE_GAP_MAX,
+      Math.max(ANCHOR_OUTSIDE_GAP_MIN, Math.round(value)),
+    )
+  }
+  return DEFAULT_ANCHOR_OUTSIDE_GAP
+}
+
 export function anchorOffsetExtent(imageSize: number): number {
   if (!Number.isFinite(imageSize) || imageSize <= 0) return ANCHOR_OFFSET_FALLBACK
   return Math.max(1, Math.round(imageSize))

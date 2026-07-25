@@ -21,7 +21,7 @@ import {
   normalizePageBackgroundColor,
 } from './commonSettings'
 import { normalizeCalloutFontItalic, normalizeCalloutFontWeight } from './googleFonts'
-import { clampAnchorOffsetAxis } from './markerSize'
+import { clampAnchorOffsetAxis, normalizeAnchorOutsideGap } from './markerSize'
 import { computeProjectContentHash, isContentHash } from './contentHash'
 
 const FILE_VERSION = 1
@@ -126,6 +126,9 @@ function sanitizeAnnotation(
       imageHeight,
     ),
     anchorOutside: (raw as Annotation & { anchorOutside?: unknown }).anchorOutside === true,
+    anchorOutsideGap: normalizeAnchorOutsideGap(
+      (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
+    ),
   }
 }
 

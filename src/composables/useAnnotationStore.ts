@@ -32,8 +32,10 @@ import {
 import {
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
+  DEFAULT_ANCHOR_OUTSIDE_GAP,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
+  normalizeAnchorOutsideGap,
 } from '../utils/markerSize'
 import {
   normalizeLineHaloColor,
@@ -122,8 +124,6 @@ export function useAnnotationStore() {
 
   function setLineHaloWidth(width: number): void {
     state.lineHaloWidth = normalizeLineHaloWidth(width)
-    // Anchors placed outside a section leave extra room for the halo stroke.
-    refreshDocumentAndLayouts()
   }
 
   function setLineHaloColor(color: string): void {
@@ -296,6 +296,7 @@ export function useAnnotationStore() {
       calloutPosition: null,
       anchorOffset: { x: 0, y: 0 },
       anchorOutside: true,
+      anchorOutsideGap: DEFAULT_ANCHOR_OUTSIDE_GAP,
     }
     annotation.calloutSide = resolveInitialSide(annotation)
     state.annotations.push(annotation)
@@ -318,6 +319,7 @@ export function useAnnotationStore() {
       calloutPosition: null,
       anchorOffset: { x: 0, y: 0 },
       anchorOutside: true,
+      anchorOutsideGap: DEFAULT_ANCHOR_OUTSIDE_GAP,
     }
     annotation.calloutSide = resolveInitialSide(annotation)
     state.annotations.push(annotation)
@@ -429,6 +431,7 @@ export function useAnnotationStore() {
         | 'calloutPosition'
         | 'anchorOffset'
         | 'anchorOutside'
+        | 'anchorOutsideGap'
         | 'sectionId'
       >,
       'calloutPosition'
@@ -460,6 +463,9 @@ export function useAnnotationStore() {
         y: patch.anchorOffsetY ?? annotation.anchorOffset.y,
       })
     }
+    if (patch.anchorOutsideGap !== undefined) {
+      annotation.anchorOutsideGap = normalizeAnchorOutsideGap(patch.anchorOutsideGap)
+    }
     if ('calloutPosition' in patch) {
       annotation.calloutPosition = patch.calloutPosition
         ? { ...patch.calloutPosition }
@@ -477,6 +483,7 @@ export function useAnnotationStore() {
       anchorOffset: _ignoredOffset,
       anchorOffsetX: _ignoredX,
       anchorOffsetY: _ignoredY,
+      anchorOutsideGap: _ignoredGap,
       calloutPosition: _ignoredCallout,
       calloutPositionX: _ignoredCalloutX,
       calloutPositionY: _ignoredCalloutY,
@@ -494,9 +501,11 @@ export function useAnnotationStore() {
           patch.anchorOffsetX !== undefined ||
           patch.anchorOffsetY !== undefined
         ? `anchor-offset:${annotationId}`
-        : patch.description !== undefined
-          ? `description:${annotationId}`
-          : null
+        : patch.anchorOutsideGap !== undefined
+          ? `anchor-outside-gap:${annotationId}`
+          : patch.description !== undefined
+            ? `description:${annotationId}`
+            : null
     pushEditUndo(coalesceKey)
     applyAnnotationPatch(annotation, patch)
   }
@@ -514,7 +523,9 @@ export function useAnnotationStore() {
           patch.anchorOffsetX !== undefined ||
           patch.anchorOffsetY !== undefined
         ? `anchor-offset-multi:${idKey}`
-        : null
+        : patch.anchorOutsideGap !== undefined
+          ? `anchor-outside-gap-multi:${idKey}`
+          : null
     pushEditUndo(coalesceKey)
     for (const annotationId of annotationIds) {
       const annotation = state.annotations.find((item) => item.id === annotationId)

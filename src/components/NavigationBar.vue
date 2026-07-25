@@ -60,45 +60,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
         @click="emit('navigate', 'files')"
       >
         <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <rect
-            x="3.5"
-            y="3.5"
-            width="7"
-            height="7"
-            rx="1.5"
+          <path
+            d="M7 3.5h7.2L19.5 8.8V20a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"
             fill="none"
             stroke="currentColor"
             stroke-width="1.8"
+            stroke-linejoin="round"
           />
-          <rect
-            x="13.5"
-            y="3.5"
-            width="7"
-            height="7"
-            rx="1.5"
+          <path
+            d="M14 3.5V8a1 1 0 0 0 1 1h4.5"
             fill="none"
             stroke="currentColor"
             stroke-width="1.8"
-          />
-          <rect
-            x="3.5"
-            y="13.5"
-            width="7"
-            height="7"
-            rx="1.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-          />
-          <rect
-            x="13.5"
-            y="13.5"
-            width="7"
-            height="7"
-            rx="1.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
+            stroke-linejoin="round"
           />
         </svg>
         <span class="nav-label">{{ t('nav.files') }}</span>

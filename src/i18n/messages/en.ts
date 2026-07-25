@@ -95,11 +95,12 @@ export const en = {
   'home.filesTitle': 'Saved projects',
   'home.filesCount': '{count} saved',
   'home.filesEmpty': 'No saved projects yet. Create one and use Project → Save / load.',
+  'home.editingBadge': 'Editing',
   'home.removeAria': 'Delete saved project',
   'home.downloadBundle': 'Download all',
   'home.downloadBundleTitle': 'Download all saved projects as one bundle file',
   'storage.notice.before':
-    'This data is stored in this browser’s IndexedDB. It may be lost if you clear site data or leave private browsing. ',
+    'This data is stored in this browser. It may be lost if you clear site data or leave private browsing. ',
   'storage.notice.link': 'Download all data from here',
   'storage.notice.after': '.',
 
@@ -163,6 +164,7 @@ export const en = {
   'style.presetsManage': 'Presets',
   'style.section.anchor': 'Anchor',
   'style.anchorOutside': 'Place outside the frame',
+  'style.anchorOutsideGap': 'Distance from frame',
   'style.section.placement': 'Placement',
   'style.axis.x': 'X',
   'style.axis.y': 'Y',
