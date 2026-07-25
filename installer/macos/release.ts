@@ -1,5 +1,6 @@
 import { copy } from "jsr:@std/fs/copy";
 import { fromFileUrl, join } from "jsr:@std/path";
+import { buildDesktopApp } from "../../desktop/pack.ts";
 
 const here = fromFileUrl(new URL(".", import.meta.url));
 const repoRoot = join(here, "..", "..");
@@ -33,23 +34,7 @@ async function removeIfExists(path: string) {
 async function build() {
   await Deno.mkdir(buildDir, { recursive: true });
   await run("npm", ["run", "build"], repoRoot);
-  await run(
-    "deno",
-    [
-      "desktop",
-      "--include",
-      "./dist",
-      "--exclude",
-      "node_modules",
-      "--allow-read=dist",
-      "--icon",
-      "public/icon.png",
-      "-o",
-      unsignedDmg,
-      "desktop/main.ts",
-    ],
-    repoRoot,
-  );
+  await buildDesktopApp(unsignedDmg);
 }
 
 async function sign() {
