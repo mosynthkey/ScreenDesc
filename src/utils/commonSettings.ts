@@ -1,4 +1,4 @@
-import type { AnchorStyleId, LineStyleId, NumberStyleId } from '../types/annotation'
+import type { AnchorStyleId, LineStyleId } from '../types/annotation'
 import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from './anchorStyle'
 import { DEFAULT_FONT_FAMILY, normalizeCalloutFontItalic, normalizeCalloutFontWeight, DEFAULT_CALLOUT_FONT_ITALIC, DEFAULT_CALLOUT_FONT_WEIGHT } from './googleFonts'
 import {
@@ -16,7 +16,6 @@ import {
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
 } from './markerSize'
-import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
 
 const STORAGE_KEY = 'screendesc.commonSettingsPresets'
 
@@ -44,7 +43,6 @@ export interface CommonSettings {
   /** 0–1 */
   calloutFillOpacity: number
   pageBackgroundColor: string
-  numberStyle: NumberStyleId
 }
 
 export interface CommonSettingsPresetMeta {
@@ -75,7 +73,6 @@ export function createDefaultCommonSettings(): CommonSettings {
     calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
     calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
     pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
-    numberStyle: DEFAULT_NUMBER_STYLE,
   }
 }
 
@@ -160,7 +157,6 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
       : defaults.calloutFontSize
   const calloutFontWeight = normalizeCalloutFontWeight(raw.calloutFontWeight, fontFamily)
   const calloutFontItalic = normalizeCalloutFontItalic(raw.calloutFontItalic)
-  const numberStyle = isNumberStyleId(raw.numberStyle) ? raw.numberStyle : defaults.numberStyle
 
   return {
     defaultFontFamily: fontFamily,
@@ -179,7 +175,6 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),
     calloutFillOpacity: normalizeCalloutFillOpacity(raw.calloutFillOpacity),
     pageBackgroundColor: normalizePageBackgroundColor(raw.pageBackgroundColor),
-    numberStyle,
   }
 }
 

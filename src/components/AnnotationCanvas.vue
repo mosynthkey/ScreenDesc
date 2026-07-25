@@ -20,6 +20,7 @@ import {
   dotLeaderAttachPoint,
   isArrowAnchorStyle,
   leaderAttachPoint,
+  leaderLeaveUnit,
 } from '../utils/anchorStyle'
 import { buildLeaderPath, leaderAttachOnLabel } from '../utils/calloutLayout'
 import { resolveCalloutFill } from '../utils/commonSettings'
@@ -68,6 +69,7 @@ const emit = defineEmits<{
   updateSectionRect: [sectionId: string, rect: Rect]
   updateCalloutPosition: [annotationId: string, point: Point]
   nudgeCalloutPositions: [moves: Array<{ annotationId: string; position: Point }>]
+  updateAnchorOffset: [annotationId: string, offset: Point]
   addSection: [rect: Rect]
   commitDescription: [annotationId: string, description: string]
   cropImage: [rect: Rect]
@@ -98,6 +100,12 @@ type DragState =
       kind: 'create-section'
       origin: Point
       current: Point
+    }
+  | {
+      kind: 'anchor'
+      annotationId: string
+      /** anchorPoint minus current anchorOffset, i.e. the point offset=0 would sit at (image coords). */
+      basePoint: Point
     }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
@@ -174,6 +182,7 @@ function onPointerDown(event: PointerEvent): void {
     null) as ResizeHandle | null
   const sectionId = target.closest('[data-section]')?.getAttribute('data-section')
   const calloutId = target.closest('[data-callout-label]')?.getAttribute('data-callout-label')
+  const anchorId = target.closest('[data-anchor]')?.getAttribute('data-anchor')
 
   // Second click of a double-click: edit instead of starting a drag.
   if (event.detail >= 2 && calloutId) {
@@ -188,6 +197,25 @@ function onPointerDown(event: PointerEvent): void {
 
   pointerMoved.value = false
   ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
+
+  if (anchorId) {
+    const layout = props.calloutLayouts.find((item) => item.annotationId === anchorId)
+    const annotation = props.annotations.find((item) => item.id === anchorId)
+    if (!layout || !annotation) return
+    if (!props.selectedAnnotationIds.includes(anchorId)) {
+      emit('selectAnnotation', anchorId, event.shiftKey)
+    }
+    const anchorImagePoint = toImagePoint(layout.anchorPoint)
+    drag.value = {
+      kind: 'anchor',
+      annotationId: anchorId,
+      basePoint: {
+        x: anchorImagePoint.x - annotation.anchorOffset.x,
+        y: anchorImagePoint.y - annotation.anchorOffset.y,
+      },
+    }
+    return
+  }
 
   if (calloutId) {
     const layout = props.calloutLayouts.find((item) => item.annotationId === calloutId)
@@ -293,6 +321,14 @@ function onPointerMove(event: PointerEvent): void {
     if (Math.hypot(dx, dy) > 3) {
       pointerMoved.value = true
     }
+  }
+
+  if (drag.value.kind === 'anchor') {
+    emit('updateAnchorOffset', drag.value.annotationId, {
+      x: imagePoint.x - drag.value.basePoint.x,
+      y: imagePoint.y - drag.value.basePoint.y,
+    })
+    return
   }
 
   if (drag.value.kind === 'callout') {
@@ -481,11 +517,10 @@ function leaderEnd(layout: CalloutLayoutItem): Point {
 }
 
 function leaderStartFor(layout: CalloutLayoutItem): Point {
-  const end = leaderEnd(layout)
   if (isArrowAnchorStyle(props.anchorStyle)) {
     return leaderAttachPoint(
       props.anchorStyle,
-      buildAnchorArrowGeometry(layout.anchorPoint, end, props.dotRadius),
+      buildAnchorArrowGeometry(layout.anchorPoint, layout.targetCenter, props.dotRadius),
     )
   }
   return dotLeaderAttachPoint(layout.anchorPoint)
@@ -493,13 +528,13 @@ function leaderStartFor(layout: CalloutLayoutItem): Point {
 
 function leaderPathFor(layout: CalloutLayoutItem): string {
   const end = leaderEnd(layout)
-  return buildLeaderPath(leaderStartFor(layout), end.x, end.y)
+  const leave = leaderLeaveUnit(layout.anchorPoint, layout.targetCenter)
+  return buildLeaderPath(leaderStartFor(layout), end.x, end.y, leave)
 }
 
 function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   if (!isArrowAnchorStyle(props.anchorStyle)) return ''
-  const end = leaderEnd(layout)
-  const geometry = buildAnchorArrowGeometry(layout.anchorPoint, end, props.dotRadius)
+  const geometry = buildAnchorArrowGeometry(layout.anchorPoint, layout.targetCenter, props.dotRadius)
   return buildAnchorHeadPath(props.anchorStyle, geometry)
 }
 
@@ -701,6 +736,14 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                 }"
               />
             </template>
+            <circle
+              :data-anchor="annotation.id"
+              class="anchor-hit-area"
+              :cx="layoutFor(annotation.id)!.anchorPoint.x"
+              :cy="layoutFor(annotation.id)!.anchorPoint.y"
+              :r="Math.max(14, dotRadius + 8)"
+              fill="transparent"
+            />
           </g>
           <g
             :data-callout-label="annotation.id"
@@ -880,6 +923,10 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 
 .callout-label {
   cursor: text;
+}
+
+.anchor-hit-area {
+  cursor: move;
 }
 
 .callout-text {

@@ -3,9 +3,8 @@ import { computed, watch } from 'vue'
 import type {
   AnchorStyleId,
   LineStyleId,
-  NumberStyleId,
 } from '../types/annotation'
-import { useI18n, type MessageKey } from '../i18n'
+import { useI18n } from '../i18n'
 import FontFamilyPicker from './FontFamilyPicker.vue'
 import {
   calloutFontWeightForBold,
@@ -31,7 +30,6 @@ import {
   CALLOUT_FILL_OPACITY_MAX,
   CALLOUT_FILL_OPACITY_MIN,
 } from '../utils/commonSettings'
-import { numberStyleIds } from '../utils/circledNumbers'
 
 const props = defineProps<{
   defaultFontFamily: string
@@ -50,7 +48,6 @@ const props = defineProps<{
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  numberStyle: NumberStyleId
 }>()
 
 const emit = defineEmits<{
@@ -70,7 +67,6 @@ const emit = defineEmits<{
   'update:calloutFillColor': [color: string]
   'update:calloutFillOpacity': [opacity: number]
   'update:pageBackgroundColor': [color: string]
-  'update:numberStyle': [style: NumberStyleId]
   openPresets: []
 }>()
 
@@ -78,17 +74,6 @@ const { t } = useI18n()
 
 const lineStyleOptions = computed(() => getLineStyleOptions())
 const anchorStyleOptions = computed(() => getAnchorStyleOptions())
-const NUMBER_STYLE_LABEL_KEYS: Record<NumberStyleId, MessageKey> = {
-  circled: 'style.numberStyle.circled',
-  paren: 'style.numberStyle.paren',
-  dotted: 'style.numberStyle.dotted',
-  'paren-suffix': 'style.numberStyle.parenSuffix',
-  plain: 'style.numberStyle.plain',
-  none: 'style.numberStyle.none',
-}
-const numberStyleOptions = computed(() =>
-  numberStyleIds().map((value) => ({ value, label: t(NUMBER_STYLE_LABEL_KEYS[value]) })),
-)
 
 const calloutFontBold = computed(() => isCalloutFontBold(props.calloutFontWeight))
 
@@ -245,20 +230,6 @@ watch(
             @input="emit('update:pageBackgroundColor', ($event.target as HTMLInputElement).value)"
           />
         </label>
-      </div>
-    </div>
-
-    <div class="settings-group">
-      <div class="field" style="margin-bottom: 0">
-        <label>{{ t('style.numberStyle') }}</label>
-        <select
-          :value="numberStyle"
-          @change="emit('update:numberStyle', ($event.target as HTMLSelectElement).value as NumberStyleId)"
-        >
-          <option v-for="option in numberStyleOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
       </div>
     </div>
 
@@ -632,7 +603,7 @@ watch(
   padding: 5px 10px;
   border: 1px solid var(--line-strong);
   border-radius: 980px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--bg-elevated);
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 650;
@@ -745,7 +716,7 @@ watch(
   padding: 2px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--input-bg);
   cursor: pointer;
 }
 
@@ -788,7 +759,7 @@ watch(
   padding: 8px 6px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--bg-elevated);
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 650;
@@ -827,7 +798,7 @@ watch(
   padding: 10px 6px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--bg-elevated);
   color: var(--ink-muted);
   cursor: pointer;
 }

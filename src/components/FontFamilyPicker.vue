@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
   padding: 8px 10px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--bg-elevated);
   color: var(--ink);
   font-size: 0.88rem;
   font-weight: 600;
@@ -242,7 +242,7 @@ onBeforeUnmount(() => {
   padding: 6px;
   border: 1px solid var(--line-strong);
   border-radius: 12px;
-  background: #fff;
+  background: var(--bg-elevated);
   box-shadow: var(--shadow);
 }
 
@@ -266,7 +266,7 @@ onBeforeUnmount(() => {
 .font-picker-search input:focus {
   outline: none;
   border-color: var(--accent);
-  background: #fff;
+  background: var(--bg-elevated);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.14);
 }
 

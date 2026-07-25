@@ -19,14 +19,6 @@ export type LineStyleId = 'solid' | 'dashed' | 'invert'
 
 export type AnchorStyleId = 'dot' | 'arrow' | 'chevron'
 
-export type NumberStyleId =
-  | 'circled'
-  | 'paren'
-  | 'dotted'
-  | 'paren-suffix'
-  | 'plain'
-  | 'none'
-
 export interface Section {
   id: string
   rect: Rect
@@ -43,6 +35,8 @@ export interface Annotation {
   sectionId: string | null
   order: number
   description: string
+  /** Step number text (e.g. "①"), shown before the description. Set via the "Number" utility. */
+  numberPrefix: string
   /** Anchor point in image coordinates (leader start). */
   markerPosition: Point
   calloutSide: CalloutSide
@@ -50,6 +44,8 @@ export interface Annotation {
   calloutPosition: Point | null
   /** Extra X/Y shift of the anchor from its default position (image coords). */
   anchorOffset: Point
+  /** When true, the anchor sits just outside the section border instead of inside it. */
+  anchorOutside: boolean
 }
 
 export interface CalloutLayoutItem {
@@ -57,6 +53,8 @@ export interface CalloutLayoutItem {
   side: 'left' | 'right' | 'top' | 'bottom'
   labelPosition: Point
   anchorPoint: Point
+  /** Section center (or marker position) in document coords — the arrow points here. */
+  targetCenter: Point
   elbowPoint: Point
   labelWidth: number
   labelHeight: number
@@ -108,8 +106,6 @@ export interface ProjectState {
   calloutFillOpacity: number
   /** Page / export canvas color behind the screenshot and margins. */
   pageBackgroundColor: string
-  /** Project-wide step number style (① / (1) / …). */
-  numberStyle: NumberStyleId
   showSections: boolean
   calloutLayouts: CalloutLayoutItem[]
   document: DocumentLayout

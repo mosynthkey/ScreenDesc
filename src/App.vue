@@ -40,6 +40,7 @@ const {
   activeNamedProject,
   loadImageFile,
   replaceImageFile,
+  flushPersistCurrentProject,
   rediscoverSectionsAfterReplace,
   clearCurrentProject,
   cropImage,
@@ -63,11 +64,11 @@ const {
   setCalloutFillColor,
   setPageBackgroundColor,
   setCalloutFillOpacity,
-  setNumberStyle,
   toggleShowSections,
   clearSelection,
   selectSection,
   selectAnnotation,
+  selectAllAnnotations,
   updateSectionRect,
   createAnnotationForSection,
   addAnnotationAtPoint,
@@ -76,7 +77,8 @@ const {
   nudgeCalloutPositions,
   removeAnnotations,
   reorderAnnotations,
-  sortAnnotationsByXY,
+  assignNumberPrefixes,
+  clearNumberPrefixes,
   exportProject,
   copyAnnotatedImageToClipboard,
   saveProjectToFile,
@@ -232,6 +234,7 @@ function goToPage(page: AppPageId): void {
 
 async function onFile(file: File): Promise<void> {
   clearProjectLoadError()
+  if (hasImage.value) await flushPersistCurrentProject()
   await loadImageFile(file)
   appPage.value = 'edit'
 }
@@ -245,11 +248,6 @@ async function onWindowPaste(event: ClipboardEvent): Promise<void> {
     const file = item.getAsFile()
     if (!file) return
     event.preventDefault()
-    if (hasImage.value) {
-      if (!window.confirm(t('confirm.newProject'))) return
-      clearProjectLoadError()
-      await clearCurrentProject()
-    }
     await onFile(file)
     return
   }
@@ -599,6 +597,10 @@ function onNudgeCalloutPositions(
   nudgeCalloutPositions(moves)
 }
 
+function onUpdateAnchorOffset(annotationId: string, offset: Point): void {
+  updateAnnotation(annotationId, { anchorOffset: offset })
+}
+
 const documentWidth = computed(
   () => state.document.marginLeft + state.document.imageWidth + state.document.marginRight,
 )
@@ -620,6 +622,7 @@ function onPatchSelectedAnnotations(
     anchorOffset: { x: number; y: number }
     anchorOffsetX: number
     anchorOffsetY: number
+    anchorOutside: boolean
     calloutPosition: Point | null
     calloutPositionX: number
     calloutPositionY: number
@@ -643,6 +646,12 @@ function onKeydown(event: KeyboardEvent): void {
     if (event.shiftKey) return
     event.preventDefault()
     undoEdit()
+    return
+  }
+
+  if ((event.metaKey || event.ctrlKey) && !event.altKey && (event.key === 'a' || event.key === 'A')) {
+    event.preventDefault()
+    selectAllAnnotations()
     return
   }
 
@@ -764,7 +773,8 @@ function onKeydown(event: KeyboardEvent): void {
                 :selected-ids="[...state.selectedAnnotationIds]"
                 @select="selectAnnotation"
                 @reorder="reorderAnnotations"
-                @sort-by-xy="sortAnnotationsByXY"
+                @assign-numbers="assignNumberPrefixes"
+                @clear-numbers="clearNumberPrefixes"
                 @remove="(id) => removeAnnotations([id])"
               />
             </div>
@@ -834,6 +844,7 @@ function onKeydown(event: KeyboardEvent): void {
             @update-section-rect="updateSectionRect"
             @update-callout-position="onUpdateCalloutPosition"
             @nudge-callout-positions="onNudgeCalloutPositions"
+            @update-anchor-offset="onUpdateAnchorOffset"
             @add-section="onAddSection"
             @commit-description="onCommitDescription"
             @crop-image="onCropImage"
@@ -858,7 +869,6 @@ function onKeydown(event: KeyboardEvent): void {
                 :callout-fill-color="state.calloutFillColor"
                 :callout-fill-opacity="state.calloutFillOpacity"
                 :page-background-color="state.pageBackgroundColor"
-                :number-style="state.numberStyle"
                 @update:default-font-family="setDefaultFontFamily"
                 @update:line-style="setLineStyle"
                 @update:line-width="setLineWidth"
@@ -875,7 +885,6 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:callout-fill-color="setCalloutFillColor"
                 @update:callout-fill-opacity="setCalloutFillOpacity"
                 @update:page-background-color="setPageBackgroundColor"
-                @update:number-style="setNumberStyle"
                 @open-presets="onOpenCommonSettings"
               />
             </div>

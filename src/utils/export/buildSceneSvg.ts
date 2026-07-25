@@ -12,6 +12,7 @@ import {
   dotLeaderAttachPoint,
   isArrowAnchorStyle,
   leaderAttachPoint,
+  leaderLeaveUnit,
 } from '../anchorStyle'
 import { fontFamilyCss } from '../googleFonts'
 import { getLineStyleSpec } from '../lineStyle'
@@ -46,7 +47,7 @@ function renderCallout(
   calloutFillOpacity: number,
   fontFamily: string,
 ): string {
-  const { labelPosition, labelWidth, labelHeight, lines, anchorPoint } = layout
+  const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, targetCenter } = layout
   const textX = labelPosition.x + Math.max(10, calloutFontSize * 0.28)
   const leaderEnd = leaderAttachOnLabel(layout)
 
@@ -73,15 +74,18 @@ function renderCallout(
       ? 'fill="none"'
       : `fill="${fillPaint.fill}" fill-opacity="${fillPaint.fillOpacity}"`
 
+  const leave = leaderLeaveUnit(anchorPoint, targetCenter)
+
   let body: string
   if (isArrowAnchorStyle(anchorStyle)) {
     // Head and leader must be separate: filling a combined path paints the open cubic.
-    const geometry = buildAnchorArrowGeometry(anchorPoint, leaderEnd, dotRadius)
+    const geometry = buildAnchorArrowGeometry(anchorPoint, targetCenter, dotRadius)
     const head = buildAnchorHeadPath(anchorStyle, geometry)
     const leader = buildLeaderPath(
       leaderAttachPoint(anchorStyle, geometry),
       leaderEnd.x,
       leaderEnd.y,
+      leave,
     )
     const fill = anchorStyle === 'arrow' ? effectiveDotColor : 'none'
     const haloWidth = spec.strokeWidth + lineHaloWidth
@@ -95,7 +99,7 @@ function renderCallout(
       <path d="${leader}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
   } else {
     const leaderStart = dotLeaderAttachPoint(anchorPoint)
-    const pathD = buildLeaderPath(leaderStart, leaderEnd.x, leaderEnd.y)
+    const pathD = buildLeaderPath(leaderStart, leaderEnd.x, leaderEnd.y, leave)
     const haloWidth = spec.strokeWidth + lineHaloWidth
     const haloLeader =
       lineHaloWidth > 0 && !isInvert

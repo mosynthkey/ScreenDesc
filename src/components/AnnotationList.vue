@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Annotation } from '../types/annotation'
-import { useI18n } from '../i18n'
+import type { NumberPrefixDirection, NumberPrefixStyle } from '../utils/numberPrefix'
+import { useI18n, type MessageKey } from '../i18n'
 
 const props = defineProps<{
   annotations: Annotation[]
@@ -11,7 +12,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [id: string, additive: boolean]
   reorder: [orderedIds: string[]]
-  sortByXY: []
+  assignNumbers: [direction: NumberPrefixDirection, style: NumberPrefixStyle]
+  clearNumbers: []
   remove: [id: string]
 }>()
 
@@ -19,6 +21,37 @@ const { t } = useI18n()
 const draggingId = ref<string | null>(null)
 /** Insert index in the current list (0 … length). */
 const dropIndex = ref<number | null>(null)
+
+const numberMenuOpen = ref(false)
+const numberDirection = ref<NumberPrefixDirection>('left-to-right')
+const numberStyle = ref<NumberPrefixStyle>('circled')
+
+const numberDirectionOptions: Array<{ value: NumberPrefixDirection; labelKey: MessageKey }> = [
+  { value: 'left-to-right', labelKey: 'annotationList.numberDirection.leftToRight' },
+  { value: 'top-to-bottom', labelKey: 'annotationList.numberDirection.topToBottom' },
+]
+const numberStyleOptions: Array<{ value: NumberPrefixStyle; labelKey: MessageKey }> = [
+  { value: 'circled', labelKey: 'style.numberStyle.circled' },
+  { value: 'paren', labelKey: 'style.numberStyle.paren' },
+  { value: 'dotted', labelKey: 'style.numberStyle.dotted' },
+  { value: 'paren-suffix', labelKey: 'style.numberStyle.parenSuffix' },
+  { value: 'plain', labelKey: 'style.numberStyle.plain' },
+]
+
+function applyNumbering(): void {
+  emit('assignNumbers', numberDirection.value, numberStyle.value)
+  numberMenuOpen.value = false
+}
+
+function clearNumbering(): void {
+  emit('clearNumbers')
+  numberMenuOpen.value = false
+}
+
+function displayText(annotation: Annotation): string {
+  const prefix = annotation.numberPrefix ? `${annotation.numberPrefix} ` : ''
+  return `${prefix}${annotation.description || t('annotationList.emptyDescription')}`
+}
 
 function onDragStart(id: string, event: DragEvent): void {
   const target = event.target as HTMLElement | null
@@ -106,15 +139,52 @@ function onDrop(event: DragEvent): void {
         </svg>
         {{ t('annotationList.title') }}
       </h3>
-      <button
-        v-if="annotations.length > 1"
-        class="sort-by-xy-btn"
-        type="button"
-        :title="t('annotationList.sortByXYTitle')"
-        @click="emit('sortByXY')"
-      >
-        {{ t('annotationList.sortByXY') }}
-      </button>
+      <div v-if="annotations.length > 1" class="list-header-actions">
+        <div class="number-menu-anchor">
+          <button
+            class="list-action-btn"
+            type="button"
+            :title="t('annotationList.assignNumbersTitle')"
+            @click="numberMenuOpen = !numberMenuOpen"
+          >
+            {{ t('annotationList.assignNumbers') }}
+          </button>
+          <div v-if="numberMenuOpen" class="number-menu">
+            <label class="number-menu-field">
+              <span>{{ t('annotationList.numberDirectionLabel') }}</span>
+              <select v-model="numberDirection">
+                <option
+                  v-for="option in numberDirectionOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ t(option.labelKey) }}
+                </option>
+              </select>
+            </label>
+            <label class="number-menu-field">
+              <span>{{ t('style.numberStyle') }}</span>
+              <select v-model="numberStyle">
+                <option
+                  v-for="option in numberStyleOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ t(option.labelKey) }}
+                </option>
+              </select>
+            </label>
+            <div class="number-menu-buttons">
+              <button class="number-menu-clear" type="button" @click="clearNumbering">
+                {{ t('annotationList.clearNumbers') }}
+              </button>
+              <button class="number-menu-apply" type="button" @click="applyNumbering">
+                {{ t('annotationList.applyNumbers') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <p v-if="annotations.length === 0" class="hint">
       {{ t('annotationList.emptyHint') }}
@@ -150,9 +220,7 @@ function onDrop(event: DragEvent): void {
           @dragend="onDragEnd"
           @dragover="onItemDragOver(itemIndex, $event)"
         >
-          <span class="desc-text">
-            {{ annotation.description || t('annotationList.emptyDescription') }}
-          </span>
+          <span class="desc-text">{{ displayText(annotation) }}</span>
           <button
             class="icon-btn remove-btn"
             type="button"
@@ -191,12 +259,12 @@ function onDrop(event: DragEvent): void {
   margin: 0;
 }
 
-.sort-by-xy-btn {
+.list-action-btn {
   flex-shrink: 0;
   padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--bg-panel);
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 600;
@@ -208,10 +276,85 @@ function onDrop(event: DragEvent): void {
     color var(--spring);
 }
 
-.sort-by-xy-btn:hover {
+.list-action-btn:hover {
   border-color: var(--line-strong);
-  background: #fff;
+  background: var(--bg-elevated);
   color: var(--ink);
+}
+
+.list-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.number-menu-anchor {
+  position: relative;
+}
+
+.number-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 200px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.number-menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.number-menu-field select {
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.number-menu-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.number-menu-apply,
+.number-menu-clear {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.number-menu-apply {
+  background: var(--accent);
+  color: #fff;
+}
+
+.number-menu-clear {
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+}
+
+.number-menu-clear:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
 .hint,
@@ -235,7 +378,7 @@ function onDrop(event: DragEvent): void {
   border-width: 1px 0;
   border-radius: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--bg-elevated);
 }
 
 .drop-indicator {

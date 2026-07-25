@@ -598,7 +598,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   justify-content: space-between;
   gap: 16px;
   padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--bg-panel);
   border-bottom: 1px solid var(--line);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
@@ -804,7 +804,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  background: #fff;
+  background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 4px;

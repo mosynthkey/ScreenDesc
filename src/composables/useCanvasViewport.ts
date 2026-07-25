@@ -34,11 +34,20 @@ export function useCanvasViewport(options: {
   let gestureStartZoom = 1
   let resizeObserver: ResizeObserver | null = null
 
-  const fitScale = computed(() => {
-    if (viewportWidth.value <= 0 || documentWidth.value <= 0) return 1
+  // A ref, not a computed: re-fitting should follow the viewport size or a
+  // new image, not every document-layout tweak (e.g. callout labels
+  // changing the margins when annotations are added/removed), which would
+  // otherwise make the screenshot visibly zoom in/out on edits.
+  const fitScale = ref(1)
+
+  function recomputeFitScale(): void {
+    if (viewportWidth.value <= 0 || documentWidth.value <= 0) {
+      fitScale.value = 1
+      return
+    }
     const available = Math.max(120, viewportWidth.value - STAGE_INSET)
-    return available / documentWidth.value
-  })
+    fitScale.value = available / documentWidth.value
+  }
 
   const stageWidth = computed(
     () => documentWidth.value * fitScale.value * viewZoom.value,
@@ -148,6 +157,7 @@ export function useCanvasViewport(options: {
     const viewport = viewportRef.value
     if (!viewport) return
     viewportWidth.value = viewport.clientWidth
+    recomputeFitScale()
   }
 
   onMounted(() => {
@@ -192,6 +202,9 @@ export function useCanvasViewport(options: {
       viewport.scrollLeft = 0
       viewport.scrollTop = 0
     }
+    // New image: its document size is only reflected after this tick's
+    // reactive updates settle, so wait before re-fitting.
+    void nextTick(() => recomputeFitScale())
   })
 
   return {

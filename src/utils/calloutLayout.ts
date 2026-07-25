@@ -3,12 +3,10 @@ import type {
   CalloutLayoutItem,
   CalloutSide,
   DocumentLayout,
-  NumberStyleId,
   Point,
   Section,
 } from '../types/annotation'
 import { clamp, rectCenter } from './geometry'
-import { formatStepNumber } from './circledNumbers'
 import { measureTextWidth } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
 import { t } from '../i18n'
@@ -26,60 +24,58 @@ export function normalizeCalloutSide(value: unknown): CalloutSide {
 }
 
 /**
- * Cubic leader with a single bend (C-curve). Leaves along the dominant axis
- * toward the label, then curves into the attachment point.
+ * Cubic leader with a single bend (C-curve). Leaves along `leaveDirection`
+ * (must match the anchor marker's own orientation — see `leaderLeaveUnit` in
+ * anchorStyle.ts — so the arrowhead/chevron points the same way the curve
+ * actually departs), then curves into the attachment point.
  */
-export function buildLeaderPath(start: Point, endX: number, endY: number): string {
+export function buildLeaderPath(
+  start: Point,
+  endX: number,
+  endY: number,
+  leaveDirection: Point,
+): string {
   const dx = endX - start.x
   const dy = endY - start.y
-  const absDx = Math.abs(dx)
-  const absDy = Math.abs(dy)
+  const dist = Math.hypot(dx, dy)
+  if (dist < 1e-6) return `M ${start.x} ${start.y} L ${endX} ${endY}`
 
-  if (absDy > absDx) {
-    const direction = dy === 0 ? 1 : Math.sign(dy)
-    const stub = Math.min(
-      absDy * 0.55,
-      48,
-      Math.max(8, absDy * 0.35),
-      absDx > 0 ? absDx * 0.45 + 10 : absDy,
-    )
-    const elbowY = start.y + direction * stub
-    return `M ${start.x} ${start.y} C ${start.x} ${elbowY}, ${endX} ${elbowY}, ${endX} ${endY}`
+  // Leave exactly along leaveDirection (arrowhead points the opposite way,
+  // so the curve and the marker always agree), then bend smoothly into end.
+  const stub = Math.min(dist * 0.6, 56)
+  const control1: Point = {
+    x: start.x + leaveDirection.x * stub,
+    y: start.y + leaveDirection.y * stub,
   }
+  const control2: Point = {
+    x: endX - dx * 0.2,
+    y: endY - dy * 0.2,
+  }
+  return `M ${start.x} ${start.y} C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${endX} ${endY}`
+}
 
-  const direction = dx === 0 ? 1 : Math.sign(dx)
-  const stub = Math.min(
-    absDx * 0.55,
-    48,
-    Math.max(8, absDx * 0.35),
-    absDy > 0 ? absDy * 0.45 + 10 : absDx,
-  )
-  const elbowX = start.x + direction * stub
-  return `M ${start.x} ${start.y} C ${elbowX} ${start.y}, ${elbowX} ${endY}, ${endX} ${endY}`
+/** Midpoint of the label's edge facing the image. */
+function labelAttachPoint(
+  labelPosition: Point,
+  labelWidth: number,
+  labelHeight: number,
+  side: ResolvedCalloutSide,
+): Point {
+  const centerX = labelPosition.x + labelWidth / 2
+  const centerY = labelPosition.y + labelHeight / 2
+  if (side === 'top') return { x: centerX, y: labelPosition.y + labelHeight }
+  if (side === 'bottom') return { x: centerX, y: labelPosition.y }
+  const x = side === 'left' ? labelPosition.x + labelWidth : labelPosition.x
+  return { x, y: centerY }
 }
 
 export function leaderAttachOnLabel(layout: CalloutLayoutItem): Point {
-  const labelCenterX = layout.labelPosition.x + layout.labelWidth / 2
-  const labelCenterY = layout.labelPosition.y + layout.labelHeight / 2
-  if (layout.side === 'top') {
-    return {
-      x: labelCenterX,
-      y: layout.labelPosition.y + layout.labelHeight,
-    }
-  }
-  if (layout.side === 'bottom') {
-    return {
-      x: labelCenterX,
-      y: layout.labelPosition.y,
-    }
-  }
-  return {
-    x:
-      layout.anchorPoint.x < labelCenterX
-        ? layout.labelPosition.x
-        : layout.labelPosition.x + layout.labelWidth,
-    y: labelCenterY,
-  }
+  return labelAttachPoint(
+    layout.labelPosition,
+    layout.labelWidth,
+    layout.labelHeight,
+    layout.side,
+  )
 }
 
 function documentSize(document: DocumentLayout): { width: number; height: number } {
@@ -157,15 +153,13 @@ function verticalMarginsFor(imageHeight: number, maxStackHeight: number): {
 
 function estimateLabelSize(
   description: string,
-  order: number,
+  numberPrefix: string,
   fontFamily: string,
   fontSize: number,
   fontWeight: number,
   fontItalic: boolean,
-  numberStyle: NumberStyleId,
 ): { width: number; height: number; lines: string[] } {
-  const numberLabel = formatStepNumber(order, numberStyle)
-  const prefix = numberLabel ? `${numberLabel} ` : ''
+  const prefix = numberPrefix ? `${numberPrefix} ` : ''
   const text = `${prefix}${description || t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
@@ -193,24 +187,30 @@ function anchorForAnnotation(
   side: ResolvedCalloutSide,
   imageWidth: number,
   imageHeight: number,
+  lineHaloWidth: number,
 ): Point {
   const section = getSectionForAnnotation(annotation, sections)
   const offset = annotation.anchorOffset
+  // When the anchor sits outside the section, leave room for the leader's
+  // halo stroke so it doesn't paint back over the section border.
+  const inset = annotation.anchorOutside
+    ? -(LINE_INSET + Math.max(0, lineHaloWidth))
+    : LINE_INSET
   let baseX: number
   let baseY: number
   if (section) {
     if (side === 'left') {
-      baseX = section.rect.x + LINE_INSET
+      baseX = section.rect.x + inset
       baseY = rectCenter(section.rect).y
     } else if (side === 'right') {
-      baseX = section.rect.x + section.rect.width - LINE_INSET
+      baseX = section.rect.x + section.rect.width - inset
       baseY = rectCenter(section.rect).y
     } else if (side === 'top') {
       baseX = rectCenter(section.rect).x
-      baseY = section.rect.y + LINE_INSET
+      baseY = section.rect.y + inset
     } else {
       baseX = rectCenter(section.rect).x
-      baseY = section.rect.y + section.rect.height - LINE_INSET
+      baseY = section.rect.y + section.rect.height - inset
     }
   } else {
     baseX = annotation.markerPosition.x
@@ -222,7 +222,20 @@ function anchorForAnnotation(
   }
 }
 
-function referencePointForAnnotation(
+/** Section center (or marker position) in document coords — what the arrow should point at. */
+function targetCenterForAnnotation(
+  annotation: Annotation,
+  sections: Section[],
+  document: DocumentLayout,
+): Point {
+  const local = referencePointForAnnotation(annotation, sections)
+  return {
+    x: document.marginLeft + local.x,
+    y: document.marginTop + local.y,
+  }
+}
+
+export function referencePointForAnnotation(
   annotation: Annotation,
   sections: Section[],
 ): Point {
@@ -230,77 +243,120 @@ function referencePointForAnnotation(
   return section ? rectCenter(section.rect) : { ...annotation.markerPosition }
 }
 
-/** Pick the image edge closest to the marker (ties keep left → right → top → bottom). */
-export function preferredSide(
-  annotation: Annotation,
-  sections: Section[],
+const RESOLVED_SIDES: readonly ResolvedCalloutSide[] = ['left', 'right', 'top', 'bottom']
+
+/** How much of the edge's length one label eats up: its height on left/right, its width on top/bottom. */
+function congestionExtent(
+  size: { width: number; height: number },
+  side: ResolvedCalloutSide,
+): number {
+  return side === 'left' || side === 'right' ? size.height : size.width
+}
+
+function availableExtent(
+  side: ResolvedCalloutSide,
   imageWidth: number,
   imageHeight: number,
-): ResolvedCalloutSide {
-  if (
-    annotation.calloutSide === 'left' ||
-    annotation.calloutSide === 'right' ||
-    annotation.calloutSide === 'top' ||
-    annotation.calloutSide === 'bottom'
-  ) {
-    return annotation.calloutSide
-  }
-  const point = referencePointForAnnotation(annotation, sections)
-  const candidates: Array<{ side: ResolvedCalloutSide; distance: number }> = [
-    { side: 'left', distance: point.x },
-    { side: 'right', distance: imageWidth - point.x },
-    { side: 'top', distance: point.y },
-    { side: 'bottom', distance: imageHeight - point.y },
-  ]
-  let best = candidates[0]!
-  for (let candidateIndex = 1; candidateIndex < candidates.length; candidateIndex += 1) {
-    const candidate = candidates[candidateIndex]!
-    if (candidate.distance < best.distance) best = candidate
-  }
-  return best.side
+): number {
+  return side === 'left' || side === 'right' ? imageHeight : imageWidth
+}
+
+/** 0 (touching the edge) to ~1 (across the whole image). */
+function distanceScore(
+  point: Point,
+  side: ResolvedCalloutSide,
+  imageWidth: number,
+  imageHeight: number,
+): number {
+  if (side === 'left') return imageWidth > 0 ? point.x / imageWidth : 0
+  if (side === 'right') return imageWidth > 0 ? (imageWidth - point.x) / imageWidth : 0
+  if (side === 'top') return imageHeight > 0 ? point.y / imageHeight : 0
+  return imageHeight > 0 ? (imageHeight - point.y) / imageHeight : 0
+}
+
+const DISTANCE_WEIGHT = 0.5
+const CONGESTION_WEIGHT = 0.5
+
+export interface AutoSideDecision {
+  annotationId: string
+  distance: Record<ResolvedCalloutSide, number>
+  congestion: Record<ResolvedCalloutSide, number>
+  cost: Record<ResolvedCalloutSide, number>
+  chosenSide: ResolvedCalloutSide
 }
 
 /**
- * Order annotations so packing on each side follows position (fewer crossed leaders):
- * top/bottom by X then Y; left/right by Y then X. Sides: top → left → right → bottom.
+ * Assigns every annotation a side, weighing "which edge is nearest" against
+ * "how crowded that edge already is" — a tall image's top/bottom bands fill
+ * up fast with wide labels, while its left/right columns stack many
+ * single-line labels without crowding. Annotations with an explicit side
+ * keep it (only contributing to that side's load); only `calloutSide:
+ * 'auto'` ones get decided here, most-decisive-preference first so a
+ * strong preference isn't crowded out by a borderline one that goes first.
  */
-export function orderedAnnotationsForClearLeaders(
+export function resolveAutoSides(
   annotations: Annotation[],
+  sizeById: Map<string, { width: number; height: number }>,
   sections: Section[],
   imageWidth: number,
   imageHeight: number,
-): Annotation[] {
-  const groups: Record<ResolvedCalloutSide, Annotation[]> = {
-    left: [],
-    right: [],
-    top: [],
-    bottom: [],
-  }
+  onDecision?: (decision: AutoSideDecision) => void,
+): Map<string, ResolvedCalloutSide> {
+  const resolved = new Map<string, ResolvedCalloutSide>()
+  const load: Record<ResolvedCalloutSide, number> = { left: 0, right: 0, top: 0, bottom: 0 }
+  const fallbackSize = { width: MIN_LABEL_WIDTH, height: 0 }
+
+  const autoItems: Array<{ annotation: Annotation; point: Point }> = []
   for (const annotation of annotations) {
-    groups[preferredSide(annotation, sections, imageWidth, imageHeight)].push(annotation)
+    if (
+      annotation.calloutSide === 'left' ||
+      annotation.calloutSide === 'right' ||
+      annotation.calloutSide === 'top' ||
+      annotation.calloutSide === 'bottom'
+    ) {
+      resolved.set(annotation.id, annotation.calloutSide)
+      const size = sizeById.get(annotation.id) ?? fallbackSize
+      load[annotation.calloutSide] += congestionExtent(size, annotation.calloutSide)
+      continue
+    }
+    autoItems.push({
+      annotation,
+      point: referencePointForAnnotation(annotation, sections),
+    })
   }
 
-  const compareByYX = (left: Annotation, right: Annotation): number => {
-    const leftPoint = referencePointForAnnotation(left, sections)
-    const rightPoint = referencePointForAnnotation(right, sections)
-    const yDelta = leftPoint.y - rightPoint.y
-    if (yDelta !== 0) return yDelta
-    return leftPoint.x - rightPoint.x
+  const decisiveness = (item: { point: Point }): number => {
+    const values = RESOLVED_SIDES.map((side) =>
+      distanceScore(item.point, side, imageWidth, imageHeight),
+    ).sort((left, right) => left - right)
+    return values[1]! - values[0]!
   }
-  const compareByXY = (left: Annotation, right: Annotation): number => {
-    const leftPoint = referencePointForAnnotation(left, sections)
-    const rightPoint = referencePointForAnnotation(right, sections)
-    const xDelta = leftPoint.x - rightPoint.x
-    if (xDelta !== 0) return xDelta
-    return leftPoint.y - rightPoint.y
+  autoItems.sort((left, right) => decisiveness(right) - decisiveness(left))
+
+  for (const item of autoItems) {
+    const size = sizeById.get(item.annotation.id) ?? fallbackSize
+    const distance = {} as Record<ResolvedCalloutSide, number>
+    const congestion = {} as Record<ResolvedCalloutSide, number>
+    const cost = {} as Record<ResolvedCalloutSide, number>
+    let bestSide: ResolvedCalloutSide = RESOLVED_SIDES[0]!
+    let bestCost = Infinity
+    for (const side of RESOLVED_SIDES) {
+      const capacity = availableExtent(side, imageWidth, imageHeight)
+      const extent = congestionExtent(size, side)
+      distance[side] = distanceScore(item.point, side, imageWidth, imageHeight)
+      congestion[side] = capacity > 0 ? (load[side] + extent) / capacity : 0
+      cost[side] = DISTANCE_WEIGHT * distance[side] + CONGESTION_WEIGHT * congestion[side]
+      if (cost[side] < bestCost) {
+        bestCost = cost[side]
+        bestSide = side
+      }
+    }
+    resolved.set(item.annotation.id, bestSide)
+    load[bestSide] += congestionExtent(size, bestSide)
+    onDecision?.({ annotationId: item.annotation.id, distance, congestion, cost, chosenSide: bestSide })
   }
 
-  groups.top.sort(compareByXY)
-  groups.left.sort(compareByYX)
-  groups.right.sort(compareByYX)
-  groups.bottom.sort(compareByXY)
-
-  return [...groups.top, ...groups.left, ...groups.right, ...groups.bottom]
+  return resolved
 }
 
 /**
@@ -354,6 +410,7 @@ function packSide(
   document: DocumentLayout,
   side: 'left' | 'right',
   gap: number,
+  lineHaloWidth: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -364,6 +421,7 @@ function packSide(
       side,
       document.imageWidth,
       document.imageHeight,
+      lineHaloWidth,
     ),
   )
 
@@ -376,6 +434,9 @@ function packSide(
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
     if (!items[itemIndex]!.calloutPosition) autoIndices.push(itemIndex)
   }
+  // Stack top-to-bottom by natural anchor position, not creation order —
+  // otherwise two labels can swap places and cross their leader lines.
+  autoIndices.sort((left, right) => anchors[left]!.y - anchors[right]!.y)
 
   const packedAutoTops = packAlongAxis(
     autoIndices.map((itemIndex) => document.marginTop + anchors[itemIndex]!.y),
@@ -431,6 +492,7 @@ function packSide(
         x: document.marginLeft + anchor.x,
         y: document.marginTop + anchor.y,
       },
+      targetCenter: targetCenterForAnnotation(annotation, sections, document),
       elbowPoint: {
         x: elbowX,
         y: labelCenterY,
@@ -451,6 +513,7 @@ function packBand(
   document: DocumentLayout,
   side: 'top' | 'bottom',
   gap: number,
+  lineHaloWidth: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -461,6 +524,7 @@ function packBand(
       side,
       document.imageWidth,
       document.imageHeight,
+      lineHaloWidth,
     ),
   )
 
@@ -473,6 +537,9 @@ function packBand(
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
     if (!items[itemIndex]!.calloutPosition) autoIndices.push(itemIndex)
   }
+  // Stack left-to-right by natural anchor position, not creation order —
+  // otherwise two labels can swap places and cross their leader lines.
+  autoIndices.sort((left, right) => anchors[left]!.x - anchors[right]!.x)
 
   const packedAutoLefts = packAlongAxis(
     autoIndices.map((itemIndex) => document.marginLeft + anchors[itemIndex]!.x),
@@ -528,6 +595,7 @@ function packBand(
         x: document.marginLeft + anchor.x,
         y: document.marginTop + anchor.y,
       },
+      targetCenter: targetCenterForAnnotation(annotation, sections, document),
       elbowPoint: {
         x: labelCenterX,
         y: elbowY,
@@ -541,43 +609,40 @@ function packBand(
   return layouts
 }
 
-function splitBySide(
-  annotations: Annotation[],
-  sections: Section[],
-  imageWidth: number,
-  imageHeight: number,
-): Record<ResolvedCalloutSide, Annotation[]> {
-  const groups: Record<ResolvedCalloutSide, Annotation[]> = {
-    left: [],
-    right: [],
-    top: [],
-    bottom: [],
-  }
-  for (const annotation of annotations) {
-    const side = preferredSide(annotation, sections, imageWidth, imageHeight)
-    groups[side].push(annotation)
-  }
-  return groups
-}
-
 function sizesFor(
   items: Annotation[],
   fontFamily: string,
   fontSize: number,
   fontWeight: number,
   fontItalic: boolean,
-  numberStyle: NumberStyleId,
 ): Array<{ width: number; height: number; lines: string[] }> {
   return items.map((annotation) =>
     estimateLabelSize(
       annotation.description,
-      annotation.order,
+      annotation.numberPrefix,
       fontFamily,
       fontSize,
       fontWeight,
       fontItalic,
-      numberStyle,
     ),
+  )
+}
+
+/** Label size for a single annotation, e.g. for congestion lookups before it's laid out. */
+export function estimateAnnotationLabelSize(
+  annotation: Annotation,
+  fontFamily: string,
+  fontSize: number,
+  fontWeight: number,
+  fontItalic: boolean,
+): { width: number; height: number } {
+  return estimateLabelSize(
+    annotation.description,
+    annotation.numberPrefix,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    fontItalic,
   )
 }
 
@@ -608,7 +673,7 @@ export function layoutCalloutsForImage(
   fontFamily: string,
   fontWeight: number,
   fontItalic: boolean,
-  numberStyle: NumberStyleId,
+  lineHaloWidth: number,
 ): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) {
@@ -619,39 +684,22 @@ export function layoutCalloutsForImage(
   }
 
   const gap = labelGapFor(fontSize)
-  const groups = splitBySide(callouts, sections, imageWidth, imageHeight)
-  const leftSizes = sizesFor(
-    groups.left,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    fontItalic,
-    numberStyle,
-  )
-  const rightSizes = sizesFor(
-    groups.right,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    fontItalic,
-    numberStyle,
-  )
-  const topSizes = sizesFor(
-    groups.top,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    fontItalic,
-    numberStyle,
-  )
-  const bottomSizes = sizesFor(
-    groups.bottom,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    fontItalic,
-    numberStyle,
-  )
+  const allSizes = sizesFor(callouts, fontFamily, fontSize, fontWeight, fontItalic)
+  const sizeById = new Map(callouts.map((annotation, index) => [annotation.id, allSizes[index]!]))
+  const resolvedSides = resolveAutoSides(callouts, sizeById, sections, imageWidth, imageHeight)
+  const groups: Record<ResolvedCalloutSide, Annotation[]> = {
+    left: [],
+    right: [],
+    top: [],
+    bottom: [],
+  }
+  for (const annotation of callouts) {
+    groups[resolvedSides.get(annotation.id) ?? 'top'].push(annotation)
+  }
+  const leftSizes = groups.left.map((annotation) => sizeById.get(annotation.id)!)
+  const rightSizes = groups.right.map((annotation) => sizeById.get(annotation.id)!)
+  const topSizes = groups.top.map((annotation) => sizeById.get(annotation.id)!)
+  const bottomSizes = groups.bottom.map((annotation) => sizeById.get(annotation.id)!)
 
   const leftMax = leftSizes.reduce(
     (maxWidth, size) => Math.max(maxWidth, size.width),
@@ -718,10 +766,10 @@ export function layoutCalloutsForImage(
   return {
     document,
     layouts: [
-      ...packSide(groups.left, leftSizes, sections, document, 'left', gap),
-      ...packSide(groups.right, rightSizes, sections, document, 'right', gap),
-      ...packBand(groups.top, topSizes, sections, document, 'top', gap),
-      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap),
+      ...packSide(groups.left, leftSizes, sections, document, 'left', gap, lineHaloWidth),
+      ...packSide(groups.right, rightSizes, sections, document, 'right', gap, lineHaloWidth),
+      ...packBand(groups.top, topSizes, sections, document, 'top', gap, lineHaloWidth),
+      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap, lineHaloWidth),
     ],
   }
 }

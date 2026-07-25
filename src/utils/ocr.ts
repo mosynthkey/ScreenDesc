@@ -21,6 +21,7 @@ let clientPromise: Promise<OcrClient> | null = null
 
 async function getOcrClient(): Promise<OcrClient> {
   if (!clientPromise) {
+    console.log('[ocr] initializing PaddleOCR client…')
     clientPromise = PaddleOCR.create({
       // PP-OCRv6_small; Japanese UI screenshots (also covers Latin glyphs).
       lang: 'japan',
@@ -29,16 +30,24 @@ async function getOcrClient(): Promise<OcrClient> {
         backend: 'wasm',
         wasmPaths: `${baseUrl}ort/`,
       },
+      textDetectionModelName: 'PP-OCRv6_small_det',
       textDetectionModelAsset: {
         url: `${baseUrl}models/paddleocr/PP-OCRv6_small_det_onnx_infer.tar`,
       },
+      textRecognitionModelName: 'PP-OCRv6_small_rec',
       textRecognitionModelAsset: {
         url: `${baseUrl}models/paddleocr/PP-OCRv6_small_rec_onnx_infer.tar`,
       },
-    }).catch((error) => {
-      clientPromise = null
-      throw error
     })
+      .then((client) => {
+        console.log('[ocr] client ready', client.getInitializationSummary?.())
+        return client
+      })
+      .catch((error) => {
+        clientPromise = null
+        console.error('[ocr] failed to initialize PaddleOCR client', error)
+        throw error
+      })
   }
   return clientPromise
 }
@@ -69,8 +78,23 @@ async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunR
   const empty: OcrRunResult = { lines: [], fullText: '' }
   if (imageData.width < 8 || imageData.height < 8) return empty
 
-  const client = await getOcrClient()
-  const [result] = await client.predict(imageData)
+  let result: Awaited<ReturnType<OcrClient['predict']>>[number] | undefined
+  try {
+    const client = await getOcrClient()
+    console.log('[ocr] running predict()', { width: imageData.width, height: imageData.height })
+    const started = performance.now()
+    ;[result] = await client.predict(imageData)
+    console.log('[ocr] predict() done', {
+      ms: Math.round(performance.now() - started),
+      itemCount: result?.items.length ?? 0,
+      items: result?.items.map((item) => ({ text: item.text, score: item.score })),
+      metrics: result?.metrics,
+      runtime: result?.runtime,
+    })
+  } catch (error) {
+    console.error('[ocr] predict() failed', error)
+    return empty
+  }
   if (!result) return empty
 
   const lines: OcrLineHit[] = []
@@ -83,6 +107,7 @@ async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunR
       confidence: item.score,
     })
   }
+  console.log('[ocr] kept lines after filtering', lines)
 
   return {
     lines,

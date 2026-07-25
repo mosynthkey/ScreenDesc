@@ -2,9 +2,9 @@ import { computed, readonly } from 'vue'
 import type {
   Annotation,
   AnchorStyleId,
+  CalloutSide,
   ExportOptions,
   LineStyleId,
-  NumberStyleId,
   Point,
   Rect,
   Section,
@@ -12,7 +12,13 @@ import type {
 } from '../types/annotation'
 import { createId } from '../utils/id'
 import { sortByOrder } from '../utils/circledNumbers'
-import { orderedAnnotationsForClearLeaders } from '../utils/calloutLayout'
+import { estimateAnnotationLabelSize, resolveAutoSides } from '../utils/calloutLayout'
+import {
+  formatNumberPrefix,
+  orderAnnotationsForNumbering,
+  type NumberPrefixDirection,
+  type NumberPrefixStyle,
+} from '../utils/numberPrefix'
 import { normalizeRect, rectCenter } from '../utils/geometry'
 import { createManualSection } from '../utils/mlSectionDetection'
 import { downloadBlob, exportScene } from '../utils/export'
@@ -63,7 +69,7 @@ import {
   screenParser,
   state,
 } from './annotationStoreCore'
-import './projectPersistence'
+import { flushPersistCurrentProject } from './projectPersistence'
 import {
   clearCurrentProject,
   cropImage,
@@ -116,6 +122,8 @@ export function useAnnotationStore() {
 
   function setLineHaloWidth(width: number): void {
     state.lineHaloWidth = normalizeLineHaloWidth(width)
+    // Anchors placed outside a section leave extra room for the halo stroke.
+    refreshDocumentAndLayouts()
   }
 
   function setLineHaloColor(color: string): void {
@@ -167,13 +175,6 @@ export function useAnnotationStore() {
     state.pageBackgroundColor = normalizePageBackgroundColor(color)
   }
 
-  function setNumberStyle(style: NumberStyleId): void {
-    state.numberStyle = style
-    for (const annotation of state.annotations) {
-      annotation.calloutPosition = null
-    }
-  }
-
   function toggleShowSections(): void {
     state.showSections = !state.showSections
   }
@@ -212,6 +213,11 @@ export function useAnnotationStore() {
     }
   }
 
+  function selectAllAnnotations(): void {
+    state.selectedSectionIds = []
+    state.selectedAnnotationIds = state.annotations.map((annotation) => annotation.id)
+  }
+
   function addSection(rect: Rect): Section {
     const normalized = normalizeRect(rect)
     if (normalized.width < 8 || normalized.height < 8) {
@@ -244,6 +250,38 @@ export function useAnnotationStore() {
     state.selectedSectionIds = state.selectedSectionIds.filter((id) => !idSet.has(id))
   }
 
+  /**
+   * Resolve the auto-placement side for a freshly created annotation, weighing
+   * edge distance against how crowded each side already is from existing
+   * annotations, and logging the decision.
+   */
+  function resolveInitialSide(annotation: Annotation): CalloutSide {
+    const sizeArgs = [
+      state.defaultFontFamily,
+      state.calloutFontSize,
+      state.calloutFontWeight,
+      state.calloutFontItalic,
+    ] as const
+    const sizeById = new Map<string, { width: number; height: number }>()
+    for (const existing of state.annotations) {
+      sizeById.set(existing.id, estimateAnnotationLabelSize(existing, ...sizeArgs))
+    }
+    sizeById.set(annotation.id, estimateAnnotationLabelSize(annotation, ...sizeArgs))
+
+    const resolved = resolveAutoSides(
+      [...state.annotations, annotation],
+      sizeById,
+      state.sections,
+      state.imageWidth,
+      state.imageHeight,
+      (decision) => {
+        if (decision.annotationId !== annotation.id) return
+        console.log('[calloutSide] auto-placement', decision)
+      },
+    )
+    return resolved.get(annotation.id) ?? 'top'
+  }
+
   function createAnnotationForSection(section: Section): Annotation {
     pushEditUndo()
     const center = rectCenter(section.rect)
@@ -252,11 +290,14 @@ export function useAnnotationStore() {
       sectionId: section.id,
       order: state.annotations.length + 1,
       description: buildAutoDescription(section),
+      numberPrefix: '',
       markerPosition: { ...center },
       calloutSide: 'auto',
       calloutPosition: null,
       anchorOffset: { x: 0, y: 0 },
+      anchorOutside: true,
     }
+    annotation.calloutSide = resolveInitialSide(annotation)
     state.annotations.push(annotation)
     reindexOrders()
     state.selectedAnnotationIds = [annotation.id]
@@ -271,11 +312,14 @@ export function useAnnotationStore() {
       sectionId,
       order: state.annotations.length + 1,
       description: '',
+      numberPrefix: '',
       markerPosition: { ...point },
       calloutSide: 'auto',
       calloutPosition: null,
       anchorOffset: { x: 0, y: 0 },
+      anchorOutside: true,
     }
+    annotation.calloutSide = resolveInitialSide(annotation)
     state.annotations.push(annotation)
     reindexOrders()
     state.selectedAnnotationIds = [annotation.id]
@@ -313,7 +357,6 @@ export function useAnnotationStore() {
       calloutFillColor: state.calloutFillColor,
       calloutFillOpacity: state.calloutFillOpacity,
       pageBackgroundColor: state.pageBackgroundColor,
-      numberStyle: state.numberStyle,
     }
   }
 
@@ -326,8 +369,7 @@ export function useAnnotationStore() {
       fontChanged ||
       settings.calloutFontSize !== state.calloutFontSize ||
       settings.calloutFontWeight !== state.calloutFontWeight ||
-      settings.calloutFontItalic !== state.calloutFontItalic ||
-      settings.numberStyle !== state.numberStyle
+      settings.calloutFontItalic !== state.calloutFontItalic
 
     state.defaultFontFamily = settings.defaultFontFamily
     state.lineStyle = settings.lineStyle
@@ -346,7 +388,6 @@ export function useAnnotationStore() {
     state.calloutFillColor = settings.calloutFillColor
     state.calloutFillOpacity = settings.calloutFillOpacity
     state.pageBackgroundColor = settings.pageBackgroundColor
-    state.numberStyle = settings.numberStyle
 
     await ensureGoogleFontsLoaded([state.defaultFontFamily], {
       italic: state.calloutFontItalic,
@@ -387,6 +428,7 @@ export function useAnnotationStore() {
         | 'calloutSide'
         | 'calloutPosition'
         | 'anchorOffset'
+        | 'anchorOutside'
         | 'sectionId'
       >,
       'calloutPosition'
@@ -515,23 +557,25 @@ export function useAnnotationStore() {
     })
   }
 
-  /** Reorder by side + X/Y so leaders stay clearer; one undo step for the whole sort. */
-  function sortAnnotationsByXY(): void {
-    if (state.annotations.length < 2) return
-    const ordered = orderedAnnotationsForClearLeaders(
-      state.annotations,
-      state.sections,
-      state.imageWidth,
-      state.imageHeight,
-    )
-    const alreadySorted = ordered.every(
-      (annotation, annotationIndex) => annotation.order === annotationIndex + 1,
-    )
-    if (alreadySorted) return
+  /** Set each annotation's number prefix, in the given reading direction. */
+  function assignNumberPrefixes(
+    direction: NumberPrefixDirection,
+    style: NumberPrefixStyle,
+  ): void {
+    if (state.annotations.length === 0) return
     pushEditUndo()
-    ordered.forEach((annotation, annotationIndex) => {
-      annotation.order = annotationIndex + 1
+    const ordered = orderAnnotationsForNumbering(state.annotations, state.sections, direction)
+    ordered.forEach((annotation, index) => {
+      annotation.numberPrefix = formatNumberPrefix(index + 1, style)
     })
+  }
+
+  function clearNumberPrefixes(): void {
+    if (state.annotations.every((annotation) => !annotation.numberPrefix)) return
+    pushEditUndo()
+    for (const annotation of state.annotations) {
+      annotation.numberPrefix = ''
+    }
   }
 
   function undoEdit(): boolean {
@@ -657,6 +701,7 @@ export function useAnnotationStore() {
     imageElement: readonly(imageElement),
     loadImageFile,
     replaceImageFile,
+    flushPersistCurrentProject,
     clearCurrentProject,
     cropImage,
     undoCrop,
@@ -685,11 +730,11 @@ export function useAnnotationStore() {
     setCalloutFillColor,
     setCalloutFillOpacity,
     setPageBackgroundColor,
-    setNumberStyle,
     toggleShowSections,
     clearSelection,
     selectSection,
     selectAnnotation,
+    selectAllAnnotations,
     addSection,
     updateSectionRect,
     removeSections,
@@ -700,7 +745,8 @@ export function useAnnotationStore() {
     nudgeCalloutPositions,
     removeAnnotations,
     reorderAnnotations,
-    sortAnnotationsByXY,
+    assignNumberPrefixes,
+    clearNumberPrefixes,
     exportProject,
     copyAnnotatedImageToClipboard,
     saveProjectToFile,

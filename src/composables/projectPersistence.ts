@@ -51,7 +51,6 @@ export async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     calloutFillColor: state.calloutFillColor,
     calloutFillOpacity: state.calloutFillOpacity,
     pageBackgroundColor: state.pageBackgroundColor,
-    numberStyle: state.numberStyle,
     showSections: state.showSections,
     activeNamedProjectId: activeNamedProject.value?.id ?? null,
     activeNamedProjectName: activeNamedProject.value?.name ?? null,
@@ -102,6 +101,16 @@ export async function ensureActiveNamedProject(): Promise<void> {
   } finally {
     ensuringNamedProject = false
   }
+}
+
+/** Flush pending debounced saves before leaving the current project. */
+export async function flushPersistCurrentProject(): Promise<void> {
+  clearSessionSaveSchedule()
+  clearNamedSaveSchedule()
+  if (!state.imageUrl) return
+  await ensureActiveNamedProject()
+  await persistActiveNamedProject()
+  await persistCurrentProject()
 }
 
 export function scheduleSave(): void {
@@ -202,7 +211,6 @@ watch(
     state.calloutFillColor,
     state.calloutFillOpacity,
     state.pageBackgroundColor,
-    state.numberStyle,
     state.showSections,
   ],
   () => scheduleSave(),

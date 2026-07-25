@@ -2,7 +2,6 @@ import type {
   Annotation,
   AnchorStyleId,
   LineStyleId,
-  NumberStyleId,
   Section,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
@@ -38,7 +37,6 @@ export interface ProjectSnapshot {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  numberStyle: NumberStyleId
   showSections: boolean
   /** When set, edits auto-overwrite this named browser save. */
   activeNamedProjectId?: string | null

@@ -2,12 +2,10 @@ import type {
   Annotation,
   AnchorStyleId,
   LineStyleId,
-  NumberStyleId,
   Section,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
-import { DEFAULT_NUMBER_STYLE, isNumberStyleId } from './circledNumbers'
 import { normalizeAnchorStyle } from './anchorStyle'
 import { normalizeCalloutSide } from './calloutLayout'
 import {
@@ -56,7 +54,6 @@ export interface ProjectFileData {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  numberStyle: NumberStyleId
   showSections: boolean
   /** SHA-256 hex of canonical project bytes (excluding this field). Written on export. */
   contentHash?: string
@@ -116,6 +113,10 @@ function sanitizeAnnotation(
     sectionId: raw.sectionId,
     order: raw.order,
     description: raw.description,
+    numberPrefix:
+      typeof (raw as Annotation & { numberPrefix?: unknown }).numberPrefix === 'string'
+        ? raw.numberPrefix
+        : '',
     markerPosition: raw.markerPosition,
     calloutSide: normalizeCalloutSide(raw.calloutSide),
     calloutPosition: raw.calloutPosition,
@@ -124,6 +125,7 @@ function sanitizeAnnotation(
       imageWidth,
       imageHeight,
     ),
+    anchorOutside: (raw as Annotation & { anchorOutside?: unknown }).anchorOutside === true,
   }
 }
 
@@ -177,7 +179,6 @@ export async function contentHashFromSnapshot(snapshot: {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  numberStyle: NumberStyleId
   showSections: boolean
 }): Promise<string> {
   const data = await buildProjectFileData(
@@ -225,9 +226,6 @@ export function suggestProjectBundleFileName(): string {
 
 function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   const project = { ...raw }
-  if (!isNumberStyleId(project.numberStyle)) {
-    project.numberStyle = DEFAULT_NUMBER_STYLE
-  }
   const normalizedLine = normalizeLineStyle(project.lineStyle, project.lineWidth)
   project.lineStyle = normalizedLine.lineStyle
   project.lineWidth = normalizedLine.lineWidth
@@ -359,7 +357,6 @@ export function projectFileFieldsFromSnapshot(
     calloutFillColor: string
     calloutFillOpacity: number
     pageBackgroundColor: string
-    numberStyle: NumberStyleId
     showSections: boolean
   },
 ): ProjectFileFields {
@@ -386,7 +383,6 @@ export function projectFileFieldsFromSnapshot(
     calloutFillColor: snapshot.calloutFillColor,
     calloutFillOpacity: snapshot.calloutFillOpacity,
     pageBackgroundColor: snapshot.pageBackgroundColor,
-    numberStyle: snapshot.numberStyle,
     showSections: snapshot.showSections,
   }
 }

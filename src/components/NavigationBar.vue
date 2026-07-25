@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { APP_LICENSE, APP_LICENSE_URL, APP_NAME, APP_VERSION } from '../appMeta'
 import { RUNTIME_LIBRARIES } from '../credits'
 import { useI18n } from '../i18n'
+import { useTheme, type ThemePreference } from '../composables/useTheme'
 
 export type AppPageId = 'gallery' | 'edit'
 
@@ -18,6 +19,13 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const aboutOpen = ref(false)
 const baseUrl = import.meta.env.BASE_URL
+const { themePreference, setThemePreference } = useTheme()
+
+const themeOptions: Array<{ value: ThemePreference; labelKey: 'about.theme.system' | 'about.theme.light' | 'about.theme.dark' }> = [
+  { value: 'system', labelKey: 'about.theme.system' },
+  { value: 'light', labelKey: 'about.theme.light' },
+  { value: 'dark', labelKey: 'about.theme.dark' },
+]
 
 function openAbout(): void {
   aboutOpen.value = true
@@ -180,6 +188,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
           </a>
         </p>
         <p class="about-copyright">{{ t('about.copyright') }}</p>
+
+        <section class="about-theme" :aria-label="t('about.theme.title')">
+          <h3 class="about-theme-title">{{ t('about.theme.title') }}</h3>
+          <div class="about-theme-buttons" role="group" :aria-label="t('about.theme.title')">
+            <button
+              v-for="option in themeOptions"
+              :key="option.value"
+              type="button"
+              class="about-theme-btn"
+              :class="{ active: themePreference === option.value }"
+              :aria-pressed="themePreference === option.value"
+              @click="setThemePreference(option.value)"
+            >
+              {{ t(option.labelKey) }}
+            </button>
+          </div>
+        </section>
 
         <section class="about-libraries" :aria-label="t('about.librariesTitle')">
           <h3 class="about-libraries-title">{{ t('about.librariesTitle') }}</h3>
@@ -364,6 +389,53 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
   color: var(--ink-muted);
   font-size: 0.76rem;
   line-height: 1.4;
+}
+
+.about-theme {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.about-theme-title {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.about-theme-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.about-theme-btn {
+  margin: 0;
+  padding: 7px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--spring),
+    border-color var(--spring),
+    color var(--spring);
+}
+
+.about-theme-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.about-theme-btn.active {
+  border-color: rgba(0, 122, 255, 0.45);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .about-libraries {

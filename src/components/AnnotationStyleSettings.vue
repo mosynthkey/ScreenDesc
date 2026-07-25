@@ -39,6 +39,7 @@ const emit = defineEmits<{
       anchorOffset: { x: number; y: number }
       anchorOffsetX: number
       anchorOffsetY: number
+      anchorOutside: boolean
       calloutPosition: Point | null
       calloutPositionX: number
       calloutPositionY: number
@@ -76,12 +77,6 @@ const calloutSideOptions = computed(() => [
     area: 'left' as const,
   },
   {
-    value: 'auto' as const,
-    label: t('style.calloutSide.auto'),
-    title: t('style.calloutSide.autoTitle'),
-    area: 'auto' as const,
-  },
-  {
     value: 'right' as const,
     label: t('style.calloutSide.right'),
     title: t('style.calloutSide.right'),
@@ -114,6 +109,21 @@ const sharedAnchorOffsetY = computed<number | null>(() => {
     ? first.anchorOffset.y
     : null
 })
+
+const sharedAnchorOutside = computed<boolean | null>(() => {
+  const first = activeAnnotations.value[0]
+  if (!first) return null
+  return activeAnnotations.value.every(
+    (item) => item.anchorOutside === first.anchorOutside,
+  )
+    ? first.anchorOutside
+    : null
+})
+
+function onAnchorOutsideChange(event: Event): void {
+  const checked = (event.target as HTMLInputElement).checked
+  emit('patch', { anchorOutside: checked })
+}
 
 function resolvedLabelPosition(annotation: Annotation): Point {
   if (annotation.calloutPosition) return annotation.calloutPosition
@@ -311,13 +321,12 @@ function resetLabelPosition(): void {
           {{ selectionTitle }}
         </h3>
         <button
-          class="close-editor-btn"
+          class="clear-selection-btn"
           type="button"
-          :title="t('style.closeEditor')"
-          :aria-label="t('style.closeEditor')"
+          :title="t('style.clearSelection')"
           @click="emit('close')"
         >
-          ×
+          {{ t('style.clearSelection') }}
         </button>
       </div>
       <p v-if="isMultiSelection" class="hint multi-hint">{{ t('style.multiSelectionHint') }}</p>
@@ -425,6 +434,17 @@ function resetLabelPosition(): void {
 
       <div class="settings-group settings-group-compact">
         <h4 class="section-title">{{ t('style.section.anchor') }}</h4>
+        <div class="field field-tight">
+          <label class="check">
+            <input
+              type="checkbox"
+              :checked="sharedAnchorOutside ?? false"
+              :indeterminate.prop="sharedAnchorOutside === null"
+              @change="onAnchorOutsideChange"
+            />
+            <span>{{ t('style.anchorOutside') }}</span>
+          </label>
+        </div>
         <div class="field field-tight">
           <label class="slider-label">
             <span>{{ t('style.axis.x') }}</span>
@@ -550,27 +570,23 @@ function resetLabelPosition(): void {
   min-width: 0;
 }
 
-.close-editor-btn {
+.clear-selection-btn {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
   margin: 0;
-  padding: 0;
+  padding: 4px 10px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 1.15rem;
-  line-height: 1;
+  font-size: 0.72rem;
+  font-weight: 590;
+  line-height: 1.2;
   cursor: pointer;
 }
 
-.close-editor-btn:hover {
+.clear-selection-btn:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--bg-panel);
   color: var(--ink);
 }
 
@@ -684,7 +700,7 @@ function resetLabelPosition(): void {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-areas:
     '. top .'
-    'left auto right'
+    'left . right'
     '. bottom .';
   gap: 4px;
 }
@@ -695,10 +711,6 @@ function resetLabelPosition(): void {
 
 .callout-side-left {
   grid-area: left;
-}
-
-.callout-side-auto {
-  grid-area: auto;
 }
 
 .callout-side-right {
@@ -717,7 +729,7 @@ function resetLabelPosition(): void {
   padding: 5px 4px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--bg-elevated);
   color: var(--ink-muted);
   font-size: 0.68rem;
   font-weight: 650;

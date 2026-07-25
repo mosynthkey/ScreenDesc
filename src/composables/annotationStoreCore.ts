@@ -3,12 +3,11 @@ import type {
   Annotation,
   AnchorStyleId,
   LineStyleId,
-  NumberStyleId,
   Point,
   ProjectState,
   Section,
 } from '../types/annotation'
-import { DEFAULT_NUMBER_STYLE, sortByOrder } from '../utils/circledNumbers'
+import { sortByOrder } from '../utils/circledNumbers'
 import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from '../utils/anchorStyle'
 import { containmentRatio } from '../utils/geometry'
 import { type OcrLineHit } from '../utils/ocr'
@@ -76,7 +75,6 @@ export const state = reactive<ProjectState>({
   calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
   calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
   pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
-  numberStyle: DEFAULT_NUMBER_STYLE,
   showSections: true,
   calloutLayouts: [],
   document: createDefaultDocumentLayout(0, 0, 0),
@@ -134,6 +132,10 @@ export function sanitizeAnnotation(raw: Annotation): Annotation {
     sectionId: raw.sectionId,
     order: raw.order,
     description: raw.description,
+    numberPrefix:
+      typeof (raw as Annotation & { numberPrefix?: unknown }).numberPrefix === 'string'
+        ? raw.numberPrefix
+        : '',
     markerPosition: { ...raw.markerPosition },
     calloutSide: normalizeCalloutSide(raw.calloutSide),
     calloutPosition: raw.calloutPosition
@@ -142,6 +144,7 @@ export function sanitizeAnnotation(raw: Annotation): Annotation {
     anchorOffset: sanitizeAnchorOffset(
       (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,
     ),
+    anchorOutside: (raw as Annotation & { anchorOutside?: unknown }).anchorOutside === true,
   }
 }
 
@@ -160,7 +163,7 @@ export function refreshDocumentAndLayouts(): void {
     state.defaultFontFamily,
     state.calloutFontWeight,
     state.calloutFontItalic,
-    state.numberStyle,
+    state.lineHaloWidth,
   )
   state.document = document
   state.calloutLayouts = layouts
@@ -252,6 +255,7 @@ watch(
       id: annotation.id,
       order: annotation.order,
       description: annotation.description,
+      numberPrefix: annotation.numberPrefix,
       sectionId: annotation.sectionId,
       markerPosition: { ...annotation.markerPosition },
       calloutSide: annotation.calloutSide,
@@ -259,6 +263,7 @@ watch(
         ? { ...annotation.calloutPosition }
         : null,
       anchorOffset: { ...annotation.anchorOffset },
+      anchorOutside: annotation.anchorOutside,
     })),
   () => {
     refreshDocumentAndLayouts()
@@ -287,7 +292,6 @@ watch(
       state.calloutFontWeight,
       state.calloutFontItalic,
       state.defaultFontFamily,
-      state.numberStyle,
     ] as const,
   () => {
     refreshDocumentAndLayouts()
@@ -317,7 +321,6 @@ export interface RestorableFields {
   calloutFillColor?: string
   calloutFillOpacity?: number
   pageBackgroundColor?: string
-  numberStyle?: NumberStyleId
   showSections: boolean
 }
 
@@ -356,7 +359,6 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
   state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
   state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
-  state.numberStyle = fields.numberStyle ?? DEFAULT_NUMBER_STYLE
   state.showSections = fields.showSections
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []

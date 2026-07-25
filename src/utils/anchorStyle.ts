@@ -27,13 +27,17 @@ export function getAnchorStyleOptions(): Array<{ value: AnchorStyleId; label: st
   ]
 }
 
-export function leaderLeaveUnit(anchor: Point, end: Point): Point {
-  const deltaX = end.x - anchor.x
-  const deltaY = end.y - anchor.y
-  if (Math.abs(deltaY) > Math.abs(deltaX)) {
-    return { x: 0, y: deltaY === 0 ? 1 : Math.sign(deltaY) }
-  }
-  return { x: deltaX === 0 ? 1 : Math.sign(deltaX), y: 0 }
+/**
+ * Direction the leader leaves `anchor` in — always pointing away from
+ * `targetCenter`, so the arrowhead (which points the opposite way) reads as
+ * "into" the annotated element rather than toward wherever the label landed.
+ */
+export function leaderLeaveUnit(anchor: Point, targetCenter: Point): Point {
+  const deltaX = anchor.x - targetCenter.x
+  const deltaY = anchor.y - targetCenter.y
+  const distance = Math.hypot(deltaX, deltaY)
+  if (distance < 1e-6) return { x: 0, y: 1 }
+  return { x: deltaX / distance, y: deltaY / distance }
 }
 
 export interface AnchorArrowGeometry {
@@ -46,14 +50,14 @@ export interface AnchorArrowGeometry {
 
 /**
  * Arrowhead centered on `anchor`.
- * Tip points at the annotated target; notched base faces the label.
+ * Tip points at the annotated target's center; notched base faces the label.
  */
 export function buildAnchorArrowGeometry(
   anchor: Point,
-  end: Point,
+  targetCenter: Point,
   radius: number,
 ): AnchorArrowGeometry {
-  const leave = leaderLeaveUnit(anchor, end)
+  const leave = leaderLeaveUnit(anchor, targetCenter)
   const towardTargetX = -leave.x
   const towardTargetY = -leave.y
   const perpX = -towardTargetY

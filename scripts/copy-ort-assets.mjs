@@ -13,9 +13,15 @@ const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const srcDir = path.join(rootDir, 'node_modules', 'onnxruntime-web', 'dist')
 const outDir = path.join(rootDir, 'public', 'ort')
 
-// Single-threaded-capable SIMD build; works with or without COOP/COEP
-// (GitHub Pages doesn't send those headers, so threading stays off).
-const files = ['ort-wasm-simd-threaded.wasm', 'ort-wasm-simd-threaded.mjs']
+// PaddleOCR.js's own provider-selection logic picks between these SIMD
+// build variants at runtime (we don't control which one it asks for), so
+// all of them need to be available same-origin. Each works with or without
+// COOP/COEP (GitHub Pages doesn't send those headers, so threading stays off).
+const variants = ['', '.jsep', '.jspi', '.asyncify']
+const files = variants.flatMap((variant) => [
+  `ort-wasm-simd-threaded${variant}.wasm`,
+  `ort-wasm-simd-threaded${variant}.mjs`,
+])
 
 async function main() {
   await mkdir(outDir, { recursive: true })

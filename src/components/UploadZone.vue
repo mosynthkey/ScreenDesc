@@ -304,7 +304,7 @@ defineExpose({ openFilePicker })
   text-align: center;
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--bg-panel);
 }
 
 .gallery-grid {
