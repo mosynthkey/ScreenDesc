@@ -1,6 +1,6 @@
 # ScreenDesc
 
-A screenshot annotation tool for manuals.
+A screenshot annotation tool.
 It uses AI-assisted UI element detection so you can create annotated images with simple controls.
 
 ## License

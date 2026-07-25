@@ -16,8 +16,14 @@ import {
 } from '../anchorStyle'
 import { fontFamilyCss } from '../googleFonts'
 import { getLineStyleSpec } from '../lineStyle'
-import { buildLeaderPath, leaderAttachOnLabel } from '../calloutLayout'
+import {
+  buildLeaderPath,
+  calloutLabelLineBaselineY,
+  calloutLabelTextX,
+  leaderAttachOnLabel,
+} from '../calloutLayout'
 import { resolveCalloutFill } from '../commonSettings'
+import { measureTextBaselineFromCenter } from '../textMeasure'
 
 function escapeXml(value: string): string {
   return value
@@ -26,6 +32,7 @@ function escapeXml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
 }
+
 
 function renderCallout(
   annotation: Annotation,
@@ -48,16 +55,28 @@ function renderCallout(
   fontFamily: string,
 ): string {
   const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, targetCenter } = layout
-  const textX = labelPosition.x + Math.max(10, calloutFontSize * 0.28)
   const leaderEnd = leaderAttachOnLabel(layout)
-
-  const lineHeight = Math.round(calloutFontSize * 1.375)
-  const blockHeight = lines.length * lineHeight
-  const blockTop = labelPosition.y + (labelHeight - blockHeight) / 2
+  const textX = calloutLabelTextX(labelPosition.x, calloutFontSize)
+  const fontCss = fontFamilyCss(fontFamily)
+  // Native <text> only — foreignObject is stripped when SVG is rasterized via <img>/canvas.
   const tspans = lines
     .map((line, lineIndex) => {
-      const y = blockTop + lineHeight * lineIndex + lineHeight / 2
-      return `<tspan x="${textX}" y="${y}" dominant-baseline="middle">${escapeXml(line)}</tspan>`
+      const baselineFromCenter = measureTextBaselineFromCenter(
+        line,
+        calloutFontSize,
+        fontCss,
+        calloutFontWeight,
+        calloutFontItalic,
+      )
+      const y = calloutLabelLineBaselineY(
+        labelPosition.y,
+        labelHeight,
+        lines.length,
+        lineIndex,
+        calloutFontSize,
+        baselineFromCenter,
+      )
+      return `<tspan x="${textX}" y="${y}">${escapeXml(line)}</tspan>`
     })
     .join('')
 
@@ -121,8 +140,8 @@ function renderCallout(
       <g${blendAttr}>
         ${body}
       </g>
-      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="8" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
-      <text dominant-baseline="middle" font-family="${escapeXml(fontFamilyCss(fontFamily))}" font-size="${calloutFontSize}" font-weight="${calloutFontWeight}" font-style="${calloutFontItalic ? 'italic' : 'normal'}" fill="#111111">${tspans}</text>
+      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="6" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
+      <text font-family="${escapeXml(fontCss)}" font-size="${calloutFontSize}" font-weight="${calloutFontWeight}" font-style="${calloutFontItalic ? 'italic' : 'normal'}" fill="#111111">${tspans}</text>
     </g>
   `
 }

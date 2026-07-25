@@ -1,5 +1,5 @@
 export const en = {
-  'document.title': 'ScreenDesc — Manual Annotation',
+  'document.title': 'ScreenDesc',
 
   'about.title': 'About ScreenDesc',
   'about.openAria': 'About ScreenDesc',
@@ -124,7 +124,7 @@ export const en = {
   'canvas.detecting': 'Proposing sections…',
   'canvas.descriptionPlaceholder': 'Step description',
 
-  'export.defaultFilename': 'manual-annotation',
+  'export.defaultFilename': 'annotation',
   'export.title': 'Export',
   'export.format': 'Format',
   'export.filename': 'Filename',

@@ -13,7 +13,7 @@ export interface GoogleFontOption {
 export const DEFAULT_CALLOUT_FONT_WEIGHT = 700
 export const DEFAULT_CALLOUT_FONT_ITALIC = false
 
-/** Curated Google Fonts for manuals (JP-first, plus common Latin faces). */
+/** Curated Google Fonts (JP-first, plus common Latin faces). */
 export const GOOGLE_FONT_OPTIONS: GoogleFontOption[] = [
   // Japanese — gothic / sans
   { family: 'Noto Sans JP', label: 'Noto Sans JP', weights: [400, 700, 900], group: 'japanese' },

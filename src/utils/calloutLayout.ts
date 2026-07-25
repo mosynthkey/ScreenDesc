@@ -121,6 +121,37 @@ function labelVPadding(fontSize: number): number {
   return Math.max(14, Math.round(fontSize * 0.35))
 }
 
+/** Horizontal / vertical padding inside a fixed-size callout text box. */
+export function calloutLabelPadding(fontSize: number): {
+  horizontal: number
+  vertical: number
+} {
+  return {
+    horizontal: labelHPadding(fontSize) / 2,
+    vertical: labelVPadding(fontSize) / 2,
+  }
+}
+
+export function calloutLabelTextX(labelX: number, fontSize: number): number {
+  return labelX + calloutLabelPadding(fontSize).horizontal
+}
+
+/** Alphabetic baseline Y for a line whose ink is vertically centered in the label. */
+export function calloutLabelLineBaselineY(
+  labelY: number,
+  labelHeight: number,
+  lineCount: number,
+  lineIndex: number,
+  fontSize: number,
+  baselineFromCenter: number,
+): number {
+  const lineHeight = lineHeightFor(fontSize)
+  const blockHeight = lineCount * lineHeight
+  const blockTop = labelY + (labelHeight - blockHeight) / 2
+  const lineCenterY = blockTop + lineHeight * lineIndex + lineHeight / 2
+  return lineCenterY + baselineFromCenter
+}
+
 function labelGapFor(fontSize: number): number {
   return Math.max(LABEL_GAP_MIN, Math.round(fontSize * 0.35))
 }

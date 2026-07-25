@@ -22,7 +22,14 @@ import {
   leaderAttachPoint,
   leaderLeaveUnit,
 } from '../utils/anchorStyle'
-import { buildLeaderPath, leaderAttachOnLabel } from '../utils/calloutLayout'
+import {
+  buildLeaderPath,
+  calloutLabelLineBaselineY,
+  calloutLabelPadding,
+  calloutLabelTextX,
+  leaderAttachOnLabel,
+} from '../utils/calloutLayout'
+import { measureTextBaselineFromCenter } from '../utils/textMeasure'
 import { resolveCalloutFill } from '../utils/commonSettings'
 import { useCanvasViewport } from '../composables/useCanvasViewport'
 import { useI18n } from '../i18n'
@@ -498,11 +505,33 @@ function layoutFor(annotationId: string): CalloutLayoutItem | undefined {
   return props.calloutLayouts.find((item) => item.annotationId === annotationId)
 }
 
+const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
+
+function calloutTextPadding(): { horizontal: number; vertical: number } {
+  return calloutLabelPadding(props.calloutFontSize)
+}
+
+function calloutTextX(layout: CalloutLayoutItem): number {
+  return calloutLabelTextX(layout.labelPosition.x, props.calloutFontSize)
+}
+
 function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
-  const lineHeight = Math.round(props.calloutFontSize * 1.375)
-  const blockHeight = layout.lines.length * lineHeight
-  const blockTop = layout.labelPosition.y + (layout.labelHeight - blockHeight) / 2
-  return blockTop + lineHeight * lineIndex + lineHeight / 2
+  const line = layout.lines[lineIndex] ?? ''
+  const baselineFromCenter = measureTextBaselineFromCenter(
+    line,
+    props.calloutFontSize,
+    activeFontFamily.value,
+    props.calloutFontWeight,
+    props.calloutFontItalic,
+  )
+  return calloutLabelLineBaselineY(
+    layout.labelPosition.y,
+    layout.labelHeight,
+    layout.lines.length,
+    lineIndex,
+    props.calloutFontSize,
+    baselineFromCenter,
+  )
 }
 
 const activeLineStyle = computed(() => getLineStyleSpec(props.lineStyle, props.lineWidth))
@@ -538,7 +567,6 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   return buildAnchorHeadPath(props.anchorStyle, geometry)
 }
 
-const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 </script>
 
 <template>
@@ -770,7 +798,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
               v-show="editingId !== annotation.id"
               :data-callout-label="annotation.id"
               class="callout-text"
-              :x="layoutFor(annotation.id)!.labelPosition.x + Math.max(10, calloutFontSize * 0.28)"
+              :x="calloutTextX(layoutFor(annotation.id)!)"
               :font-size="calloutFontSize"
               :font-weight="calloutFontWeight"
               :font-style="calloutFontItalic ? 'italic' : 'normal'"
@@ -780,9 +808,8 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
                 v-for="(line, lineIndex) in layoutFor(annotation.id)!.lines"
                 :key="lineIndex"
                 :data-callout-label="annotation.id"
-                :x="layoutFor(annotation.id)!.labelPosition.x + Math.max(10, calloutFontSize * 0.28)"
+                :x="calloutTextX(layoutFor(annotation.id)!)"
                 :y="calloutLineY(layoutFor(annotation.id)!, lineIndex)"
-                dominant-baseline="middle"
               >{{ line }}</tspan>
             </text>
           </g>
@@ -802,6 +829,7 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
           fontSize: `${calloutFontSize * screenScale}px`,
           fontWeight: calloutFontWeight,
           fontStyle: calloutFontItalic ? 'italic' : 'normal',
+          padding: `0 ${calloutTextPadding().horizontal * screenScale}px`,
         }"
         @pointerdown.stop
       >
@@ -839,7 +867,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 10px;
   border-radius: 6px;
   background: #fff;
   border: 1.5px solid var(--selection);
@@ -932,7 +959,6 @@ const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 
 .callout-text {
   fill: #111;
-  dominant-baseline: middle;
   pointer-events: none;
   user-select: none;
 }

@@ -1,7 +1,7 @@
 import type { MessageKey } from './en'
 
 export const ja: Record<MessageKey, string> = {
-  'document.title': 'ScreenDesc — 取扱説明書注釈',
+  'document.title': 'ScreenDesc',
 
   'about.title': 'ScreenDesc について',
   'about.openAria': 'ScreenDesc について',
@@ -126,7 +126,7 @@ export const ja: Record<MessageKey, string> = {
   'canvas.detecting': 'セクションを提案中…',
   'canvas.descriptionPlaceholder': '手順の説明',
 
-  'export.defaultFilename': 'マニュアル注釈',
+  'export.defaultFilename': '注釈',
   'export.title': '書き出し',
   'export.format': '形式',
   'export.filename': 'ファイル名',
