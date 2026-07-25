@@ -17,7 +17,7 @@ const emit = defineEmits<{
   downloadBundle: []
 }>()
 
-const { t } = useI18n()
+const { t, tr } = useI18n()
 const isDragging = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 const thumbUrls = ref<Record<string, string>>({})
@@ -180,7 +180,7 @@ defineExpose({ openFilePicker })
     </section>
 
     <p class="hint storage-notice">
-      {{ t('storage.notice.before')
+      {{ tr('storage.notice.before')
       }}<button
         class="storage-notice-link"
         type="button"

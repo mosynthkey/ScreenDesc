@@ -62,6 +62,7 @@ export const en = {
 
   'menu.newProject': 'New project',
   'menu.projectStorage': 'Save / load (in browser)',
+  'menu.projectStorage.desktop': 'Save / load (Documents)',
   'menu.exportProjectFile': 'Export (write to file)',
   'menu.importProjectFile': 'Import (read from file)',
   'menu.replaceImage': 'Replace image…',
@@ -101,6 +102,8 @@ export const en = {
   'home.downloadBundleTitle': 'Download all saved projects as one bundle file',
   'storage.notice.before':
     'This data is stored in this browser. It may be lost if you clear site data or leave private browsing. ',
+  'storage.notice.before.desktop':
+    'This data is saved under Documents/ScreenDesc on this computer. ',
   'storage.notice.link': 'Download all data from here',
   'storage.notice.after': '.',
 
@@ -136,8 +139,11 @@ export const en = {
 
   'projectStorage.defaultName': 'Project {stamp}',
   'projectStorage.title': 'Save / load in browser storage',
+  'projectStorage.title.desktop': 'Save / load in Documents/ScreenDesc',
   'projectStorage.autosaveHint':
     'Your current work is auto-saved in this browser as you edit.',
+  'projectStorage.autosaveHint.desktop':
+    'Your current work is auto-saved under Documents/ScreenDesc as you edit.',
   'projectStorage.currentLabel': 'Current project',
   'projectStorage.currentBadge': 'Editing',
   'projectStorage.currentNamedHint':

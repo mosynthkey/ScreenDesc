@@ -32,11 +32,11 @@ npm run dev
 Wraps the built app in a native window via Deno's experimental [`deno desktop`](https://docs.deno.com/runtime/desktop/) (requires Deno ≥ 2.9; `deno upgrade` to update).
 
 ```bash
-npm run desktop:run      # build + launch a native window
-npm run desktop:package  # build + output a distributable binary to dist-desktop/
+npm run desktop:run      # build:desktop + launch a native window
+npm run desktop:package  # build:desktop + output a distributable binary to dist-desktop/
 ```
 
-There's no dev-server/HMR integration; after code changes, rerun `npm run desktop:run`.
+Desktop builds use `vite build --mode desktop` (`VITE_APP_RUNTIME=desktop`). Saved projects persist under `Documents/ScreenDesc` (via a local host API), avoiding the webview’s ephemeral IndexedDB origin. There's no dev-server/HMR integration; after code changes, rerun `npm run desktop:run`.
 
 For a signed & notarized `.dmg` (requires the `Developer ID Application: Masaki Ono` certificate and the `Melissa` notarytool keychain profile): `npm run desktop:release:macos`. Run a single step with `deno run -A installer/macos/release.ts <build|sign|dmg|notarize|staple|verify|clean>`.
 

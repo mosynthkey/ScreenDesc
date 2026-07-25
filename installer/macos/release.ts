@@ -33,7 +33,7 @@ async function removeIfExists(path: string) {
 
 async function build() {
   await Deno.mkdir(buildDir, { recursive: true });
-  await run("npm", ["run", "build"], repoRoot);
+  await run("npm", ["run", "build:desktop"], repoRoot);
   await buildDesktopApp(unsignedDmg);
 }
 

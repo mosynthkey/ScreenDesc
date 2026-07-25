@@ -64,6 +64,7 @@ export const ja: Record<MessageKey, string> = {
 
   'menu.newProject': '新規作成',
   'menu.projectStorage': '保存 / 読み込み(ブラウザ内)',
+  'menu.projectStorage.desktop': '保存 / 読み込み(書類フォルダ)',
   'menu.exportProjectFile': 'エクスポート(ファイルに書き出し)',
   'menu.importProjectFile': 'インポート(ファイルから読み込み)',
   'menu.replaceImage': '画像を差し替え…',
@@ -103,6 +104,8 @@ export const ja: Record<MessageKey, string> = {
   'home.downloadBundleTitle': '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
   'storage.notice.before':
     'このデータはブラウザ内に保存されます。サイトデータを削除した場合やプライベートブラウジングでは失われる可能性があります。',
+  'storage.notice.before.desktop':
+    'このデータは書類（Documents）フォルダ内の ScreenDesc に保存されます。',
   'storage.notice.link': 'こちら',
   'storage.notice.after': 'からデータを一括ダウンロードできます。',
 
@@ -138,8 +141,11 @@ export const ja: Record<MessageKey, string> = {
 
   'projectStorage.defaultName': 'プロジェクト {stamp}',
   'projectStorage.title': 'ブラウザ内ストレージに保存 / 読み込み',
+  'projectStorage.title.desktop': '書類/ScreenDesc に保存 / 読み込み',
   'projectStorage.autosaveHint':
     '編集中の内容は、このブラウザに自動保存されます。',
+  'projectStorage.autosaveHint.desktop':
+    '編集中の内容は、書類（Documents）/ScreenDesc に自動保存されます。',
   'projectStorage.currentLabel': 'いまのプロジェクト',
   'projectStorage.currentBadge': '編集中',
   'projectStorage.currentNamedHint':

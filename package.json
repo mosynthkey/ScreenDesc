@@ -10,10 +10,11 @@
     "fetch-model": "node scripts/fetch-model.mjs",
     "fetch-ocr-model": "node scripts/fetch-ocr-model.mjs",
     "build": "vue-tsc -b && vite build",
+    "build:desktop": "vue-tsc -b && vite build --mode desktop",
     "build:pages": "npm run fetch-model && npm run fetch-ocr-model && npm run build",
     "preview": "vite preview",
-    "desktop:run": "npm run build && deno run -A desktop/pack.ts",
-    "desktop:package": "npm run build && deno run -A desktop/pack.ts dist-desktop/ScreenDesc",
+    "desktop:run": "npm run build:desktop && deno run -A desktop/pack.ts",
+    "desktop:package": "npm run build:desktop && deno run -A desktop/pack.ts dist-desktop/ScreenDesc",
     "desktop:release:macos": "deno run -A installer/macos/release.ts"
   },
   "dependencies": {

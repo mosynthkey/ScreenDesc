@@ -4,7 +4,7 @@ import type { ToolMode } from '../types/annotation'
 import type { AppPageId } from './NavigationBar.vue'
 import { useI18n } from '../i18n'
 
-const { t } = useI18n()
+const { t, tr } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -207,7 +207,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
                   stroke-linejoin="round"
                 />
               </svg>
-              <span>{{ t('menu.projectStorage') }}</span>
+              <span>{{ tr('menu.projectStorage') }}</span>
             </button>
             <div class="project-menu-sep" />
             <button

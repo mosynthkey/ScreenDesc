@@ -11,12 +11,27 @@ export async function buildDesktopApp(outputPath?: string) {
   try {
     await Deno.mkdir(join(sourceDir, "desktop"), { recursive: true });
     await Deno.symlink(join(repoRoot, "desktop", "main.ts"), join(sourceDir, "desktop", "main.ts"));
+    await Deno.symlink(
+      join(repoRoot, "desktop", "storageApi.ts"),
+      join(sourceDir, "desktop", "storageApi.ts"),
+    );
     await Deno.symlink(join(repoRoot, "dist"), join(sourceDir, "dist"));
     await Deno.copyFile(join(repoRoot, "deno.json"), join(sourceDir, "deno.json"));
     await Deno.copyFile(join(repoRoot, "deno.lock"), join(sourceDir, "deno.lock"));
     await Deno.copyFile(join(repoRoot, "public", "icon.png"), join(sourceDir, "icon.png"));
 
-    const args = ["desktop", "--include", "./dist", "--allow-read=dist", "--icon", "icon.png"];
+    // Documents/ScreenDesc persistence needs home-dir read/write; dist is served read-only.
+    const args = [
+      "desktop",
+      "--include",
+      "./dist",
+      "--allow-read=dist",
+      "--allow-read",
+      "--allow-write",
+      "--allow-env=HOME,USERPROFILE",
+      "--icon",
+      "icon.png",
+    ];
     if (outputPath) args.push("-o", outputPath);
     args.push("desktop/main.ts");
 

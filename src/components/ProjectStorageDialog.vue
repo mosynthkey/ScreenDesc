@@ -22,7 +22,7 @@ const emit = defineEmits<{
   downloadBundle: []
 }>()
 
-const { t } = useI18n()
+const { t, tr } = useI18n()
 const nameInput = ref('')
 
 const currentDisplayName = computed(() => {
@@ -70,8 +70,8 @@ function submitSave(): void {
 <template>
   <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
     <div class="modal">
-      <h2>{{ t('projectStorage.title') }}</h2>
-      <p class="autosave-hint">{{ t('projectStorage.autosaveHint') }}</p>
+      <h2>{{ tr('projectStorage.title') }}</h2>
+      <p class="autosave-hint">{{ tr('projectStorage.autosaveHint') }}</p>
 
       <div class="field">
         <label>{{ t('projectStorage.currentLabel') }}</label>
@@ -149,7 +149,7 @@ function submitSave(): void {
       </div>
 
       <p class="hint storage-notice">
-        {{ t('storage.notice.before')
+        {{ tr('storage.notice.before')
         }}<button
           class="storage-notice-link"
           type="button"
