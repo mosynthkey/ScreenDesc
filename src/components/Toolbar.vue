@@ -706,7 +706,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 .tool-dock {
   position: fixed;
   /* Center within the main column (right of the nav rail). */
-  left: calc(var(--nav-rail-width) + (100vw - var(--nav-rail-width)) / 2);
+  left: calc(var(--nav-rail-width) + (var(--app-width, 100vw) - var(--nav-rail-width)) / 2);
   bottom: 24px;
   transform: translateX(-50%);
   z-index: 40;
