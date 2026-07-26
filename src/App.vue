@@ -20,6 +20,7 @@ import type { SavedProjectMeta } from './utils/projectStorage'
 import { revealNamedProject } from './utils/projectStorage'
 import type { CommonSettingsPresetMeta } from './utils/commonSettings'
 import { resolveCalloutBorderWidth } from './utils/commonSettings'
+import { persistentStorage } from './utils/persistentStorage'
 import { useI18n } from './i18n'
 
 const { t } = useI18n()
@@ -117,6 +118,7 @@ const replaceDetectOpen = ref(false)
 const pendingDeleteProjectId = ref<string | null>(null)
 const pendingDeleteProjectName = ref('')
 const appPage = ref<AppPageId>('files')
+const isImportingFile = ref(false)
 
 const ANNOTATION_PANE_STORAGE_KEY = 'screendesc.annotationPanePercent'
 const ANNOTATION_PANE_MIN = 18
@@ -125,7 +127,7 @@ const ANNOTATION_PANE_DEFAULT = 42
 
 function readAnnotationPanePercent(): number {
   try {
-    const raw = localStorage.getItem(ANNOTATION_PANE_STORAGE_KEY)
+    const raw = persistentStorage.getItem(ANNOTATION_PANE_STORAGE_KEY)
     const value = Number(raw)
     if (Number.isFinite(value) && value >= ANNOTATION_PANE_MIN && value <= ANNOTATION_PANE_MAX) {
       return value
@@ -146,7 +148,7 @@ function clampAnnotationPanePercent(value: number): number {
 
 function persistAnnotationPanePercent(value: number): void {
   try {
-    localStorage.setItem(ANNOTATION_PANE_STORAGE_KEY, String(value))
+    persistentStorage.setItem(ANNOTATION_PANE_STORAGE_KEY, String(value))
   } catch {
     // Ignore storage errors.
   }
@@ -235,9 +237,18 @@ function goToPage(page: AppPageId): void {
 
 async function onFile(file: File): Promise<void> {
   clearProjectLoadError()
-  if (hasImage.value) await flushPersistCurrentProject()
-  await loadImageFile(file)
-  appPage.value = 'edit'
+  isImportingFile.value = true
+  // Yield a frame so the loading spinner paints before the heavy work starts.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  try {
+    if (hasImage.value) await flushPersistCurrentProject()
+    await loadImageFile(file)
+    appPage.value = 'edit'
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.imageReadFailed'))
+  } finally {
+    isImportingFile.value = false
+  }
 }
 
 async function onWindowPaste(event: ClipboardEvent): Promise<void> {
@@ -264,18 +275,16 @@ onBeforeUnmount(() => {
   clearAppNotice()
 })
 
-watch(
-  hasImage,
-  (open, wasOpen) => {
-    if (!open) {
-      void refreshSavedProjects()
-      if (wasOpen) appPage.value = 'files'
-      return
-    }
-    appPage.value = 'edit'
-  },
-  { immediate: true },
-)
+// Only react to the image being cleared (→ back to the files list). Every
+// path that loads an image (file open, paste, saved-project load) already
+// navigates to 'edit' itself; auto-navigating here too would also fire for
+// the silent autosave restore on startup and hijack the initial screen away
+// from 'files'.
+watch(hasImage, (open, wasOpen) => {
+  if (open) return
+  void refreshSavedProjects()
+  if (wasOpen) appPage.value = 'files'
+})
 
 async function onRetryModelLoad(): Promise<void> {
   try {
@@ -781,6 +790,7 @@ function onKeydown(event: KeyboardEvent): void {
           :projects="savedProjects"
           :active-project-id="activeNamedProject?.id ?? null"
           :is-busy="projectStorageBusy"
+          :is-importing="isImportingFile"
           @file="onFile"
           @open="onLoadSavedProject"
           @remove="onRemoveSavedProject"

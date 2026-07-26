@@ -31,7 +31,7 @@ type DesktopBrowserWindow = {
     >,
   ) => void;
   addEventListener: (
-    type: "mousedown" | "contextmenuclick",
+    type: "mousedown" | "contextmenuclick" | "close",
     listener: (event: DesktopWindowMouseEvent) => void,
   ) => void;
 };
@@ -50,6 +50,13 @@ function installNativeWindowChrome(): void {
   if (typeof DenoDesktop.BrowserWindow !== "function") return;
 
   const win = new DenoDesktop.BrowserWindow({ title: "ScreenDesc" });
+
+  // Traffic-light close only requests close; Deno.serve keeps the process (and
+  // often the window) alive. Exit so ⌘W / the red button actually quits.
+  // @see https://docs.deno.com/runtime/desktop/windows/
+  win.addEventListener("close", () => {
+    Deno.exit(0);
+  });
 
   win.addEventListener("mousedown", (event) => {
     if (event.button !== 2) return;

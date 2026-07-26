@@ -123,12 +123,17 @@ export async function saveNamedProject(
   snapshot: ProjectSnapshot,
   id?: string,
   contentHash?: string,
+  thumbnail?: Blob,
 ): Promise<string> {
   const body = {
     id,
     name,
     contentHash,
     snapshot: await snapshotToStored(snapshot),
+    // Omitted means "leave the previously stored thumbnail untouched".
+    thumbnailBase64: thumbnail
+      ? bytesToBase64(new Uint8Array(await thumbnail.arrayBuffer()))
+      : undefined,
   }
   const result = await requestJson<{ id: string }>('/projects', {
     method: 'PUT',
@@ -188,6 +193,15 @@ export async function loadNamedProjectImageBlob(id: string): Promise<Blob | null
   return response.blob()
 }
 
+export async function loadNamedProjectThumbnail(id: string): Promise<Blob | null> {
+  const response = await fetch(`${API_PREFIX}/projects/${encodeURIComponent(id)}/thumbnail`)
+  if (response.status === 404) return null
+  if (!response.ok) {
+    throw new Error(`Desktop storage load thumbnail failed (${response.status})`)
+  }
+  return response.blob()
+}
+
 export async function renameNamedProject(id: string, name: string): Promise<boolean> {
   const trimmed = name.trim()
   if (!trimmed) return false
@@ -205,4 +219,20 @@ export async function deleteNamedProject(id: string): Promise<void> {
 
 export async function revealNamedProject(id: string): Promise<void> {
   await requestJson(`/projects/${encodeURIComponent(id)}/reveal`, { method: 'POST' })
+}
+
+/**
+ * Write an exported file straight to Documents/ScreenDesc/exports and reveal
+ * it in the OS file manager. Deno Desktop's webview has no delegate to
+ * complete a browser-style `<a download>` navigation, so downloads silently
+ * never finish.
+ */
+export async function saveExportedFile(blob: Blob, filename: string): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  const result = await requestJson<{ path: string }>('/export', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ filename, base64: bytesToBase64(bytes) }),
+  })
+  return result.path
 }

@@ -93,6 +93,7 @@ export const en = {
   'home.newHint.formats': 'PNG / JPEG / WebP',
   'home.newHint.dnd': 'Drag & drop or paste (⌘V) a screenshot to start',
   'home.newButton': 'Choose screenshot',
+  'home.importing': 'Loading image…',
   'home.filesTitle': 'Saved projects',
   'home.filesCount': '{count} saved',
   'home.filesEmpty': 'No saved projects yet. Create one and use Project → Save / load.',
@@ -133,9 +134,9 @@ export const en = {
   'export.filename': 'Filename',
   'export.scale': 'Resolution (PNG)',
   'export.includeSectionGuides': 'Include section outlines',
-  'export.includeOriginal': 'Also export the original image (no annotations)',
   'export.cancel': 'Cancel',
   'export.download': 'Download',
+  'export.download.desktop': 'Save',
 
   'projectStorage.defaultName': 'Project {stamp}',
   'projectStorage.title': 'Save / load in browser storage',

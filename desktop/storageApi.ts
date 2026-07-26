@@ -1,6 +1,6 @@
 import { ensureDir } from "jsr:@std/fs/ensure-dir";
 import { exists } from "jsr:@std/fs/exists";
-import { dirname, join } from "jsr:@std/path";
+import { basename, dirname, join } from "jsr:@std/path";
 import { homedir } from "node:os";
 
 const API_PREFIX = "/__screendesc/storage";
@@ -43,12 +43,16 @@ export interface StoredSnapshot {
   activeNamedProjectName?: string | null;
 }
 
-function documentsRoot(): string {
+function homeDir(): string {
   // GUI-launched .app bundles often omit HOME from the process environment.
   // node:os.homedir() uses the OS account database (needs --allow-sys=homedir).
   const home = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE") ?? homedir();
-  if (!home) throw new Error("Cannot resolve home directory for Documents/ScreenDesc");
-  return join(home, "Documents", "ScreenDesc");
+  if (!home) throw new Error("Cannot resolve home directory");
+  return home;
+}
+
+function documentsRoot(): string {
+  return join(homeDir(), "Documents", "ScreenDesc");
 }
 
 function autosaveDir(root: string): string {
@@ -57,6 +61,25 @@ function autosaveDir(root: string): string {
 
 function projectsDir(root: string): string {
   return join(root, "projects");
+}
+
+function exportsDir(root: string): string {
+  return join(root, "exports");
+}
+
+/** Append " (2)", " (3)", … before the extension if `filename` already exists. */
+async function uniqueExportPath(dir: string, filename: string): Promise<string> {
+  await ensureDir(dir);
+  const dotIndex = filename.lastIndexOf(".");
+  const stem = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+  const ext = dotIndex > 0 ? filename.slice(dotIndex) : "";
+  let candidate = join(dir, filename);
+  let suffix = 2;
+  while (await exists(candidate)) {
+    candidate = join(dir, `${stem} (${suffix})${ext}`);
+    suffix += 1;
+  }
+  return candidate;
 }
 
 function projectDir(root: string, id: string): string {
@@ -102,6 +125,13 @@ async function writeSnapshotFiles(dir: string, snapshot: StoredSnapshot): Promis
   const { imageBase64, imageMimeType, ...fields } = snapshot;
   await writeJson(join(dir, "data.json"), { ...fields, imageMimeType });
   await Deno.writeFile(join(dir, "image.bin"), base64ToBytes(imageBase64));
+}
+
+/** Omit thumbnailBase64 to leave a previously stored thumbnail untouched. */
+async function writeThumbnailFile(dir: string, thumbnailBase64?: string): Promise<void> {
+  if (!thumbnailBase64) return;
+  await ensureDir(dir);
+  await Deno.writeFile(join(dir, "thumbnail.png"), base64ToBytes(thumbnailBase64));
 }
 
 async function readSnapshotFiles(dir: string): Promise<StoredSnapshot | null> {
@@ -189,6 +219,16 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
     const root = documentsRoot();
     await ensureDir(root);
 
+    if (path === "/settings" && req.method === "GET") {
+      const settings = await readJson<Record<string, string>>(join(root, "settings.json"));
+      return jsonResponse(settings ?? {});
+    }
+    if (path === "/settings" && req.method === "PUT") {
+      const settings = (await req.json()) as Record<string, string>;
+      await writeJson(join(root, "settings.json"), settings);
+      return emptyResponse(204);
+    }
+
     if (path === "/autosave" && req.method === "GET") {
       const snapshot = await readSnapshotFiles(autosaveDir(root));
       return snapshot ? jsonResponse(snapshot) : emptyResponse(404);
@@ -207,6 +247,16 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
       return emptyResponse(204);
     }
 
+    if (path === "/export" && req.method === "POST") {
+      const body = (await req.json()) as { filename: string; base64: string };
+      // Never trust a client-supplied filename as a path: take the basename only.
+      const safeFilename = basename(body.filename);
+      const targetPath = await uniqueExportPath(exportsDir(root), safeFilename);
+      await Deno.writeFile(targetPath, base64ToBytes(body.base64));
+      await revealPath(targetPath);
+      return jsonResponse({ path: targetPath });
+    }
+
     if (path === "/projects" && req.method === "GET") {
       return jsonResponse(await listMetas(root));
     }
@@ -217,6 +267,7 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
         name: string;
         contentHash?: string;
         snapshot: StoredSnapshot;
+        thumbnailBase64?: string;
       };
       const projectId = body.id ?? crypto.randomUUID();
       const dir = projectDir(root, projectId);
@@ -227,11 +278,12 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
         contentHash: body.contentHash,
       };
       await writeSnapshotFiles(dir, body.snapshot);
+      await writeThumbnailFile(dir, body.thumbnailBase64);
       await writeJson(join(dir, "meta.json"), meta);
       return jsonResponse({ id: projectId });
     }
 
-    const projectMatch = path.match(/^\/projects\/([^/]+)(\/(image|reveal))?$/);
+    const projectMatch = path.match(/^\/projects\/([^/]+)(\/(image|thumbnail|reveal))?$/);
     if (projectMatch) {
       const projectId = decodeURIComponent(projectMatch[1]!);
       const subResource = projectMatch[3] ?? null;
@@ -246,6 +298,15 @@ export async function handleStorageRequest(req: Request, url: URL): Promise<Resp
           headers: {
             "content-type": data?.imageMimeType || "application/octet-stream",
           },
+        });
+      }
+
+      if (subResource === "thumbnail" && req.method === "GET") {
+        const thumbnailPath = join(dir, "thumbnail.png");
+        if (!(await exists(thumbnailPath))) return emptyResponse(404);
+        const bytes = await Deno.readFile(thumbnailPath);
+        return new Response(bytes, {
+          headers: { "content-type": "image/png" },
         });
       }
 

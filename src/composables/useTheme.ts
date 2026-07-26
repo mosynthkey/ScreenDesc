@@ -1,4 +1,5 @@
 import { readonly, ref, watch } from 'vue'
+import { persistentStorage } from '../utils/persistentStorage'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
@@ -6,10 +7,10 @@ const STORAGE_KEY = 'screendesc.theme'
 
 function readStoredPreference(): ThemePreference {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = persistentStorage.getItem(STORAGE_KEY)
     if (raw === 'light' || raw === 'dark' || raw === 'system') return raw
   } catch {
-    // localStorage unavailable (private mode, etc.) — fall back to system.
+    // Storage unavailable (private mode, etc.) — fall back to system.
   }
   return 'system'
 }
@@ -29,11 +30,21 @@ applyTheme(themePreference.value)
 watch(themePreference, (preference) => {
   applyTheme(preference)
   try {
-    localStorage.setItem(STORAGE_KEY, preference)
+    persistentStorage.setItem(STORAGE_KEY, preference)
   } catch {
     // Ignore write failures; the in-memory preference still applies this session.
   }
 })
+
+/**
+ * On desktop, the stored preference isn't available until
+ * `loadDesktopSettings()` resolves (see `main.ts`), which happens after this
+ * module's initial synchronous read. Call once, right after that load, to
+ * pick up the real value before the app mounts.
+ */
+export function applyStoredThemePreference(): void {
+  themePreference.value = readStoredPreference()
+}
 
 export function useTheme() {
   function setThemePreference(preference: ThemePreference): void {

@@ -15,7 +15,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="open" class="modal-backdrop">
     <div class="modal crop-confirm-modal" role="dialog" aria-modal="true">
       <h2>{{ t('cropConfirm.title') }}</h2>
       <p class="body">{{ t('cropConfirm.body') }}</p>

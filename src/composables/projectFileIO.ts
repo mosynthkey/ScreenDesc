@@ -37,6 +37,7 @@ import {
   persistActiveNamedProject,
   persistCurrentProject,
 } from './projectPersistence'
+import { renderThumbnailBlob } from './projectThumbnail'
 
 async function snapshotFromProjectFile(data: ProjectFileData): Promise<ProjectSnapshot> {
   const imageBlob = await fetch(data.imageDataUrl).then((res) => res.blob())
@@ -53,7 +54,7 @@ export async function saveProjectToFile(): Promise<void> {
     snapshot.imageBlob,
     projectFileFieldsFromSnapshot(snapshot),
   )
-  downloadBlob(fileBlob, suggestProjectFileName())
+  await downloadBlob(fileBlob, suggestProjectFileName())
 }
 
 export async function downloadAllProjectsBundle(): Promise<number> {
@@ -72,7 +73,7 @@ export async function downloadAllProjectsBundle(): Promise<number> {
       fields: projectFileFieldsFromSnapshot(snapshot),
     })),
   )
-  downloadBlob(fileBlob, suggestProjectBundleFileName())
+  await downloadBlob(fileBlob, suggestProjectBundleFileName())
   return loaded.length
 }
 
@@ -138,7 +139,14 @@ export async function saveProjectAs(name: string, overwriteId?: string): Promise
   const snapshot = await buildCurrentSnapshot()
   if (!snapshot) return null
   const contentHash = await contentHashFromSnapshot(snapshot)
-  const projectId = await saveNamedProject(name, snapshot, overwriteId, contentHash)
+  const thumbnail = await renderThumbnailBlob()
+  const projectId = await saveNamedProject(
+    name,
+    snapshot,
+    overwriteId,
+    contentHash,
+    thumbnail ?? undefined,
+  )
   activeNamedProject.value = { id: projectId, name }
   markNamedSaveClean()
   await persistCurrentProject()

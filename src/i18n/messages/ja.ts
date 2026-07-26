@@ -95,6 +95,7 @@ export const ja: Record<MessageKey, string> = {
   'home.newHint.formats': 'PNG / JPEG / WebP',
   'home.newHint.dnd': 'ドラッグ&ドロップまたは貼り付け(⌘V)でも開始できます',
   'home.newButton': 'スクリーンショットを選ぶ',
+  'home.importing': '画像を読み込んでいます…',
   'home.filesTitle': '保存済みのプロジェクト',
   'home.filesCount': '{count} 件',
   'home.filesEmpty': 'まだ保存がありません。作成後、プロジェクト → 保存 / 読み込み で残せます。',
@@ -135,9 +136,9 @@ export const ja: Record<MessageKey, string> = {
   'export.filename': 'ファイル名',
   'export.scale': '解像度（PNG）',
   'export.includeSectionGuides': 'セクション枠も含める',
-  'export.includeOriginal': '元の画像(注釈なし)も一緒に書き出す',
   'export.cancel': 'キャンセル',
   'export.download': 'ダウンロード',
+  'export.download.desktop': '保存',
 
   'projectStorage.defaultName': 'プロジェクト {stamp}',
   'projectStorage.title': 'ブラウザ内ストレージに保存 / 読み込み',

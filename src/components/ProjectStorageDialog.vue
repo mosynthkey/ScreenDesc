@@ -69,7 +69,7 @@ function submitSave(): void {
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="open" class="modal-backdrop">
     <div class="modal">
       <h2>{{ tr('projectStorage.title') }}</h2>
       <p class="autosave-hint">{{ tr('projectStorage.autosaveHint') }}</p>

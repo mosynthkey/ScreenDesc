@@ -14,7 +14,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="open" class="modal-backdrop">
     <div class="modal replace-detect-modal" role="dialog" aria-modal="true">
       <h2>{{ t('replaceDetect.title') }}</h2>
       <p class="body">{{ t('replaceDetect.body') }}</p>

@@ -1,5 +1,6 @@
 import type { AnchorStyleId, LineStyleId } from '../types/annotation'
 import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from './anchorStyle'
+import { persistentStorage } from './persistentStorage'
 import { DEFAULT_FONT_FAMILY, normalizeCalloutFontItalic, normalizeCalloutFontWeight, DEFAULT_CALLOUT_FONT_ITALIC, DEFAULT_CALLOUT_FONT_WEIGHT } from './googleFonts'
 import {
   DEFAULT_LINE_HALO_COLOR,
@@ -180,7 +181,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
 
 function readAllPresets(): CommonSettingsPreset[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = persistentStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
@@ -206,7 +207,7 @@ function readAllPresets(): CommonSettingsPreset[] {
 }
 
 function writeAllPresets(presets: CommonSettingsPreset[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(presets))
+  persistentStorage.setItem(STORAGE_KEY, JSON.stringify(presets))
 }
 
 export function listCommonSettingsPresets(): CommonSettingsPresetMeta[] {

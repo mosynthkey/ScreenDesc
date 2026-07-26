@@ -59,7 +59,7 @@ function submitSave(): void {
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="open" class="modal-backdrop">
     <div class="modal">
       <h2>{{ t('commonSettings.title') }}</h2>
       <p class="hint">{{ t('commonSettings.description') }}</p>

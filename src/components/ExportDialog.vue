@@ -12,12 +12,11 @@ const emit = defineEmits<{
   export: [options: ExportOptions]
 }>()
 
-const { t } = useI18n()
+const { t, tr } = useI18n()
 
 const form = reactive({
   format: 'png' as ExportFormat,
   includeSectionGuides: false,
-  includeOriginal: true,
   scale: 2,
   filename: t('export.defaultFilename'),
 })
@@ -28,15 +27,29 @@ function submit(): void {
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+  <div v-if="open" class="modal-backdrop">
     <div class="modal">
       <h2>{{ t('export.title') }}</h2>
       <div class="field">
         <label>{{ t('export.format') }}</label>
-        <select v-model="form.format">
-          <option value="png">PNG</option>
-          <option value="svg">SVG</option>
-        </select>
+        <div class="format-buttons">
+          <button
+            class="btn btn-ghost"
+            type="button"
+            :class="{ active: form.format === 'png' }"
+            @click="form.format = 'png'"
+          >
+            PNG
+          </button>
+          <button
+            class="btn btn-ghost"
+            type="button"
+            :class="{ active: form.format === 'svg' }"
+            @click="form.format = 'svg'"
+          >
+            SVG
+          </button>
+        </div>
       </div>
       <div class="field">
         <label>{{ t('export.filename') }}</label>
@@ -54,16 +67,12 @@ function submit(): void {
         <input v-model="form.includeSectionGuides" type="checkbox" />
         {{ t('export.includeSectionGuides') }}
       </label>
-      <label class="check" style="margin-top: 8px">
-        <input v-model="form.includeOriginal" type="checkbox" />
-        {{ t('export.includeOriginal') }}
-      </label>
       <div class="modal-actions">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('export.cancel') }}
         </button>
         <button class="btn btn-primary" type="button" @click="submit">
-          {{ t('export.download') }}
+          {{ tr('export.download') }}
         </button>
       </div>
     </div>
@@ -76,5 +85,14 @@ function submit(): void {
   align-items: center;
   gap: 8px;
   font-size: 0.875rem;
+}
+
+.format-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.format-buttons .btn {
+  flex: 1;
 }
 </style>

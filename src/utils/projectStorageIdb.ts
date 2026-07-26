@@ -1,11 +1,12 @@
 import type { ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
 
 const DB_NAME = 'screendesc'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const AUTOSAVE_STORE = 'project'
 const AUTOSAVE_KEY = 'current'
 const SAVED_META_STORE = 'savedProjectsMeta'
 const SAVED_DATA_STORE = 'savedProjectsData'
+const SAVED_THUMB_STORE = 'savedProjectsThumbs'
 
 export type { ProjectSnapshot, SavedProjectMeta }
 
@@ -31,6 +32,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(SAVED_DATA_STORE)) {
         db.createObjectStore(SAVED_DATA_STORE)
+      }
+      if (!db.objectStoreNames.contains(SAVED_THUMB_STORE)) {
+        db.createObjectStore(SAVED_THUMB_STORE)
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -78,6 +82,7 @@ export async function saveNamedProject(
   snapshot: ProjectSnapshot,
   id?: string,
   contentHash?: string,
+  thumbnail?: Blob,
 ): Promise<string> {
   const projectId = id ?? crypto.randomUUID()
   const payload = toCloneableSnapshot(snapshot)
@@ -89,9 +94,14 @@ export async function saveNamedProject(
   }
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction([SAVED_META_STORE, SAVED_DATA_STORE], 'readwrite')
+    const stores = thumbnail
+      ? [SAVED_META_STORE, SAVED_DATA_STORE, SAVED_THUMB_STORE]
+      : [SAVED_META_STORE, SAVED_DATA_STORE]
+    const tx = db.transaction(stores, 'readwrite')
     tx.objectStore(SAVED_META_STORE).put(meta)
     tx.objectStore(SAVED_DATA_STORE).put(payload, projectId)
+    // When omitted, leave any previously stored thumbnail untouched.
+    if (thumbnail) tx.objectStore(SAVED_THUMB_STORE).put(thumbnail, projectId)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })
@@ -166,6 +176,18 @@ export async function loadNamedProjectImageBlob(id: string): Promise<Blob | null
   return snapshot?.imageBlob ?? null
 }
 
+export async function loadNamedProjectThumbnail(id: string): Promise<Blob | null> {
+  const db = await openDb()
+  const result = await new Promise<Blob | null>((resolve, reject) => {
+    const tx = db.transaction(SAVED_THUMB_STORE, 'readonly')
+    const request = tx.objectStore(SAVED_THUMB_STORE).get(id)
+    request.onsuccess = () => resolve((request.result as Blob | undefined) ?? null)
+    request.onerror = () => reject(request.error)
+  })
+  db.close()
+  return result
+}
+
 export async function renameNamedProject(id: string, name: string): Promise<boolean> {
   const trimmed = name.trim()
   if (!trimmed) return false
@@ -196,9 +218,13 @@ export async function renameNamedProject(id: string, name: string): Promise<bool
 export async function deleteNamedProject(id: string): Promise<void> {
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction([SAVED_META_STORE, SAVED_DATA_STORE], 'readwrite')
+    const tx = db.transaction(
+      [SAVED_META_STORE, SAVED_DATA_STORE, SAVED_THUMB_STORE],
+      'readwrite',
+    )
     tx.objectStore(SAVED_META_STORE).delete(id)
     tx.objectStore(SAVED_DATA_STORE).delete(id)
+    tx.objectStore(SAVED_THUMB_STORE).delete(id)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })

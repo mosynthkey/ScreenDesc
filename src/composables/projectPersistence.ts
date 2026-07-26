@@ -9,6 +9,7 @@ import {
 } from '../utils/projectStorage'
 import { contentHashFromSnapshot } from '../utils/projectFile'
 import { defaultProjectName } from '../utils/projectName'
+import { renderThumbnailBlob } from './projectThumbnail'
 import {
   activeNamedProject,
   applyRestoredSnapshot,
@@ -68,7 +69,12 @@ export async function persistCurrentProject(): Promise<void> {
   }
 }
 
-export async function persistActiveNamedProject(): Promise<void> {
+/**
+ * @param withThumbnail Re-renders the annotated thumbnail too. Costly (font
+ * loading + SVG rasterization), so callers only pass true at natural
+ * settle points (leaving the project), not on the frequent edit-debounce path.
+ */
+export async function persistActiveNamedProject(withThumbnail = false): Promise<void> {
   if (!activeNamedProject.value || !state.imageUrl) return
   try {
     const snapshot = await buildCurrentSnapshot()
@@ -77,9 +83,10 @@ export async function persistActiveNamedProject(): Promise<void> {
     const active = activeNamedProject.value
     if (!active) return
     const contentHash = await contentHashFromSnapshot(snapshot)
+    const thumbnail = withThumbnail ? await renderThumbnailBlob() : undefined
     const latest = activeNamedProject.value
     if (!latest || latest.id !== active.id) return
-    await saveNamedProject(latest.name, snapshot, latest.id, contentHash)
+    await saveNamedProject(latest.name, snapshot, latest.id, contentHash, thumbnail ?? undefined)
     namedSaveDirty = false
   } catch (err) {
     console.warn('[ScreenDesc] failed to auto-overwrite named project', err)
@@ -97,7 +104,14 @@ export async function ensureActiveNamedProject(): Promise<void> {
     if (!snapshot || activeNamedProject.value) return
     const name = defaultProjectName()
     const contentHash = await contentHashFromSnapshot(snapshot)
-    const projectId = await saveNamedProject(name, snapshot, undefined, contentHash)
+    const thumbnail = await renderThumbnailBlob()
+    const projectId = await saveNamedProject(
+      name,
+      snapshot,
+      undefined,
+      contentHash,
+      thumbnail ?? undefined,
+    )
     // Re-read via .value after awaits; TS control-flow still thinks it is null here.
     const concurrent = activeNamedProject.value as { id: string; name: string } | null
     if (concurrent) {
@@ -122,7 +136,7 @@ export async function flushPersistCurrentProject(): Promise<void> {
   clearNamedSaveSchedule()
   if (!state.imageUrl) return
   await ensureActiveNamedProject()
-  await persistActiveNamedProject()
+  await persistActiveNamedProject(true)
   await persistCurrentProject()
 }
 

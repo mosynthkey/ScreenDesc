@@ -641,13 +641,7 @@ export function useAnnotationStore() {
     try {
       const blob = await renderExportBlob(options)
       if (!blob) return
-      downloadBlob(blob, `${options.filename}.${options.format}`)
-
-      if (options.includeOriginal && state.imageUrl) {
-        const originalBlob = await fetch(state.imageUrl).then((res) => res.blob())
-        const ext = originalBlob.type.split('/')[1] ?? 'png'
-        downloadBlob(originalBlob, `${options.filename}-original.${ext}`)
-      }
+      await downloadBlob(blob, `${options.filename}.${options.format}`)
     } finally {
       isExporting.value = false
     }
@@ -661,19 +655,24 @@ export function useAnnotationStore() {
 
     isExporting.value = true
     try {
-      const blob = await renderExportBlob({
-        format: 'png',
-        includeSectionGuides: false,
-        includeOriginal: false,
-        scale: 2,
-        filename: 'clipboard',
-      })
-      if (!blob) return
+      // Safari/WKWebView revoke the clipboard-write permission granted by the
+      // user gesture as soon as this async function awaits anything, so the
+      // PNG must be produced by a promise handed to ClipboardItem rather than
+      // awaited before clipboard.write() is called.
+      const pngPromise = (async () => {
+        const blob = await renderExportBlob({
+          format: 'png',
+          includeSectionGuides: false,
+          scale: 2,
+          filename: 'clipboard',
+        })
+        if (!blob) throw new Error('Failed to render image for clipboard')
+        return blobToPngBlob(blob)
+      })()
 
-      const annotatedPng = await blobToPngBlob(blob)
       await navigator.clipboard.write([
         new ClipboardItem({
-          'image/png': annotatedPng,
+          'image/png': pngPromise,
         }),
       ])
     } finally {

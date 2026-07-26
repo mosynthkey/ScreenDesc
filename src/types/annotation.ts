@@ -118,7 +118,6 @@ export type ExportFormat = 'png' | 'svg'
 export interface ExportOptions {
   format: ExportFormat
   includeSectionGuides: boolean
-  includeOriginal: boolean
   scale: number
   filename: string
 }

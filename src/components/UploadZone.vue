@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { SavedProjectMeta } from '../utils/projectStorage'
-import { loadNamedProjectImageBlob } from '../utils/projectStorage'
+import { loadNamedProjectImageBlob, loadNamedProjectThumbnail } from '../utils/projectStorage'
 import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
 
@@ -9,6 +9,7 @@ const props = defineProps<{
   projects: SavedProjectMeta[]
   activeProjectId?: string | null
   isBusy: boolean
+  isImporting?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -102,7 +103,11 @@ async function refreshThumbs(projects: SavedProjectMeta[]): Promise<void> {
   await Promise.all(
     projects.map(async (project) => {
       try {
-        const blob = await loadNamedProjectImageBlob(project.id)
+        // Prefer the annotated thumbnail; fall back to the raw screenshot for
+        // saves made before thumbnails existed.
+        const blob =
+          (await loadNamedProjectThumbnail(project.id)) ??
+          (await loadNamedProjectImageBlob(project.id))
         if (blob) next[project.id] = URL.createObjectURL(blob)
       } catch {
         // Skip broken saves; card still shows name/date.
@@ -135,6 +140,11 @@ defineExpose({ openFilePicker })
 
 <template>
   <div class="home">
+    <div v-if="isImporting" class="importing-overlay" role="status">
+      <span class="importing-spinner" aria-hidden="true" />
+      <span>{{ t('home.importing') }}</span>
+    </div>
+
     <section
       class="new-card"
       :class="{ 'is-active': isDragging }"
@@ -269,6 +279,36 @@ defineExpose({ openFilePicker })
   background:
     radial-gradient(900px 480px at 50% 0%, rgba(0, 122, 255, 0.08), transparent 60%),
     var(--bg);
+}
+
+.importing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  backdrop-filter: blur(2px);
+}
+
+.importing-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: importing-spin 0.8s linear infinite;
+}
+
+@keyframes importing-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .new-card {

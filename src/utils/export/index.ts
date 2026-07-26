@@ -1,4 +1,6 @@
 import type { ExportFormat, ExportOptions } from '../../types/annotation'
+import { isDesktopApp } from '../../runtime'
+import { saveExportedFile } from '../projectStorageDesktop'
 import type { ExportScene, Exporter } from './types'
 import { pngExporter } from './pngExporter'
 import { svgExporter } from './svgExporter'
@@ -15,13 +17,29 @@ export async function exportScene(
   return exporter.export(scene)
 }
 
-export function downloadBlob(blob: Blob, filename: string): void {
+function downloadBlobInBrowser(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = filename
+  document.body.appendChild(anchor)
   anchor.click()
-  URL.revokeObjectURL(url)
+  anchor.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/**
+ * Deno Desktop's webview has no delegate to complete a browser-style
+ * `<a download>` navigation, so on desktop this writes the file straight to
+ * disk (via `saveExportedFile`, defaulting to Documents/ScreenDesc/exports)
+ * and reveals it in the OS file manager instead.
+ */
+export async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+  if (isDesktopApp) {
+    await saveExportedFile(blob, filename)
+    return
+  }
+  downloadBlobInBrowser(blob, filename)
 }
 
 export type { ExportScene, Exporter }

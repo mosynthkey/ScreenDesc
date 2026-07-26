@@ -130,11 +130,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
   </nav>
 
   <Teleport to="body">
-    <div
-      v-if="aboutOpen"
-      class="modal-backdrop"
-      @click.self="closeAbout"
-    >
+    <div v-if="aboutOpen" class="modal-backdrop">
       <div
         class="modal about-modal"
         role="dialog"
