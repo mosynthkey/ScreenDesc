@@ -127,6 +127,29 @@ const pointerMoved = ref(false)
 /** Ignore blur-to-commit while the editor is still mounting / focusing. */
 let suppressEditBlurUntil = 0
 
+// Chrome keeps PointerEvent.detail at 0; Safari may report the click count.
+// Detect label double-clicks with a short window instead of relying on detail.
+const CALLOUT_DOUBLE_CLICK_MS = 500
+const CALLOUT_DOUBLE_CLICK_SLOP_PX = 6
+let lastCalloutPointerDown: {
+  annotationId: string
+  at: number
+  clientX: number
+  clientY: number
+} | null = null
+
+function isCalloutDoubleClick(annotationId: string, event: PointerEvent): boolean {
+  if (event.detail >= 2) return true
+  const previous = lastCalloutPointerDown
+  if (!previous || previous.annotationId !== annotationId) return false
+  if (performance.now() - previous.at > CALLOUT_DOUBLE_CLICK_MS) return false
+  const distance = Math.hypot(
+    event.clientX - previous.clientX,
+    event.clientY - previous.clientY,
+  )
+  return distance <= CALLOUT_DOUBLE_CLICK_SLOP_PX
+}
+
 const documentWidth = computed(
   () => props.document.marginLeft + props.document.imageWidth + props.document.marginRight,
 )
@@ -192,10 +215,21 @@ function onPointerDown(event: PointerEvent): void {
   const anchorId = target.closest('[data-anchor]')?.getAttribute('data-anchor')
 
   // Second click of a double-click: edit instead of starting a drag.
-  if (event.detail >= 2 && calloutId) {
+  if (calloutId && isCalloutDoubleClick(calloutId, event)) {
+    lastCalloutPointerDown = null
     event.preventDefault()
     void beginEdit(calloutId)
     return
+  }
+  if (calloutId) {
+    lastCalloutPointerDown = {
+      annotationId: calloutId,
+      at: performance.now(),
+      clientX: event.clientX,
+      clientY: event.clientY,
+    }
+  } else {
+    lastCalloutPointerDown = null
   }
 
   if (editingId.value && !target.closest('.callout-inplace-edit')) {
