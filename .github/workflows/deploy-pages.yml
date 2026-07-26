@@ -40,6 +40,9 @@ jobs:
       - name: Download ScreenParser model from Release
         run: npm run fetch-model
 
+      - name: Download PaddleOCR models
+        run: npm run fetch-ocr-model
+
       - name: Apply Pages base path override
         if: ${{ vars.BASE_PATH != '' }}
         run: echo "BASE_PATH=${{ vars.BASE_PATH }}" >> "$GITHUB_ENV"

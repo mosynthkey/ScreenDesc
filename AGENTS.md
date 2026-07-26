@@ -45,7 +45,8 @@ Keep new logic near its existing home; prefer extending these modules over growi
 ### Deploy (GitHub Pages + Release model)
 
 - ONNX stays out of git (`public/models/*.onnx`). Store it on a GitHub Release (`model` / `screenparser.onnx`).
-- CI: tag pushes matching `v*` (or manual workflow_dispatch) download https://github.com/mosynthkey/ScreenDesc/releases/download/model/screenparser.onnx then deploy Pages.
+- PaddleOCR `.tar` models stay out of git (`public/models/paddleocr/*.tar`); fetch with `npm run fetch-ocr-model`.
+- CI: tag pushes matching `v*` (or manual workflow_dispatch) run `fetch-model` + `fetch-ocr-model`, then deploy Pages.
 - Local: keep a copy under `public/models/`, or run `npm run fetch-model` (needs `gh` or `MODEL_DOWNLOAD_URL`).
 - Publish/update the Release asset: `./scripts/publish-model-release.sh`
 - Optional secrets/vars: `VITE_CF_BEACON_TOKEN` (secret), `BASE_PATH` (var, default `/<repo>/`).
