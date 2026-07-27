@@ -132,7 +132,6 @@ export const ja: Record<MessageKey, string> = {
   'canvas.emptyHint':
     '注釈したい範囲をドラッグしてください。その範囲に合うセクションを1件提案します。',
   'canvas.detecting': 'セクションを提案中…',
-  'canvas.descriptionPlaceholder': '手順の説明',
 
   'export.defaultFilename': '注釈',
   'export.title': '書き出し',

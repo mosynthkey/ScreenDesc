@@ -130,7 +130,6 @@ export const en = {
   'canvas.emptyHint':
     'Drag the region you want to annotate. One matching section will be proposed.',
   'canvas.detecting': 'Proposing sections…',
-  'canvas.descriptionPlaceholder': 'Step description',
 
   'export.defaultFilename': 'annotation',
   'export.title': 'Export',

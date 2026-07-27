@@ -1060,7 +1060,6 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           ref="editInputRef"
           v-model="editDraft"
           type="text"
-          :placeholder="t('canvas.descriptionPlaceholder')"
           @keydown.enter="onEditEnterKeydown"
           @keydown.escape="onEditEscapeKeydown"
           @blur="onEditBlur"
