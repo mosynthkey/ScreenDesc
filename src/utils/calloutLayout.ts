@@ -17,8 +17,30 @@ import {
   isArrowAnchorStyle,
   leaderAttachPoint,
 } from './anchorStyle'
-import { DEFAULT_IMAGE_GUTTER } from './markerSize'
+import {
+  ANCHOR_OUTSIDE_GAP_MAX,
+  DEFAULT_IMAGE_GUTTER,
+  DOT_RADIUS_MAX,
+} from './markerSize'
+import { LINE_WIDTH_MAX } from './lineStyle'
 import { t } from '../i18n'
+
+/**
+ * Worst case an "outside" anchor legitimately reaches past the section it's
+ * attached to (max configured gap + the largest dot/arrow's own reach).
+ * `anchorForAnnotation` bounds to this instead of the image edge, so a
+ * section flush against that edge can still hold its anchor (and the
+ * leader's tip) the configured distance away — clamping to the image itself
+ * silently ate that distance and left the tip short of the target.
+ * `requiredGutterFor` already grows the image-to-label gutter to match
+ * whatever this produces, so the canvas keeps up automatically.
+ */
+const MAX_ANCHOR_OUTSIDE_REACH =
+  ANCHOR_OUTSIDE_GAP_MAX +
+  Math.max(
+    anchorOutsideReach('dot', DOT_RADIUS_MAX, LINE_WIDTH_MAX),
+    anchorOutsideReach('arrow', DOT_RADIUS_MAX, LINE_WIDTH_MAX),
+  )
 
 export type ResolvedCalloutSide = Exclude<CalloutSide, 'auto'>
 
@@ -388,8 +410,8 @@ function anchorForAnnotation(
     baseY = annotation.markerPosition.y
   }
   return {
-    x: clamp(baseX + offset.x, 0, imageWidth),
-    y: clamp(baseY + offset.y, 0, imageHeight),
+    x: clamp(baseX + offset.x, -MAX_ANCHOR_OUTSIDE_REACH, imageWidth + MAX_ANCHOR_OUTSIDE_REACH),
+    y: clamp(baseY + offset.y, -MAX_ANCHOR_OUTSIDE_REACH, imageHeight + MAX_ANCHOR_OUTSIDE_REACH),
   }
 }
 
