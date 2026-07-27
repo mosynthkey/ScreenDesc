@@ -25,6 +25,7 @@ const isDragging = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 const thumbUrls = ref<Record<string, string>>({})
 const contextMenu = ref<{ projectId: string; x: number; y: number } | null>(null)
+const DEV_NOTICE_ISSUES_URL = 'https://github.com/mosynthkey/ScreenDesc/issues'
 
 function closeContextMenu(): void {
   contextMenu.value = null
@@ -235,20 +236,6 @@ defineExpose({ openFilePicker })
       </ul>
     </section>
 
-    <p v-if="!isDesktopApp" class="hint storage-notice">
-      {{ t('storage.notice.before')
-      }}<button
-        class="storage-notice-link"
-        type="button"
-        :disabled="projects.length === 0 || isBusy"
-        :title="t('home.downloadBundleTitle')"
-        @click="emit('downloadBundle')"
-      >
-        {{ t('storage.notice.link') }}
-      </button
-      >{{ t('storage.notice.after') }}
-    </p>
-
     <div
       v-if="contextMenu"
       class="files-context-menu"
@@ -266,6 +253,40 @@ defineExpose({ openFilePicker })
         {{ t('home.openLocation') }}
       </button>
     </div>
+
+    <div
+      v-if="!isDesktopApp"
+      class="dev-notice"
+      role="note"
+      :aria-label="t('home.devNotice.aria')"
+    >
+      <svg class="dev-notice-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6" />
+        <path d="M12 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        <circle cx="12" cy="7.75" r="1.05" fill="currentColor" />
+      </svg>
+      <div class="dev-notice-lines">
+        <p class="dev-notice-text">
+          {{ t('home.devNotice.body') }}
+          <a :href="DEV_NOTICE_ISSUES_URL" target="_blank" rel="noopener noreferrer">
+            {{ t('home.devNotice.issueLink') }}
+          </a>
+        </p>
+        <p class="dev-notice-text">
+          {{ t('storage.notice.before') }}<br
+          /><button
+            class="storage-notice-link"
+            type="button"
+            :disabled="projects.length === 0 || isBusy"
+            :title="t('home.downloadBundleTitle')"
+            @click="emit('downloadBundle')"
+          >
+            {{ t('storage.notice.link') }}
+          </button
+          >{{ t('storage.notice.after') }}
+        </p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -279,6 +300,10 @@ defineExpose({ openFilePicker })
   background:
     radial-gradient(900px 480px at 50% 0%, rgba(0, 122, 255, 0.08), transparent 60%),
     var(--bg);
+}
+
+.home:has(> .dev-notice) {
+  padding-bottom: 96px;
 }
 
 .importing-overlay {
@@ -374,18 +399,6 @@ defineExpose({ openFilePicker })
   font-weight: 700;
 }
 
-.storage-notice {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  max-width: 920px;
-  width: 100%;
-  margin: 24px auto 0;
-  padding: 14px 0 20px;
-  line-height: 1.5;
-  background: linear-gradient(to bottom, transparent, var(--bg) 28%);
-}
-
 .storage-notice-link {
   display: inline;
   padding: 0;
@@ -406,6 +419,58 @@ defineExpose({ openFilePicker })
   opacity: 0.45;
   cursor: default;
   text-decoration: none;
+}
+
+.dev-notice {
+  position: fixed;
+  left: 72px;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+}
+
+.dev-notice-icon {
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+}
+
+.dev-notice-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 920px;
+}
+
+.dev-notice-lines .dev-notice-text + .dev-notice-text {
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.dev-notice-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink);
+  text-align: center;
+}
+
+.dev-notice-text a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.dev-notice-text a:hover {
+  color: var(--accent);
 }
 
 .files-empty {

@@ -111,6 +111,10 @@ export const en = {
     'This data is stored in this browser. It may be lost if you clear site data or leave private browsing. ',
   'storage.notice.link': 'Download all data from here',
   'storage.notice.after': '.',
+  'home.devNotice.aria': 'Development status notice',
+  'home.devNotice.body':
+    'This app is currently under development. Behavior may change without notice.',
+  'home.devNotice.issueLink': 'Have a request or found a bug? Please open an issue',
 
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Click a section to add an annotation.',

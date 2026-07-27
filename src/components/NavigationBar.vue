@@ -125,6 +125,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
           height="36"
           decoding="async"
         />
+        <span class="brand-version">v{{ APP_VERSION }}</span>
       </button>
     </div>
   </nav>
@@ -283,11 +284,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
 
 .nav-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   width: 100%;
-  height: 52px;
-  padding: 0;
+  height: auto;
+  padding: 8px 0;
   border: none;
   border-radius: 12px;
   background: transparent;
@@ -305,6 +308,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onAboutKeydown))
   height: 36px;
   border-radius: 9px;
   object-fit: cover;
+}
+
+.brand-version {
+  font-size: 0.62rem;
+  font-weight: 590;
+  letter-spacing: 0.01em;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .about-modal {

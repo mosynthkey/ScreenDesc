@@ -113,6 +113,10 @@ export const ja: Record<MessageKey, string> = {
     'このデータはブラウザ内に保存されます。サイトデータを削除した場合やプライベートブラウジングでは失われる可能性があります。',
   'storage.notice.link': 'こちら',
   'storage.notice.after': 'からデータを一括ダウンロードできます。',
+  'home.devNotice.aria': '開発状況についての注記',
+  'home.devNotice.body':
+    'このアプリは現在開発中です。予告なく仕様が変更される場合があります。ご了承ください。',
+  'home.devNotice.issueLink': 'ご要望・不具合はissueを作成してください',
 
   'annotationList.title': '注釈一覧',
   'annotationList.emptyHint': 'セクションをクリックして注釈を追加できます。',
