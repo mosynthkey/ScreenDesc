@@ -78,8 +78,30 @@ function acceptFile(file: File | undefined): void {
 
 function onDrop(event: DragEvent): void {
   event.preventDefault()
+  dragDepth = 0
   isDragging.value = false
   acceptFile(event.dataTransfer?.files?.[0])
+}
+
+// Whole-page drop target: dragenter/dragleave fire on every child boundary
+// crossed, so a depth counter (rather than a plain boolean) is needed to
+// avoid the highlight flickering off while still dragging over a child.
+let dragDepth = 0
+
+function onDragEnter(event: DragEvent): void {
+  event.preventDefault()
+  dragDepth += 1
+  isDragging.value = true
+}
+
+function onDragOver(event: DragEvent): void {
+  event.preventDefault()
+}
+
+function onDragLeave(event: DragEvent): void {
+  event.preventDefault()
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (dragDepth === 0) isDragging.value = false
 }
 
 function onInputChange(event: Event): void {
@@ -140,15 +162,17 @@ defineExpose({ openFilePicker })
 </script>
 
 <template>
-  <div class="home">
+  <div
+    class="home"
+    @dragenter="onDragEnter"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+  >
 
     <section
       class="new-card"
       :class="{ 'is-active': isDragging }"
-      @dragenter.prevent="isDragging = true"
-      @dragover.prevent="isDragging = true"
-      @dragleave.prevent="isDragging = false"
-      @drop="onDrop"
     >
       <div class="new-card-copy">
         <h2>{{ t('home.newTitle') }}</h2>
