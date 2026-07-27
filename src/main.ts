@@ -3,7 +3,7 @@ import App from './App.vue'
 import './styles/main.css'
 import './i18n'
 import { DEFAULT_FONT_FAMILY, loadGoogleFont } from './utils/googleFonts'
-import { initCloudflareWebAnalytics } from './analytics/cloudflareWebAnalytics'
+import { initGoogleAnalytics } from './analytics/googleAnalytics'
 import { installAppViewportSync } from './utils/syncAppViewport'
 import { installDesktopChrome } from './utils/installDesktopChrome'
 import { isDesktopApp } from './runtime'
@@ -13,7 +13,7 @@ import { applyStoredThemePreference } from './composables/useTheme'
 installAppViewportSync()
 installDesktopChrome()
 loadGoogleFont(DEFAULT_FONT_FAMILY)
-initCloudflareWebAnalytics()
+initGoogleAnalytics()
 
 async function bootstrap(): Promise<void> {
   // Desktop's origin (and localStorage) changes every launch, so settings live

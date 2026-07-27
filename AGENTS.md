@@ -39,8 +39,8 @@ Keep new logic near its existing home; prefer extending these modules over growi
 
 ### Analytics
 
-- Cloudflare Web Analytics loads when `VITE_CF_BEACON_TOKEN` is set (`src/analytics/cloudflareWebAnalytics.ts`).
-- Copy `.env.example` → `.env` / `.env.production` and paste the site token from the Cloudflare dashboard.
+- Google Analytics (gtag.js) loads when `VITE_GA_MEASUREMENT_ID` is set (`src/analytics/googleAnalytics.ts`).
+- Copy `.env.example` → `.env` / `.env.production` and paste the measurement ID.
 
 ### Deploy (GitHub Pages + Release model)
 
@@ -49,7 +49,7 @@ Keep new logic near its existing home; prefer extending these modules over growi
 - CI: tag pushes matching `v*` (or manual workflow_dispatch) run `fetch-model` + `fetch-ocr-model`, then deploy Pages.
 - Local: keep a copy under `public/models/`, or run `npm run fetch-model` (needs `gh` or `MODEL_DOWNLOAD_URL`).
 - Publish/update the Release asset: `./scripts/publish-model-release.sh`
-- Optional secrets/vars: `VITE_CF_BEACON_TOKEN` (secret), `BASE_PATH` (var, default `/<repo>/`).
+- Optional secrets/vars: `VITE_GA_MEASUREMENT_ID` (secret), `BASE_PATH` (var, default `/<repo>/`).
 
 ## Style notes
 
