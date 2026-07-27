@@ -48,8 +48,10 @@ export const en = {
   'tooltip.toolSelect': 'Select / move (V)',
   'tooltip.toolAddSection': 'Draw a region to propose one section (F)',
   'tooltip.toolAnnotate': 'Click a section to add an annotation (A)',
-  'tooltip.toolCrop': 'Draw a region to crop the image (X)',
+  'tooltip.toolCrop': 'Drag the handles to crop the image (X)',
   'tooltip.cropMenu': 'Crop menu',
+  'tooltip.cropApply': 'Apply crop (Enter)',
+  'tooltip.cropCancel': 'Cancel crop (Esc)',
   'tooltip.toggleSections': 'Show / hide section outlines',
 
   'aria.editToolbar': 'Editing tools',
@@ -58,6 +60,8 @@ export const en = {
   'aria.toolAnnotate': 'Annotate',
   'aria.toolCrop': 'Crop',
   'aria.cropMenu': 'Open crop menu',
+  'aria.cropApply': 'Apply crop',
+  'aria.cropCancel': 'Cancel crop',
   'aria.toggleSections': 'Section visibility',
 
   'menu.newProject': 'New project',
@@ -247,6 +251,7 @@ export const en = {
   'anchorStyle.dot': 'Dot',
   'anchorStyle.arrow': 'Arrow',
   'anchorStyle.chevron': 'Chevron',
+  'anchorStyle.none': 'None',
 
   'callout.emptyDescription': 'Description',
 

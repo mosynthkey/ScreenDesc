@@ -65,6 +65,8 @@ const props = defineProps<{
   fontFamily: string
   isDetecting?: boolean
   emptyHint?: boolean
+  /** Figma-style adjustable crop rectangle (image-local coords) while `toolMode` is `'crop'`. */
+  cropDraft?: Rect | null
 }>()
 
 const emit = defineEmits<{
@@ -80,6 +82,7 @@ const emit = defineEmits<{
   addSection: [rect: Rect]
   commitDescription: [annotationId: string, description: string]
   cropImage: [rect: Rect]
+  updateCropDraft: [rect: Rect]
 }>()
 
 type DragState =
@@ -114,8 +117,21 @@ type DragState =
       /** anchorPoint minus current anchorOffset, i.e. the point offset=0 would sit at (image coords). */
       basePoint: Point
     }
+  | {
+      kind: 'crop-move'
+      origin: Point
+      startRect: Rect
+    }
+  | {
+      kind: 'crop-resize'
+      handle: CropHandle
+      startRect: Rect
+    }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
+type CropHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
+const CROP_HANDLES: readonly CropHandle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
+const MIN_CROP_SIZE = 8
 
 const viewportRef = ref<HTMLElement | null>(null)
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -202,11 +218,48 @@ function findSectionAt(imagePoint: Point): Section | undefined {
   )[0]
 }
 
+/** Corner handles sit on the corner; edge handles sit at the midpoint of that edge. */
+function cropHandlePosition(rect: Rect, handle: CropHandle): Point {
+  const hasN = handle.includes('n')
+  const hasS = handle.includes('s')
+  const hasE = handle.includes('e')
+  const hasW = handle.includes('w')
+  return {
+    x: hasW ? rect.x : hasE ? rect.x + rect.width : rect.x + rect.width / 2,
+    y: hasN ? rect.y : hasS ? rect.y + rect.height : rect.y + rect.height / 2,
+  }
+}
+
+function cropHandleCursor(handle: CropHandle): string {
+  if (handle === 'n' || handle === 's') return 'ns-resize'
+  if (handle === 'e' || handle === 'w') return 'ew-resize'
+  if (handle === 'nw' || handle === 'se') return 'nwse-resize'
+  return 'nesw-resize'
+}
+
 function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return
   const target = event.target as Element
   const docPoint = clientToDocument(event)
   const imagePoint = clampToImage(toImagePoint(docPoint))
+
+  if (props.toolMode === 'crop') {
+    pointerMoved.value = false
+    ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
+    const cropDraft = props.cropDraft
+    if (!cropDraft) return
+    const cropHandle = target
+      .closest('[data-crop-handle]')
+      ?.getAttribute('data-crop-handle') as CropHandle | null
+    if (cropHandle) {
+      drag.value = { kind: 'crop-resize', handle: cropHandle, startRect: { ...cropDraft } }
+      return
+    }
+    if (pointInRect(imagePoint, cropDraft)) {
+      drag.value = { kind: 'crop-move', origin: imagePoint, startRect: { ...cropDraft } }
+    }
+    return
+  }
 
   const handle = (target.closest('[data-handle]')?.getAttribute('data-handle') ??
     null) as ResizeHandle | null
@@ -318,7 +371,7 @@ function onPointerDown(event: PointerEvent): void {
     return
   }
 
-  if (props.toolMode === 'add-section' || props.toolMode === 'crop') {
+  if (props.toolMode === 'add-section') {
     drag.value = {
       kind: 'create-section',
       origin: imagePoint,
@@ -448,6 +501,49 @@ function onPointerMove(event: PointerEvent): void {
     }
 
     emit('updateSectionRect', drag.value.sectionId, { x, y, width, height })
+    return
+  }
+
+  if (drag.value.kind === 'crop-move') {
+    const dx = imagePoint.x - drag.value.origin.x
+    const dy = imagePoint.y - drag.value.origin.y
+    const start = drag.value.startRect
+    emit('updateCropDraft', {
+      x: Math.min(props.document.imageWidth - start.width, Math.max(0, start.x + dx)),
+      y: Math.min(props.document.imageHeight - start.height, Math.max(0, start.y + dy)),
+      width: start.width,
+      height: start.height,
+    })
+    return
+  }
+
+  if (drag.value.kind === 'crop-resize') {
+    // imagePoint is already clamped to the image bounds, so these never
+    // reach past the edge the way section-resize's unclamped drag can.
+    const start = drag.value.startRect
+    let x = start.x
+    let y = start.y
+    let width = start.width
+    let height = start.height
+
+    if (drag.value.handle.includes('e')) {
+      width = Math.max(MIN_CROP_SIZE, imagePoint.x - start.x)
+    }
+    if (drag.value.handle.includes('s')) {
+      height = Math.max(MIN_CROP_SIZE, imagePoint.y - start.y)
+    }
+    if (drag.value.handle.includes('w')) {
+      const right = start.x + start.width
+      x = Math.min(imagePoint.x, right - MIN_CROP_SIZE)
+      width = right - x
+    }
+    if (drag.value.handle.includes('n')) {
+      const bottom = start.y + start.height
+      y = Math.min(imagePoint.y, bottom - MIN_CROP_SIZE)
+      height = bottom - y
+    }
+
+    emit('updateCropDraft', { x, y, width, height })
   }
 }
 
@@ -458,11 +554,7 @@ function onPointerUp(): void {
     const width = Math.abs(drag.value.current.x - drag.value.origin.x)
     const height = Math.abs(drag.value.current.y - drag.value.origin.y)
     if (width >= 8 && height >= 8) {
-      if (props.toolMode === 'crop') {
-        emit('cropImage', { x, y, width, height })
-      } else {
-        emit('addSection', { x, y, width, height })
-      }
+      emit('addSection', { x, y, width, height })
     }
   }
 
@@ -770,6 +862,32 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
                 }"
               />
             </template>
+            <template v-else-if="anchorStyle === 'none'">
+              <path
+                v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
+                class="leader-halo"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: lineHaloColor,
+                  strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
+              />
+              <path
+                class="leader"
+                :d="leaderPathFor(layoutFor(annotation.id)!)"
+                fill="none"
+                :style="{
+                  stroke: effectiveLineColor,
+                  strokeWidth: activeLineStyle.strokeWidth,
+                  strokeDasharray: activeLineStyle.dasharray ?? 'none',
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                }"
+              />
+            </template>
             <template v-else>
               <path
                 v-if="lineHaloWidth > 0 && lineStyle !== 'invert'"
@@ -870,6 +988,56 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           </g>
         </template>
       </g>
+
+      <g v-if="toolMode === 'crop' && cropDraft" class="crop-overlay">
+        <rect
+          class="crop-dim"
+          :x="document.marginLeft"
+          :y="document.marginTop"
+          :width="document.imageWidth"
+          :height="cropDraft.y"
+        />
+        <rect
+          class="crop-dim"
+          :x="document.marginLeft"
+          :y="document.marginTop + cropDraft.y + cropDraft.height"
+          :width="document.imageWidth"
+          :height="Math.max(0, document.imageHeight - cropDraft.y - cropDraft.height)"
+        />
+        <rect
+          class="crop-dim"
+          :x="document.marginLeft"
+          :y="document.marginTop + cropDraft.y"
+          :width="cropDraft.x"
+          :height="cropDraft.height"
+        />
+        <rect
+          class="crop-dim"
+          :x="document.marginLeft + cropDraft.x + cropDraft.width"
+          :y="document.marginTop + cropDraft.y"
+          :width="Math.max(0, document.imageWidth - cropDraft.x - cropDraft.width)"
+          :height="cropDraft.height"
+        />
+        <rect
+          class="crop-outline"
+          fill="transparent"
+          :x="document.marginLeft + cropDraft.x"
+          :y="document.marginTop + cropDraft.y"
+          :width="cropDraft.width"
+          :height="cropDraft.height"
+        />
+        <rect
+          v-for="handle in CROP_HANDLES"
+          :key="handle"
+          class="crop-handle"
+          :data-crop-handle="handle"
+          :x="document.marginLeft + cropHandlePosition(cropDraft, handle).x - 6"
+          :y="document.marginTop + cropHandlePosition(cropDraft, handle).y - 6"
+          width="12"
+          height="12"
+          :style="{ cursor: cropHandleCursor(handle) }"
+        />
+      </g>
     </svg>
 
       <div
@@ -951,9 +1119,12 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 }
 
 .scene.tool-annotate,
-.scene.tool-add-section,
-.scene.tool-crop {
+.scene.tool-add-section {
   cursor: crosshair;
+}
+
+.scene.tool-crop {
+  cursor: default;
 }
 
 .scene.tool-select {
@@ -985,6 +1156,22 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   stroke: #007aff;
   stroke-width: 1.75;
   stroke-dasharray: 4 2;
+}
+
+.crop-dim {
+  fill: rgba(0, 0, 0, 0.55);
+}
+
+.crop-outline {
+  stroke: #fff;
+  stroke-width: 1.5;
+  cursor: move;
+}
+
+.crop-handle {
+  fill: #fff;
+  stroke: #007aff;
+  stroke-width: 1.5;
 }
 
 .leader {

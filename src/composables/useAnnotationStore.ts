@@ -100,6 +100,14 @@ export function useAnnotationStore() {
 
   function setToolMode(mode: ToolMode): void {
     state.toolMode = mode
+    state.cropDraft =
+      mode === 'crop'
+        ? { x: 0, y: 0, width: state.imageWidth, height: state.imageHeight }
+        : null
+  }
+
+  function setCropDraft(rect: Rect): void {
+    state.cropDraft = rect
   }
 
   function setLineStyle(style: LineStyleId): void {
@@ -725,6 +733,7 @@ export function useAnnotationStore() {
     runSectionDetection,
     rediscoverSectionsAfterReplace,
     setToolMode,
+    setCropDraft,
     setDefaultFontFamily,
     getCommonSettings,
     applyCommonSettings,

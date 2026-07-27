@@ -39,6 +39,8 @@ const emit = defineEmits<{
   openProjectStorage: []
   newProject: []
   renameProject: [name: string]
+  confirmCrop: []
+  cancelCrop: []
 }>()
 
 const cropMenuOpen = ref(false)
@@ -559,6 +561,44 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             </button>
           </div>
         </div>
+
+        <template v-if="toolMode === 'crop'">
+          <button
+            class="tool-btn tool-btn-affirm"
+            type="button"
+            :data-tooltip="t('tooltip.cropApply')"
+            :aria-label="t('aria.cropApply')"
+            @click="emit('confirmCrop')"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                d="M5 12.5 10 17.5 19 7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            class="tool-btn"
+            type="button"
+            :data-tooltip="t('tooltip.cropCancel')"
+            :aria-label="t('aria.cropCancel')"
+            @click="emit('cancelCrop')"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                d="M6 6 18 18M18 6 6 18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </template>
       </div>
 
       <div class="dock-sep" />
@@ -854,6 +894,14 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   width: 22px;
   padding: 0;
   margin-left: -4px;
+}
+
+.tool-btn-affirm {
+  color: #34c759;
+}
+
+.tool-btn-affirm:hover {
+  background: rgba(52, 199, 89, 0.16);
 }
 
 .crop-menu {

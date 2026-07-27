@@ -17,7 +17,7 @@ export type ToolMode = 'select' | 'add-section' | 'annotate' | 'crop'
 /** Line pattern only; stroke weight is `lineWidth`. */
 export type LineStyleId = 'solid' | 'dashed' | 'invert'
 
-export type AnchorStyleId = 'dot' | 'arrow' | 'chevron'
+export type AnchorStyleId = 'dot' | 'arrow' | 'chevron' | 'none'
 
 export interface Section {
   id: string
@@ -82,6 +82,8 @@ export interface ProjectState {
   selectedSectionIds: string[]
   selectedAnnotationIds: string[]
   toolMode: ToolMode
+  /** Figma-style adjustable crop rectangle (image-local coords) while `toolMode` is `'crop'`. */
+  cropDraft: Rect | null
   defaultFontFamily: string
   lineStyle: LineStyleId
   /** Leader stroke width in px (also used for dashed / invert). */

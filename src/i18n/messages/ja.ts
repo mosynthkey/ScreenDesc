@@ -50,8 +50,10 @@ export const ja: Record<MessageKey, string> = {
   'tooltip.toolSelect': '選択・移動 (V)',
   'tooltip.toolAddSection': '範囲を描いてセクションを1件提案 (F)',
   'tooltip.toolAnnotate': 'セクションをクリックして注釈を追加 (A)',
-  'tooltip.toolCrop': '範囲を描いて画像を切り抜く (X)',
+  'tooltip.toolCrop': 'ハンドルをドラッグして画像を切り抜く (X)',
   'tooltip.cropMenu': '切り抜きメニュー',
+  'tooltip.cropApply': '切り抜きを確定 (Enter)',
+  'tooltip.cropCancel': '切り抜きをキャンセル (Esc)',
   'tooltip.toggleSections': 'セクション枠の表示 / 非表示',
 
   'aria.editToolbar': '編集ツール',
@@ -60,6 +62,8 @@ export const ja: Record<MessageKey, string> = {
   'aria.toolAnnotate': '注釈',
   'aria.toolCrop': '切り抜き',
   'aria.cropMenu': '切り抜きメニューを開く',
+  'aria.cropApply': '切り抜きを確定',
+  'aria.cropCancel': '切り抜きをキャンセル',
   'aria.toggleSections': 'セクション表示',
 
   'menu.newProject': '新規作成',
@@ -250,6 +254,7 @@ export const ja: Record<MessageKey, string> = {
   'anchorStyle.dot': '丸',
   'anchorStyle.arrow': '矢印',
   'anchorStyle.chevron': '＜',
+  'anchorStyle.none': 'なし',
 
   'callout.emptyDescription': '説明',
 

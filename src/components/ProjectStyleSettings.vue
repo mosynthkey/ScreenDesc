@@ -411,7 +411,7 @@ watch(
               <path d="M4 12 L20 4 L14.5 12 L20 20 Z" fill="currentColor" />
             </svg>
             <svg
-              v-else
+              v-else-if="option.value === 'chevron'"
               class="anchor-style-icon"
               viewBox="0 0 24 24"
               width="22"
@@ -425,6 +425,24 @@ watch(
                 stroke-width="2.2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+              />
+            </svg>
+            <svg
+              v-else
+              class="anchor-style-icon"
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              aria-hidden="true"
+            >
+              <line
+                x1="4"
+                y1="12"
+                x2="20"
+                y2="12"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
               />
             </svg>
           </button>
@@ -824,7 +842,7 @@ watch(
 
 .anchor-style-buttons {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 

@@ -61,6 +61,7 @@ export const state = reactive<ProjectState>({
   selectedSectionIds: [],
   selectedAnnotationIds: [],
   toolMode: 'select',
+  cropDraft: null,
   defaultFontFamily: DEFAULT_FONT_FAMILY,
   lineStyle: 'solid',
   lineWidth: DEFAULT_LINE_WIDTH,

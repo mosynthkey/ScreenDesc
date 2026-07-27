@@ -5,7 +5,7 @@ export type { AnchorStyleId }
 
 export const DEFAULT_ANCHOR_STYLE: AnchorStyleId = 'dot'
 
-const ANCHOR_STYLE_IDS: readonly AnchorStyleId[] = ['dot', 'arrow', 'chevron']
+const ANCHOR_STYLE_IDS: readonly AnchorStyleId[] = ['dot', 'arrow', 'chevron', 'none']
 
 export function isAnchorStyleId(value: unknown): value is AnchorStyleId {
   return typeof value === 'string' && (ANCHOR_STYLE_IDS as readonly string[]).includes(value)
@@ -24,6 +24,7 @@ export function getAnchorStyleOptions(): Array<{ value: AnchorStyleId; label: st
     { value: 'dot', label: t('anchorStyle.dot') },
     { value: 'arrow', label: t('anchorStyle.arrow') },
     { value: 'chevron', label: t('anchorStyle.chevron') },
+    { value: 'none', label: t('anchorStyle.none') },
   ]
 }
 
@@ -144,5 +145,6 @@ export function anchorOutsideReach(
   if (isArrowAnchorStyle(style)) {
     return arrowLength(dotRadius) * 0.55 + halfStroke
   }
+  if (style === 'none') return halfStroke
   return dotRadius + halfStroke
 }

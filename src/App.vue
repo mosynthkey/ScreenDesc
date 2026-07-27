@@ -50,6 +50,7 @@ const {
   undoEdit,
   addSection,
   setToolMode,
+  setCropDraft,
   setDefaultFontFamily,
   setLineStyle,
   setLineWidth,
@@ -358,6 +359,20 @@ async function confirmCropOverwrite(): Promise<void> {
 
 async function onUndoCrop(): Promise<void> {
   await undoCrop()
+}
+
+function onUpdateCropDraft(rect: Rect): void {
+  setCropDraft(rect)
+}
+
+async function confirmCrop(): Promise<void> {
+  const rect = state.cropDraft
+  if (!rect) return
+  await onCropImage(rect)
+}
+
+function cancelCrop(): void {
+  setToolMode('select')
 }
 
 async function onExportProjectFile(): Promise<void> {
@@ -690,6 +705,19 @@ function onKeydown(event: KeyboardEvent): void {
     return
   }
 
+  if (state.toolMode === 'crop') {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      void confirmCrop()
+      return
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      cancelCrop()
+      return
+    }
+  }
+
   if (event.key === 'Delete' || event.key === 'Backspace') {
     event.preventDefault()
     deleteSelection()
@@ -751,6 +779,8 @@ function onKeydown(event: KeyboardEvent): void {
         @open-project-storage="onOpenProjectStorage"
         @new-project="onNewProject"
         @rename-project="onRenameProject"
+        @confirm-crop="confirmCrop"
+        @cancel-crop="cancelCrop"
       />
 
       <input
@@ -874,6 +904,7 @@ function onKeydown(event: KeyboardEvent): void {
             :font-family="state.defaultFontFamily"
             :is-detecting="isDetecting"
             :empty-hint="state.sections.length === 0"
+            :crop-draft="state.cropDraft"
             @clear-selection="clearSelection"
             @select-section="selectSection"
             @select-annotation="selectAnnotation"
@@ -886,6 +917,7 @@ function onKeydown(event: KeyboardEvent): void {
             @add-section="onAddSection"
             @commit-description="onCommitDescription"
             @crop-image="onCropImage"
+            @update-crop-draft="onUpdateCropDraft"
           />
 
           <aside class="panel">

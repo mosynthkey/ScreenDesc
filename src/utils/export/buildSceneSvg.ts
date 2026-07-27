@@ -124,6 +124,16 @@ function renderCallout(
     body = `${halo}
       <path d="${head}" fill="${fill}" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}" ${strokeJoin} />
       <path d="${leader}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
+  } else if (anchorStyle === 'none') {
+    const leaderStart = dotLeaderAttachPoint(anchorPoint)
+    const pathD = buildLeaderPath(leaderStart, leaderEnd.x, leaderEnd.y, leave)
+    const haloWidth = spec.strokeWidth + lineHaloWidth
+    const haloLeader =
+      lineHaloWidth > 0 && !isInvert
+        ? `<path d="${pathD}" fill="none" stroke="${lineHaloColor}" stroke-width="${haloWidth}" ${strokeJoin} />`
+        : ''
+    body = `${haloLeader}
+      <path d="${pathD}" fill="none" stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr} ${strokeJoin} />`
   } else {
     const leaderStart = dotLeaderAttachPoint(anchorPoint)
     const pathD = buildLeaderPath(leaderStart, leaderEnd.x, leaderEnd.y, leave)
