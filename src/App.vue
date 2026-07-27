@@ -55,6 +55,7 @@ const {
   setLineWidth,
   setLineColor,
   setDotRadius,
+  setImageGutter,
   setAnchorStyle,
   setLineHaloWidth,
   setLineHaloColor,
@@ -895,6 +896,7 @@ function onKeydown(event: KeyboardEvent): void {
                 :line-width="state.lineWidth"
                 :line-color="state.lineColor"
                 :dot-radius="state.dotRadius"
+                :image-gutter="state.imageGutter"
                 :anchor-style="state.anchorStyle"
                 :line-halo-width="state.lineHaloWidth"
                 :line-halo-color="state.lineHaloColor"
@@ -911,6 +913,7 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:line-width="setLineWidth"
                 @update:line-color="setLineColor"
                 @update:dot-radius="setDotRadius"
+                @update:image-gutter="setImageGutter"
                 @update:anchor-style="setAnchorStyle"
                 @update:line-halo-width="setLineHaloWidth"
                 @update:line-halo-color="setLineHaloColor"

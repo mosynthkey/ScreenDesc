@@ -90,6 +90,8 @@ export interface ProjectState {
   lineColor: string
   dotColor: string
   dotRadius: number
+  /** Baseline distance in px between the image edge and a callout label. */
+  imageGutter: number
   /** Marker at the leader start: filled dot, filled arrow, or open chevron. */
   anchorStyle: AnchorStyleId
   /** Extra outline underlay width in px (0 = none). */

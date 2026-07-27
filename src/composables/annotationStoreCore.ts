@@ -28,8 +28,10 @@ import {
 } from '../utils/googleFonts'
 import {
   CALLOUT_FONT_SIZE,
+  DEFAULT_IMAGE_GUTTER,
   clampAnchorOffsetAxis,
   normalizeAnchorOutsideGap,
+  normalizeImageGutter,
 } from '../utils/markerSize'
 import {
   DEFAULT_LINE_HALO_COLOR,
@@ -65,6 +67,7 @@ export const state = reactive<ProjectState>({
   lineColor: '#ffd60a',
   dotColor: '#ffd60a',
   dotRadius: 4.5,
+  imageGutter: DEFAULT_IMAGE_GUTTER,
   anchorStyle: DEFAULT_ANCHOR_STYLE,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
@@ -167,6 +170,10 @@ export function refreshDocumentAndLayouts(): void {
     state.defaultFontFamily,
     state.calloutFontWeight,
     state.calloutFontItalic,
+    state.anchorStyle,
+    state.dotRadius,
+    state.lineWidth,
+    state.imageGutter,
   )
   state.document = document
   state.calloutLayouts = layouts
@@ -296,6 +303,10 @@ watch(
       state.calloutFontWeight,
       state.calloutFontItalic,
       state.defaultFontFamily,
+      state.anchorStyle,
+      state.dotRadius,
+      state.lineWidth,
+      state.imageGutter,
     ] as const,
   () => {
     refreshDocumentAndLayouts()
@@ -314,6 +325,7 @@ export interface RestorableFields {
   lineColor: string
   dotColor: string
   dotRadius: number
+  imageGutter?: number
   anchorStyle?: AnchorStyleId
   lineHaloWidth?: number
   lineHaloColor?: string
@@ -349,6 +361,7 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.lineColor = fields.lineColor
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
+  state.imageGutter = normalizeImageGutter(fields.imageGutter)
   state.anchorStyle = normalizeAnchorStyle(fields.anchorStyle)
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)

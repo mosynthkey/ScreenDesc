@@ -36,6 +36,7 @@ import {
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   normalizeAnchorOutsideGap,
+  normalizeImageGutter,
 } from '../utils/markerSize'
 import {
   normalizeLineHaloColor,
@@ -116,6 +117,10 @@ export function useAnnotationStore() {
 
   function setDotRadius(radius: number): void {
     state.dotRadius = Math.min(DOT_RADIUS_MAX, Math.max(DOT_RADIUS_MIN, radius))
+  }
+
+  function setImageGutter(gutter: number): void {
+    state.imageGutter = normalizeImageGutter(gutter)
   }
 
   function setAnchorStyle(style: AnchorStyleId): void {
@@ -348,6 +353,7 @@ export function useAnnotationStore() {
       lineWidth: state.lineWidth,
       lineColor: state.lineColor,
       dotRadius: state.dotRadius,
+      imageGutter: state.imageGutter,
       anchorStyle: state.anchorStyle,
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
@@ -379,6 +385,7 @@ export function useAnnotationStore() {
     state.lineColor = settings.lineColor
     state.dotColor = settings.lineColor
     state.dotRadius = settings.dotRadius
+    state.imageGutter = settings.imageGutter
     state.anchorStyle = settings.anchorStyle
     state.lineHaloWidth = settings.lineHaloWidth
     state.lineHaloColor = settings.lineHaloColor
@@ -729,6 +736,7 @@ export function useAnnotationStore() {
     setLineWidth,
     setLineColor,
     setDotRadius,
+    setImageGutter,
     setAnchorStyle,
     setLineHaloWidth,
     setLineHaloColor,

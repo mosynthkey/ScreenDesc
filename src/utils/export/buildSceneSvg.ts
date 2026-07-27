@@ -56,8 +56,16 @@ function renderCallout(
 ): string {
   const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, targetCenter } = layout
   const leaderEnd = leaderAttachOnLabel(layout)
-  const textX = calloutLabelTextX(labelPosition.x, calloutFontSize)
   const fontCss = fontFamilyCss(fontFamily)
+  const textX = calloutLabelTextX(
+    labelPosition.x,
+    labelWidth,
+    lines[0] ?? '',
+    calloutFontSize,
+    fontCss,
+    calloutFontWeight,
+    calloutFontItalic,
+  )
   // Native <text> only — foreignObject is stripped when SVG is rasterized via <img>/canvas.
   const tspans = lines
     .map((line, lineIndex) => {

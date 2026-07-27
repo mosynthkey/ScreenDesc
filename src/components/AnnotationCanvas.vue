@@ -500,6 +500,19 @@ function commitEdit(): void {
   editingId.value = null
 }
 
+/** Ignore the Enter/Escape used to confirm or cancel an IME conversion candidate. */
+function onEditEnterKeydown(event: KeyboardEvent): void {
+  if (event.isComposing) return
+  event.preventDefault()
+  commitEdit()
+}
+
+function onEditEscapeKeydown(event: KeyboardEvent): void {
+  if (event.isComposing) return
+  event.preventDefault()
+  cancelEdit()
+}
+
 function cancelEdit(): void {
   editingId.value = null
 }
@@ -546,7 +559,15 @@ function calloutTextPadding(): { horizontal: number; vertical: number } {
 }
 
 function calloutTextX(layout: CalloutLayoutItem): number {
-  return calloutLabelTextX(layout.labelPosition.x, props.calloutFontSize)
+  return calloutLabelTextX(
+    layout.labelPosition.x,
+    layout.labelWidth,
+    layout.lines[0] ?? '',
+    props.calloutFontSize,
+    activeFontFamily.value,
+    props.calloutFontWeight,
+    props.calloutFontItalic,
+  )
 }
 
 function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
@@ -872,8 +893,8 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           v-model="editDraft"
           type="text"
           :placeholder="t('canvas.descriptionPlaceholder')"
-          @keydown.enter.prevent="commitEdit"
-          @keydown.escape.prevent="cancelEdit"
+          @keydown.enter="onEditEnterKeydown"
+          @keydown.escape="onEditEscapeKeydown"
           @blur="onEditBlur"
         />
       </div>

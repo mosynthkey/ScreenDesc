@@ -18,6 +18,7 @@ interface StoredSnapshot {
   lineColor: string
   dotColor: string
   dotRadius: number
+  imageGutter: number
   anchorStyle: ProjectSnapshot['anchorStyle']
   lineHaloWidth: number
   lineHaloColor: string

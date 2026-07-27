@@ -25,6 +25,9 @@ import {
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   DOT_RADIUS_STEP,
+  IMAGE_GUTTER_MAX,
+  IMAGE_GUTTER_MIN,
+  IMAGE_GUTTER_STEP,
 } from '../utils/markerSize'
 import {
   CALLOUT_FILL_OPACITY_MAX,
@@ -37,6 +40,7 @@ const props = defineProps<{
   lineWidth: number
   lineColor: string
   dotRadius: number
+  imageGutter: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -56,6 +60,7 @@ const emit = defineEmits<{
   'update:lineWidth': [width: number]
   'update:lineColor': [color: string]
   'update:dotRadius': [radius: number]
+  'update:imageGutter': [gutter: number]
   'update:anchorStyle': [style: AnchorStyleId]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
@@ -147,6 +152,19 @@ function onDotRadiusChange(event: Event): void {
   onProjectPxChange(event, DOT_RADIUS_MIN, DOT_RADIUS_MAX, DOT_RADIUS_STEP, (value) => {
     emit('update:dotRadius', value)
   }, props.dotRadius)
+}
+
+function onImageGutterChange(event: Event): void {
+  onProjectPxChange(
+    event,
+    IMAGE_GUTTER_MIN,
+    IMAGE_GUTTER_MAX,
+    IMAGE_GUTTER_STEP,
+    (value) => {
+      emit('update:imageGutter', value)
+    },
+    props.imageGutter,
+  )
 }
 
 function onCalloutFontSizeChange(event: Event): void {
@@ -412,7 +430,7 @@ watch(
           </button>
         </div>
       </div>
-      <div class="field" style="margin-bottom: 0">
+      <div class="field">
         <label class="slider-label">
           <span>{{ t('style.dotRadius') }}</span>
           <div class="px-field px-field-compact">
@@ -435,6 +453,31 @@ watch(
           :value="dotRadius"
           @input="emit('update:dotRadius', Number(($event.target as HTMLInputElement).value))"
         />
+      </div>
+      <div class="field" style="margin-bottom: 0">
+        <label class="slider-label">
+          <span>{{ t('style.imageGutter') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="decimal"
+              :value="imageGutter"
+              @change="onImageGutterChange"
+              @keydown.enter.prevent="onImageGutterChange"
+            />
+            <span class="px-unit">px</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="IMAGE_GUTTER_MIN"
+          :max="IMAGE_GUTTER_MAX"
+          :step="IMAGE_GUTTER_STEP"
+          :value="imageGutter"
+          @input="emit('update:imageGutter', Number(($event.target as HTMLInputElement).value))"
+        />
+        <p class="field-hint">{{ t('style.imageGutterHint') }}</p>
       </div>
     </div>
 

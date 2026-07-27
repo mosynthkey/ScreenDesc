@@ -182,6 +182,8 @@ export const ja: Record<MessageKey, string> = {
   'style.lineWidth': '線の太さ',
   'style.lineAndDotColor': '引き出し線・アンカーの色',
   'style.dotRadius': 'アンカーの大きさ',
+  'style.imageGutter': '画像とラベルの距離',
+  'style.imageGutterHint': '実際の距離はアンカーの大きさ・線の太さに応じて自動で広がることがあります。',
   'style.anchorStyle': 'アンカーの形状',
   'style.lineHalo': '縁取り',
   'style.lineHaloColor': '縁取りの色',

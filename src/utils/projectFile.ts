@@ -21,7 +21,7 @@ import {
   normalizePageBackgroundColor,
 } from './commonSettings'
 import { normalizeCalloutFontItalic, normalizeCalloutFontWeight } from './googleFonts'
-import { clampAnchorOffsetAxis, normalizeAnchorOutsideGap } from './markerSize'
+import { clampAnchorOffsetAxis, normalizeAnchorOutsideGap, normalizeImageGutter } from './markerSize'
 import { computeProjectContentHash, isContentHash } from './contentHash'
 
 const FILE_VERSION = 1
@@ -43,6 +43,7 @@ export interface ProjectFileData {
   lineColor: string
   dotColor: string
   dotRadius: number
+  imageGutter: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -171,6 +172,7 @@ export async function contentHashFromSnapshot(snapshot: {
   lineColor: string
   dotColor: string
   dotRadius: number
+  imageGutter: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -249,6 +251,9 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   )
   project.anchorStyle = normalizeAnchorStyle(
     (project as { anchorStyle?: unknown }).anchorStyle,
+  )
+  project.imageGutter = normalizeImageGutter(
+    (project as { imageGutter?: unknown }).imageGutter,
   )
   project.calloutFontWeight = normalizeCalloutFontWeight(
     (project as { calloutFontWeight?: unknown }).calloutFontWeight,
@@ -349,6 +354,7 @@ export function projectFileFieldsFromSnapshot(
     lineColor: string
     dotColor: string
     dotRadius: number
+    imageGutter: number
     anchorStyle: AnchorStyleId
     lineHaloWidth: number
     lineHaloColor: string
@@ -375,6 +381,7 @@ export function projectFileFieldsFromSnapshot(
     lineColor: snapshot.lineColor,
     dotColor: snapshot.dotColor,
     dotRadius: snapshot.dotRadius,
+    imageGutter: snapshot.imageGutter,
     anchorStyle: snapshot.anchorStyle,
     lineHaloWidth: snapshot.lineHaloWidth,
     lineHaloColor: snapshot.lineHaloColor,

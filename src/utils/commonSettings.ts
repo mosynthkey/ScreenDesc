@@ -14,8 +14,10 @@ import {
   CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
+  DEFAULT_IMAGE_GUTTER,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
+  normalizeImageGutter,
 } from './markerSize'
 
 const STORAGE_KEY = 'screendesc.commonSettingsPresets'
@@ -32,6 +34,7 @@ export interface CommonSettings {
   lineWidth: number
   lineColor: string
   dotRadius: number
+  imageGutter: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -63,6 +66,7 @@ export function createDefaultCommonSettings(): CommonSettings {
     lineWidth: DEFAULT_LINE_WIDTH,
     lineColor: '#ffd60a',
     dotRadius: 4.5,
+    imageGutter: DEFAULT_IMAGE_GUTTER,
     anchorStyle: DEFAULT_ANCHOR_STYLE,
     lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
     lineHaloColor: DEFAULT_LINE_HALO_COLOR,
@@ -152,6 +156,8 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     typeof raw.dotRadius === 'number' && Number.isFinite(raw.dotRadius)
       ? Math.min(DOT_RADIUS_MAX, Math.max(DOT_RADIUS_MIN, raw.dotRadius))
       : defaults.dotRadius
+  const imageGutter =
+    raw.imageGutter === undefined ? defaults.imageGutter : normalizeImageGutter(raw.imageGutter)
   const calloutFontSize =
     typeof raw.calloutFontSize === 'number' && Number.isFinite(raw.calloutFontSize)
       ? Math.min(CALLOUT_FONT_SIZE_MAX, Math.max(CALLOUT_FONT_SIZE_MIN, raw.calloutFontSize))
@@ -165,6 +171,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     lineWidth: normalizedLine.lineWidth,
     lineColor,
     dotRadius,
+    imageGutter,
     anchorStyle: normalizeAnchorStyle(raw.anchorStyle),
     lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth),
     lineHaloColor: normalizeLineHaloColor(raw.lineHaloColor),

@@ -26,6 +26,19 @@ export function normalizeAnchorOutsideGap(value: unknown): number {
   return DEFAULT_ANCHOR_OUTSIDE_GAP
 }
 
+/** Baseline image-to-label distance (see `requiredGutterFor` in calloutLayout.ts). */
+export const DEFAULT_IMAGE_GUTTER = 30
+export const IMAGE_GUTTER_MIN = 0
+export const IMAGE_GUTTER_MAX = 120
+export const IMAGE_GUTTER_STEP = 1
+
+export function normalizeImageGutter(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(IMAGE_GUTTER_MAX, Math.max(IMAGE_GUTTER_MIN, Math.round(value)))
+  }
+  return DEFAULT_IMAGE_GUTTER
+}
+
 export function anchorOffsetExtent(imageSize: number): number {
   if (!Number.isFinite(imageSize) || imageSize <= 0) return ANCHOR_OFFSET_FALLBACK
   return Math.max(1, Math.round(imageSize))

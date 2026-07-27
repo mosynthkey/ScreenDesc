@@ -48,6 +48,11 @@ export interface AnchorArrowGeometry {
   right: Point
 }
 
+/** Arrowhead length for a given dot radius — shared with {@link anchorOutsideReach}. */
+function arrowLength(radius: number): number {
+  return Math.max(11, radius * 2.35)
+}
+
 /**
  * Arrowhead centered on `anchor`.
  * Tip points at the annotated target's center; notched base faces the label.
@@ -64,7 +69,7 @@ export function buildAnchorArrowGeometry(
   const perpY = towardTargetX
 
   // Classic marker arrowhead: longer than wide, concave base (notch).
-  const length = Math.max(11, radius * 2.35)
+  const length = arrowLength(radius)
   const halfWidth = Math.max(4, radius * 1.05)
   const notchDepth = length * 0.22
 
@@ -116,4 +121,28 @@ export function buildAnchorHeadPath(
     return `M ${left.x} ${left.y} L ${tip.x} ${tip.y} L ${right.x} ${right.y}`
   }
   return `M ${tip.x} ${tip.y} L ${left.x} ${left.y} L ${center.x} ${center.y} L ${right.x} ${right.y} Z`
+}
+
+/**
+ * How far the marker's own ink reaches beyond the anchor *point* toward the
+ * annotated element — a dot's radius, or an arrow/chevron's tip distance
+ * (`buildAnchorArrowGeometry`'s `length * 0.55`) — plus half the leader
+ * line's stroke width, since SVG centers a stroke on its path and the marker
+ * outline is stroked too.
+ *
+ * `anchorForAnnotation` (calloutLayout.ts) adds this to the user-facing
+ * "distance from frame" gap so that value describes the visible empty space
+ * between the section border and the marker's ink, not the distance to the
+ * anchor coordinate the marker happens to be centered on.
+ */
+export function anchorOutsideReach(
+  style: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
+): number {
+  const halfStroke = lineWidth / 2
+  if (isArrowAnchorStyle(style)) {
+    return arrowLength(dotRadius) * 0.55 + halfStroke
+  }
+  return dotRadius + halfStroke
 }

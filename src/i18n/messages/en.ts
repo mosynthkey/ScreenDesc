@@ -179,6 +179,8 @@ export const en = {
   'style.lineWidth': 'Line weight',
   'style.lineAndDotColor': 'Leader & anchor color',
   'style.dotRadius': 'Anchor size',
+  'style.imageGutter': 'Image-to-label distance',
+  'style.imageGutterHint': 'Grows automatically to fit a larger anchor or thicker line.',
   'style.anchorStyle': 'Anchor shape',
   'style.lineHalo': 'Outline',
   'style.lineHaloColor': 'Outline color',

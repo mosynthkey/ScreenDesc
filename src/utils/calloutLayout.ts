@@ -1,4 +1,5 @@
 import type {
+  AnchorStyleId,
   Annotation,
   CalloutLayoutItem,
   CalloutSide,
@@ -9,6 +10,14 @@ import type {
 import { clamp, rectCenter } from './geometry'
 import { measureTextWidth } from './textMeasure'
 import { fontFamilyCss } from './googleFonts'
+import {
+  anchorOutsideReach,
+  buildAnchorArrowGeometry,
+  dotLeaderAttachPoint,
+  isArrowAnchorStyle,
+  leaderAttachPoint,
+} from './anchorStyle'
+import { DEFAULT_IMAGE_GUTTER } from './markerSize'
 import { t } from '../i18n'
 
 export type ResolvedCalloutSide = Exclude<CalloutSide, 'auto'>
@@ -102,12 +111,16 @@ function clampLabelTopLeft(
 
 const LABEL_GAP_MIN = 12
 const LINE_INSET = 8
-const IMAGE_GUTTER = 14
 const PAGE_PAD = 8
+/** Absolute floor used only where no font size is in scope (e.g. the
+ * empty-document default, or a defensive fallback before sizes exist). */
 const MIN_LABEL_WIDTH = 120
 const EMPTY_SIDE_MARGIN = 32
 const ELBOW_INSET = 10
 const MIN_VERTICAL_MARGIN = 24
+/** Leader line always keeps at least this much visible length, even when an
+ * "outside" anchor's own reach nearly spans the default image gutter. */
+const MIN_VISIBLE_LEADER = 10
 
 function lineHeightFor(fontSize: number): number {
   return Math.round(fontSize * 1.375)
@@ -121,6 +134,16 @@ function labelVPadding(fontSize: number): number {
   return Math.max(14, Math.round(fontSize * 0.35))
 }
 
+/**
+ * Narrowest a label is allowed to be, scaled to the callout font size —
+ * without this, a fixed 120px floor looks fine at the default font size but
+ * towers over short text like "(1)" at a small size, or is too cramped at a
+ * large one.
+ */
+function minLabelWidthFor(fontSize: number): number {
+  return Math.max(48, Math.round(fontSize * 1.5))
+}
+
 /** Horizontal / vertical padding inside a fixed-size callout text box. */
 export function calloutLabelPadding(fontSize: number): {
   horizontal: number
@@ -132,8 +155,27 @@ export function calloutLabelPadding(fontSize: number): {
   }
 }
 
-export function calloutLabelTextX(labelX: number, fontSize: number): number {
-  return labelX + calloutLabelPadding(fontSize).horizontal
+/**
+ * X for the text inside a label box. Ordinarily the box is sized to exactly
+ * fit the text plus symmetric padding, so left-aligning at the padding edge
+ * already looks centered. But a short string (or an empty one) hits
+ * `minLabelWidthFor`'s floor, leaving the box wider than the text needs —
+ * center the text in that leftover room instead of hugging the left edge.
+ */
+export function calloutLabelTextX(
+  labelX: number,
+  labelWidth: number,
+  text: string,
+  fontSize: number,
+  fontFamily: string,
+  fontWeight: number,
+  fontItalic: boolean,
+): number {
+  const padding = calloutLabelPadding(fontSize)
+  const textWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight, fontItalic)
+  const naturalWidth = textWidth + padding.horizontal * 2
+  if (labelWidth <= naturalWidth) return labelX + padding.horizontal
+  return labelX + (labelWidth - textWidth) / 2
 }
 
 /** Alphabetic baseline Y for a line whose ink is vertically centered in the label. */
@@ -156,12 +198,96 @@ function labelGapFor(fontSize: number): number {
   return Math.max(LABEL_GAP_MIN, Math.round(fontSize * 0.35))
 }
 
-function sideMarginFor(maxLabelWidth: number): number {
-  return maxLabelWidth + IMAGE_GUTTER + PAGE_PAD
+function sideMarginFor(maxLabelWidth: number, gutter: number): number {
+  return maxLabelWidth + gutter + PAGE_PAD
 }
 
-function bandMarginFor(maxLabelHeight: number): number {
-  return maxLabelHeight + IMAGE_GUTTER + PAGE_PAD
+function bandMarginFor(maxLabelHeight: number, gutter: number): number {
+  return maxLabelHeight + gutter + PAGE_PAD
+}
+
+/**
+ * Where the visible leader *stroke* actually begins — the dot's center, or
+ * (for arrow/chevron) the notch/tip `buildAnchorArrowGeometry` produces —
+ * mirroring the render path in AnnotationCanvas.vue exactly, since a filled
+ * arrowhead's own ink covers most of the span between the anchor and this
+ * point and isn't part of the "line".
+ */
+function leaderStartForAnnotation(
+  annotation: Annotation,
+  sections: Section[],
+  side: ResolvedCalloutSide,
+  imageWidth: number,
+  imageHeight: number,
+  anchorStyle: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
+): Point {
+  const anchor = anchorForAnnotation(
+    annotation,
+    sections,
+    side,
+    imageWidth,
+    imageHeight,
+    anchorStyle,
+    dotRadius,
+    lineWidth,
+  )
+  if (!isArrowAnchorStyle(anchorStyle)) return dotLeaderAttachPoint(anchor)
+  const targetCenter = referencePointForAnnotation(annotation, sections)
+  return leaderAttachPoint(anchorStyle, buildAnchorArrowGeometry(anchor, targetCenter, dotRadius))
+}
+
+/**
+ * Extra image-to-label gutter needed so every annotation on `side` keeps a
+ * visibly distinct leader line — not just a valid (possibly ~0px) one.
+ * `autoLabelX`/`autoLabelY` always sit a fixed gutter past the *image* edge,
+ * while the leader only actually starts at `leaderStartForAnnotation` (past
+ * the anchor for arrow/chevron styles); when a section sits close to that
+ * edge, or the marker/stroke is large, that start point can land at or
+ * beyond the default 14px gutter, leaving nothing for the eye to read as a
+ * line between the marker and the label. Applies regardless of
+ * `anchorOutside`: an inset (inside-the-box) anchor with a large arrow has
+ * the same problem.
+ */
+function requiredGutterFor(
+  items: Annotation[],
+  sections: Section[],
+  side: ResolvedCalloutSide,
+  imageWidth: number,
+  imageHeight: number,
+  anchorStyle: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
+  baseGutter: number,
+): number {
+  // A round-capped stroke shorter than roughly its own width doesn't read as
+  // a line — it just reads as part of the marker. Keep the reserved run
+  // comfortably longer than the stroke is thick.
+  const minVisibleLeader = Math.max(MIN_VISIBLE_LEADER, lineWidth * 1.5)
+  let gutter = baseGutter
+  for (const annotation of items) {
+    const leaderStart = leaderStartForAnnotation(
+      annotation,
+      sections,
+      side,
+      imageWidth,
+      imageHeight,
+      anchorStyle,
+      dotRadius,
+      lineWidth,
+    )
+    const overshoot =
+      side === 'left'
+        ? -leaderStart.x
+        : side === 'right'
+          ? leaderStart.x - imageWidth
+          : side === 'top'
+            ? -leaderStart.y
+            : leaderStart.y - imageHeight
+    gutter = Math.max(gutter, overshoot + minVisibleLeader)
+  }
+  return gutter
 }
 
 function stackExtent(sizes: number[], gap: number): number {
@@ -191,14 +317,19 @@ function estimateLabelSize(
   fontItalic: boolean,
 ): { width: number; height: number; lines: string[] } {
   const prefix = numberPrefix ? `${numberPrefix} ` : ''
-  const text = `${prefix}${description || t('callout.emptyDescription')}`
+  const text = description ? `${prefix}${description}` : numberPrefix
+  // A blank description would otherwise measure as ~0px wide, leaving nothing
+  // to click/drag; size against the placeholder, but never draw it — an
+  // intentionally empty label should render empty, not the literal
+  // placeholder word.
+  const measureText = description ? text : `${prefix}${t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
   const textWidth =
-    measureTextWidth(text, fontSize, fontCss, fontWeight, fontItalic) +
+    measureTextWidth(measureText, fontSize, fontCss, fontWeight, fontItalic) +
     labelHPadding(fontSize)
   return {
-    width: Math.max(MIN_LABEL_WIDTH, Math.ceil(textWidth)),
+    width: Math.max(minLabelWidthFor(fontSize), Math.ceil(textWidth)),
     height: Math.max(lineHeight + labelVPadding(fontSize), Math.round(fontSize * 1.5)),
     lines: [text],
   }
@@ -218,11 +349,23 @@ function anchorForAnnotation(
   side: ResolvedCalloutSide,
   imageWidth: number,
   imageHeight: number,
+  anchorStyle: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
 ): Point {
   const section = getSectionForAnnotation(annotation, sections)
   const offset = annotation.anchorOffset
+  // The "distance from frame" setting is the empty space the user sees
+  // between the section border and the marker's ink — not the distance to
+  // the anchor coordinate the marker is centered on — so grow the gap by
+  // however far the marker itself (and its stroke) reaches back toward the
+  // box. Otherwise a large dot or arrowhead visually overlaps the section
+  // it's supposedly held away from.
   const inset = annotation.anchorOutside
-    ? -Math.max(0, annotation.anchorOutsideGap)
+    ? -(
+        Math.max(0, annotation.anchorOutsideGap) +
+        anchorOutsideReach(anchorStyle, dotRadius, lineWidth)
+      )
     : LINE_INSET
   let baseX: number
   let baseY: number
@@ -438,6 +581,10 @@ function packSide(
   document: DocumentLayout,
   side: 'left' | 'right',
   gap: number,
+  anchorStyle: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
+  gutter: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -448,6 +595,9 @@ function packSide(
       side,
       document.imageWidth,
       document.imageHeight,
+      anchorStyle,
+      dotRadius,
+      lineWidth,
     ),
   )
 
@@ -487,8 +637,8 @@ function packSide(
     const imageRight = document.marginLeft + document.imageWidth
     const autoLabelX =
       side === 'left'
-        ? imageLeft - size.width - IMAGE_GUTTER
-        : imageRight + IMAGE_GUTTER
+        ? imageLeft - size.width - gutter
+        : imageRight + gutter
 
     let labelX = autoLabelX
     let labelY = autoTopByIndex.get(itemIndex) ?? minY
@@ -539,6 +689,10 @@ function packBand(
   document: DocumentLayout,
   side: 'top' | 'bottom',
   gap: number,
+  anchorStyle: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
+  gutter: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
 
@@ -549,6 +703,9 @@ function packBand(
       side,
       document.imageWidth,
       document.imageHeight,
+      anchorStyle,
+      dotRadius,
+      lineWidth,
     ),
   )
 
@@ -588,8 +745,8 @@ function packBand(
 
     const autoLabelY =
       side === 'top'
-        ? imageTop - size.height - IMAGE_GUTTER
-        : imageBottom + IMAGE_GUTTER
+        ? imageTop - size.height - gutter
+        : imageBottom + gutter
 
     let labelX = autoLeftByIndex.get(itemIndex) ?? minX
     let labelY = autoLabelY
@@ -677,7 +834,7 @@ export function createDefaultDocumentLayout(
   maxLabelWidth = MIN_LABEL_WIDTH,
 ): DocumentLayout {
   const sideMargin =
-    calloutCount > 0 ? sideMarginFor(maxLabelWidth) : EMPTY_SIDE_MARGIN
+    calloutCount > 0 ? sideMarginFor(maxLabelWidth, DEFAULT_IMAGE_GUTTER) : EMPTY_SIDE_MARGIN
   return {
     imageWidth,
     imageHeight,
@@ -697,6 +854,10 @@ export function layoutCalloutsForImage(
   fontFamily: string,
   fontWeight: number,
   fontItalic: boolean,
+  anchorStyle: AnchorStyleId,
+  dotRadius: number,
+  lineWidth: number,
+  imageGutter: number,
 ): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) {
@@ -724,14 +885,8 @@ export function layoutCalloutsForImage(
   const topSizes = groups.top.map((annotation) => sizeById.get(annotation.id)!)
   const bottomSizes = groups.bottom.map((annotation) => sizeById.get(annotation.id)!)
 
-  const leftMax = leftSizes.reduce(
-    (maxWidth, size) => Math.max(maxWidth, size.width),
-    MIN_LABEL_WIDTH,
-  )
-  const rightMax = rightSizes.reduce(
-    (maxWidth, size) => Math.max(maxWidth, size.width),
-    MIN_LABEL_WIDTH,
-  )
+  const leftMax = leftSizes.reduce((maxWidth, size) => Math.max(maxWidth, size.width), 0)
+  const rightMax = rightSizes.reduce((maxWidth, size) => Math.max(maxWidth, size.width), 0)
   const topMaxHeight = topSizes.reduce(
     (maxHeight, size) => Math.max(maxHeight, size.height),
     0,
@@ -753,15 +908,61 @@ export function layoutCalloutsForImage(
   )
   const { marginTop: stackMarginTop, marginBottom: stackMarginBottom } =
     verticalMarginsFor(imageHeight, maxSideStack)
+
+  const leftGutter = requiredGutterFor(
+    groups.left,
+    sections,
+    'left',
+    imageWidth,
+    imageHeight,
+    anchorStyle,
+    dotRadius,
+    lineWidth,
+    imageGutter,
+  )
+  const rightGutter = requiredGutterFor(
+    groups.right,
+    sections,
+    'right',
+    imageWidth,
+    imageHeight,
+    anchorStyle,
+    dotRadius,
+    lineWidth,
+    imageGutter,
+  )
+  const topGutter = requiredGutterFor(
+    groups.top,
+    sections,
+    'top',
+    imageWidth,
+    imageHeight,
+    anchorStyle,
+    dotRadius,
+    lineWidth,
+    imageGutter,
+  )
+  const bottomGutter = requiredGutterFor(
+    groups.bottom,
+    sections,
+    'bottom',
+    imageWidth,
+    imageHeight,
+    anchorStyle,
+    dotRadius,
+    lineWidth,
+    imageGutter,
+  )
+
   const bandTop =
-    groups.top.length > 0 ? bandMarginFor(topMaxHeight) : MIN_VERTICAL_MARGIN
+    groups.top.length > 0 ? bandMarginFor(topMaxHeight, topGutter) : MIN_VERTICAL_MARGIN
   const bandBottom =
-    groups.bottom.length > 0 ? bandMarginFor(bottomMaxHeight) : MIN_VERTICAL_MARGIN
+    groups.bottom.length > 0 ? bandMarginFor(bottomMaxHeight, bottomGutter) : MIN_VERTICAL_MARGIN
 
   const baseLeft =
-    groups.left.length > 0 ? sideMarginFor(leftMax) : EMPTY_SIDE_MARGIN
+    groups.left.length > 0 ? sideMarginFor(leftMax, leftGutter) : EMPTY_SIDE_MARGIN
   const baseRight =
-    groups.right.length > 0 ? sideMarginFor(rightMax) : EMPTY_SIDE_MARGIN
+    groups.right.length > 0 ? sideMarginFor(rightMax, rightGutter) : EMPTY_SIDE_MARGIN
 
   const maxBandRow = Math.max(
     stackExtent(
@@ -789,10 +990,10 @@ export function layoutCalloutsForImage(
   return {
     document,
     layouts: [
-      ...packSide(groups.left, leftSizes, sections, document, 'left', gap),
-      ...packSide(groups.right, rightSizes, sections, document, 'right', gap),
-      ...packBand(groups.top, topSizes, sections, document, 'top', gap),
-      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap),
+      ...packSide(groups.left, leftSizes, sections, document, 'left', gap, anchorStyle, dotRadius, lineWidth, leftGutter),
+      ...packSide(groups.right, rightSizes, sections, document, 'right', gap, anchorStyle, dotRadius, lineWidth, rightGutter),
+      ...packBand(groups.top, topSizes, sections, document, 'top', gap, anchorStyle, dotRadius, lineWidth, topGutter),
+      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap, anchorStyle, dotRadius, lineWidth, bottomGutter),
     ],
   }
 }

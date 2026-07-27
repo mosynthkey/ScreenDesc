@@ -19,6 +19,7 @@ export interface ProjectSnapshot {
   lineColor: string
   dotColor: string
   dotRadius: number
+  imageGutter: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
