@@ -5,6 +5,7 @@ import { createDefaultDocumentLayout } from '../utils/calloutLayout'
 import { recognizeTextFromImage } from '../utils/ocr'
 import { detectSectionsML } from '../utils/mlSectionDetection'
 import { fitImageToExactSize, loadImageFromBlob } from '../utils/fitImageToSize'
+import { defaultSectionVisibility } from '../utils/sectionVisibility'
 import { t } from '../i18n'
 import {
   activeNamedProject,
@@ -33,7 +34,7 @@ export async function runSectionDetection(): Promise<void> {
   try {
     const sections = await detectSectionsML(imageElement.value, screenParser)
     state.sections = sections
-    state.showSections = true
+    state.sectionVisibility = defaultSectionVisibility()
     state.selectedSectionIds = []
   } finally {
     isDetecting.value = false
@@ -67,7 +68,7 @@ async function applyImageSource(
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   state.toolMode = 'select'
-  state.showSections = true
+  state.sectionVisibility = defaultSectionVisibility()
   ocrLines.value = []
 
   isRecognizingText.value = true
@@ -143,7 +144,7 @@ export async function clearCurrentProject(): Promise<void> {
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   state.toolMode = 'select'
-  state.showSections = true
+  state.sectionVisibility = defaultSectionVisibility()
   state.calloutLayouts = []
   state.document = createDefaultDocumentLayout(0, 0, 0)
   state.variations = []

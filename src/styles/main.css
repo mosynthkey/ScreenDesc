@@ -1,4 +1,10 @@
 :root {
+  /* Tells the browser which palette native widgets (select popups,
+     scrollbars, spin buttons…) should render in — without this they ignore
+     our custom --ink/--bg variables and can render illegibly (e.g. light
+     text on a native-light dropdown popup) whenever the effective theme
+     doesn't match the OS's own light/dark setting. */
+  color-scheme: light;
   /* Light material system — hierarchy via weight, not borders */
   --bg: #f2f2f7;
   --bg-panel: rgba(255, 255, 255, 0.72);
@@ -38,6 +44,7 @@
    hasn't forced light), or when the user explicitly picks dark in About. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    color-scheme: dark;
     --bg: #000000;
     --bg-panel: rgba(28, 28, 30, 0.72);
     --bg-elevated: rgba(44, 44, 46, 0.92);
@@ -64,6 +71,7 @@
 }
 
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --bg: #000000;
   --bg-panel: rgba(28, 28, 30, 0.72);
   --bg-elevated: rgba(44, 44, 46, 0.92);

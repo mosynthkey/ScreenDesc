@@ -3,11 +3,13 @@ import type {
   AnchorStyleId,
   LineStyleId,
   Section,
+  SectionVisibilityCategory,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
 import { t } from '../i18n'
 import { normalizeAnchorStyle } from './anchorStyle'
 import { normalizeCalloutSide } from './calloutLayout'
+import { normalizeSectionVisibility } from './sectionVisibility'
 import {
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
@@ -65,7 +67,7 @@ export interface ProjectFileData {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  showSections: boolean
+  sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
   variations: string[]
   /** SHA-256 hex of canonical project bytes (excluding this field). Written on export. */
@@ -210,7 +212,7 @@ export async function contentHashFromSnapshot(snapshot: {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  showSections: boolean
+  sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   variations: string[]
 }): Promise<string> {
   const data = await buildProjectFileData(
@@ -275,6 +277,13 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   )
   project.pageBackgroundColor = normalizePageBackgroundColor(
     (project as { pageBackgroundColor?: unknown }).pageBackgroundColor,
+  )
+  // Old files only had one combined `showSections` flag; fall back to it for
+  // any category missing from `sectionVisibility` (including all of them,
+  // for files from before this feature existed at all).
+  project.sectionVisibility = normalizeSectionVisibility(
+    (project as { sectionVisibility?: unknown }).sectionVisibility,
+    (project as { showSections?: unknown }).showSections !== false,
   )
   project.anchorStyle = normalizeAnchorStyle(
     (project as { anchorStyle?: unknown }).anchorStyle,
@@ -405,7 +414,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFillColor: string
     calloutFillOpacity: number
     pageBackgroundColor: string
-    showSections: boolean
+    sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
     variations: string[]
   },
 ): ProjectFileFields {
@@ -436,7 +445,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFillColor: snapshot.calloutFillColor,
     calloutFillOpacity: snapshot.calloutFillOpacity,
     pageBackgroundColor: snapshot.pageBackgroundColor,
-    showSections: snapshot.showSections,
+    sectionVisibility: snapshot.sectionVisibility,
     variations: snapshot.variations,
   }
 }

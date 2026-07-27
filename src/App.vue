@@ -31,6 +31,7 @@ const {
   isDetecting,
   isRecognizingText,
   isExporting,
+  ocrLines,
   modelStatus,
   modelDownloadProgress,
   modelError,
@@ -72,7 +73,7 @@ const {
   setCalloutFillColor,
   setPageBackgroundColor,
   setCalloutFillOpacity,
-  toggleShowSections,
+  toggleSectionVisibility,
   clearSelection,
   selectSection,
   selectAnnotation,
@@ -794,7 +795,7 @@ function onKeydown(event: KeyboardEvent): void {
         :page="appPage"
         :project-title="activeNamedProject?.name ?? null"
         :tool-mode="state.toolMode"
-        :show-sections="state.showSections"
+        :section-visibility="state.sectionVisibility"
         :is-detecting="isDetecting"
         :can-export="hasImage && !isExporting"
         :copy-just-succeeded="copyJustSucceeded"
@@ -804,7 +805,7 @@ function onKeydown(event: KeyboardEvent): void {
         :variations="[...state.variations]"
         :active-variation="state.activeVariation"
         @update:tool-mode="setToolMode"
-        @toggle-sections="toggleShowSections"
+        @toggle-section-visibility="toggleSectionVisibility"
         @copy-clipboard="onCopyClipboard"
         @export="exportOpen = true"
         @undo-crop="onUndoCrop"
@@ -928,7 +929,8 @@ function onKeydown(event: KeyboardEvent): void {
             :selected-section-ids="[...state.selectedSectionIds]"
             :selected-annotation-ids="[...state.selectedAnnotationIds]"
             :tool-mode="state.toolMode"
-            :show-sections="state.showSections"
+            :section-visibility="state.sectionVisibility"
+            :ocr-lines="[...ocrLines]"
             :line-style="state.lineStyle"
             :line-width="state.lineWidth"
             :line-color="state.lineColor"

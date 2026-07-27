@@ -3,6 +3,7 @@ import type {
   AnchorStyleId,
   LineStyleId,
   Section,
+  SectionVisibilityCategory,
 } from '../types/annotation'
 import type { OcrLineHit } from './ocr'
 
@@ -34,7 +35,7 @@ export interface ProjectSnapshot {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  showSections: boolean
+  sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
   variations: string[]
   /** When set, edits auto-overwrite this named save. */

@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { ToolMode } from '../types/annotation'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { SectionVisibilityCategory, ToolMode } from '../types/annotation'
 import type { AppPageId } from './NavigationBar.vue'
 import { useI18n } from '../i18n'
+import {
+  SECTION_VISIBILITY_CATEGORIES,
+  SECTION_VISIBILITY_LABEL_KEYS,
+  type SectionVisibilityMap,
+} from '../utils/sectionVisibility'
 
 const { t, tr } = useI18n()
 
@@ -11,7 +16,7 @@ const props = withDefaults(
     page: AppPageId
     projectTitle?: string | null
     toolMode: ToolMode
-    showSections: boolean
+    sectionVisibility: SectionVisibilityMap
     isDetecting: boolean
     canExport: boolean
     copyJustSucceeded?: boolean
@@ -31,7 +36,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:toolMode': [mode: ToolMode]
-  toggleSections: []
+  toggleSectionVisibility: [category: SectionVisibilityCategory]
   copyClipboard: []
   export: []
   undoCrop: []
@@ -50,9 +55,27 @@ const emit = defineEmits<{
 const cropMenuOpen = ref(false)
 const projectMenuOpen = ref(false)
 const variationMenuOpen = ref(false)
+const sectionsMenuOpen = ref(false)
 const newVariationDraft = ref('')
 const titleDraft = ref('')
 const titleInputRef = ref<HTMLInputElement | null>(null)
+
+const sectionVisibilityOptions = computed(() =>
+  SECTION_VISIBILITY_CATEGORIES.map((category) => ({
+    category,
+    label: t(SECTION_VISIBILITY_LABEL_KEYS[category]),
+    checked: props.sectionVisibility[category] !== false,
+  })),
+)
+
+/** Dimmed when every category is hidden, so the icon reflects "nothing showing". */
+const anySectionVisible = computed(() =>
+  SECTION_VISIBILITY_CATEGORIES.some((category) => props.sectionVisibility[category] !== false),
+)
+
+function toggleSectionsMenu(): void {
+  sectionsMenuOpen.value = !sectionsMenuOpen.value
+}
 
 function syncTitleDraft(): void {
   titleDraft.value = props.projectTitle?.trim() || ''
@@ -173,6 +196,9 @@ function handleWindowClick(event: MouseEvent): void {
   }
   if (variationMenuOpen.value && !target?.closest('.variation-menu-wrap')) {
     variationMenuOpen.value = false
+  }
+  if (sectionsMenuOpen.value && !target?.closest('.sections-menu-anchor')) {
+    sectionsMenuOpen.value = false
   }
 }
 
@@ -597,6 +623,20 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
         <button
           class="tool-btn"
+          :class="{ active: toolMode === 'annotate' }"
+          type="button"
+          :data-tooltip="t('tooltip.toolAnnotate')"
+          :aria-label="t('aria.toolAnnotate')"
+          @click="setTool('annotate')"
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+            <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+          </svg>
+        </button>
+
+        <button
+          class="tool-btn"
           :class="{ active: toolMode === 'add-section' }"
           type="button"
           :data-tooltip="t('tooltip.toolAddSection')"
@@ -621,20 +661,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               stroke-width="2"
               stroke-linecap="round"
             />
-          </svg>
-        </button>
-
-        <button
-          class="tool-btn"
-          :class="{ active: toolMode === 'annotate' }"
-          type="button"
-          :data-tooltip="t('tooltip.toolAnnotate')"
-          :aria-label="t('aria.toolAnnotate')"
-          @click="setTool('annotate')"
-        >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-            <circle cx="12" cy="12" r="2.2" fill="currentColor" />
           </svg>
         </button>
 
@@ -724,14 +750,15 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
       <div class="dock-sep" />
 
-      <div class="dock-group">
+      <div class="dock-group sections-menu-anchor">
         <button
           class="tool-btn"
-          :class="{ active: showSections }"
+          :class="{ active: anySectionVisible }"
           type="button"
           :data-tooltip="t('tooltip.toggleSections')"
           :aria-label="t('aria.toggleSections')"
-          @click="emit('toggleSections')"
+          :aria-expanded="sectionsMenuOpen"
+          @click="toggleSectionsMenu"
         >
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <rect
@@ -747,6 +774,20 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             />
           </svg>
         </button>
+        <div v-if="sectionsMenuOpen" class="sections-menu" role="menu" @click.stop>
+          <label
+            v-for="option in sectionVisibilityOptions"
+            :key="option.category"
+            class="sections-menu-item"
+          >
+            <input
+              type="checkbox"
+              :checked="option.checked"
+              @change="emit('toggleSectionVisibility', option.category)"
+            />
+            <span>{{ option.label }}</span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -1013,6 +1054,45 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 .variation-menu-wrap {
   position: relative;
   flex: 0 0 auto;
+}
+
+.sections-menu-anchor {
+  position: relative;
+}
+
+.sections-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  min-width: 220px;
+  padding: 4px;
+  background: rgba(30, 30, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.28),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  pointer-events: auto;
+  z-index: 50;
+}
+
+.sections-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #f5f5f7;
+  font-size: 0.82rem;
+  font-weight: 590;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sections-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .variation-menu {

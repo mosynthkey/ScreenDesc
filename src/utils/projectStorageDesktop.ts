@@ -33,7 +33,7 @@ interface StoredSnapshot {
   calloutFillColor: string
   calloutFillOpacity: number
   pageBackgroundColor: string
-  showSections: boolean
+  sectionVisibility: ProjectSnapshot['sectionVisibility']
   variations: string[]
   activeNamedProjectId?: string | null
   activeNamedProjectName?: string | null

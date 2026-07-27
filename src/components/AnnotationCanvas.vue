@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import type {
   Annotation,
   AnchorStyleId,
   CalloutLayoutItem,
   DocumentLayout,
-  LineStyleId,
   Point,
+  LineStyleId,
   Rect,
   Section,
+  SectionVisibilityCategory,
   ToolMode,
 } from '../types/annotation'
-import { pointInRect } from '../utils/geometry'
+import { containmentRatio, pointInRect } from '../utils/geometry'
+import { isSectionVisible, categoryForSection, SECTION_VISIBILITY_LABEL_KEYS } from '../utils/sectionVisibility'
+import type { OcrLineHit } from '../utils/ocr'
 import { fontFamilyCss } from '../utils/googleFonts'
 import { getLineStyleSpec } from '../utils/lineStyle'
 import {
@@ -48,7 +51,9 @@ const props = defineProps<{
   selectedSectionIds: string[]
   selectedAnnotationIds: string[]
   toolMode: ToolMode
-  showSections: boolean
+  sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
+  /** For the right-click section list: OCR text matched to `kind: 'text'` sections. */
+  ocrLines?: OcrLineHit[]
   lineStyle: LineStyleId
   lineWidth: number
   lineColor: string
@@ -192,6 +197,8 @@ const { stageWidth, stageHeight } = useCanvasViewport({
 
 onBeforeUnmount(() => {
   stopEdgeAutoScroll()
+  window.removeEventListener('pointerdown', onWindowPointerDownForContextMenu)
+  window.removeEventListener('keydown', onWindowKeydownForContextMenu)
 })
 
 function clientToDocument(clientX: number, clientY: number): Point {
@@ -275,12 +282,95 @@ function startEdgeAutoScroll(): void {
   edgeScrollRafId = requestAnimationFrame(tickEdgeAutoScroll)
 }
 
-function findSectionAt(imagePoint: Point): Section | undefined {
-  const hits = props.sections.filter((section) => pointInRect(imagePoint, section.rect))
-  return hits.sort(
-    (left, right) => left.rect.width * left.rect.height - right.rect.width * right.rect.height,
-  )[0]
+/** Every section under the point, smallest (most specific) first. */
+function findSectionsAt(imagePoint: Point): Section[] {
+  return props.sections
+    .filter((section) => pointInRect(imagePoint, section.rect))
+    .sort((left, right) => left.rect.width * left.rect.height - right.rect.width * right.rect.height)
 }
+
+function findSectionAt(imagePoint: Point): Section | undefined {
+  return findSectionsAt(imagePoint)[0]
+}
+
+interface SectionContextMenuState {
+  x: number
+  y: number
+  sections: Section[]
+}
+
+const sectionContextMenu = ref<SectionContextMenuState | null>(null)
+
+function closeSectionContextMenu(): void {
+  sectionContextMenu.value = null
+}
+
+function ocrTextForSection(section: Section): string {
+  return (props.ocrLines ?? [])
+    .filter((line) => containmentRatio(line.rect, section.rect) >= 0.5)
+    .map((line) => line.text)
+    .join(' ')
+    .trim()
+}
+
+function sectionContextMenuLabel(section: Section): string {
+  const categoryLabel = t(SECTION_VISIBILITY_LABEL_KEYS[categoryForSection(section)])
+  const base = section.label || categoryLabel
+  return `${base} (${Math.round(section.rect.width)}×${Math.round(section.rect.height)})`
+}
+
+/** OCR excerpt shown under the label for text-kind sections, so identical-looking boxes are tellable apart. */
+function sectionContextMenuOcrExcerpt(section: Section): string {
+  if (categoryForSection(section) !== 'ai-text') return ''
+  const text = ocrTextForSection(section)
+  return text.length > 60 ? `${text.slice(0, 60)}…` : text
+}
+
+/** Same action a left click on this section would take, given the active tool. */
+function actOnSection(sectionId: string): void {
+  if (props.toolMode === 'annotate') {
+    emit('annotateSection', sectionId)
+  } else {
+    emit('selectSection', sectionId, false)
+  }
+}
+
+function onSelectFromSectionContextMenu(sectionId: string): void {
+  actOnSection(sectionId)
+  closeSectionContextMenu()
+}
+
+function onSceneContextMenu(event: MouseEvent): void {
+  if (props.toolMode !== 'select' && props.toolMode !== 'annotate') return
+  event.preventDefault()
+  const docPoint = clientToDocument(event.clientX, event.clientY)
+  const imagePoint = clampToImage(toImagePoint(docPoint))
+  const hits = findSectionsAt(imagePoint)
+  if (hits.length === 0) {
+    closeSectionContextMenu()
+  } else if (hits.length === 1) {
+    closeSectionContextMenu()
+    actOnSection(hits[0]!.id)
+  } else {
+    sectionContextMenu.value = { x: event.clientX, y: event.clientY, sections: hits }
+  }
+}
+
+function onWindowPointerDownForContextMenu(event: PointerEvent): void {
+  if (!sectionContextMenu.value) return
+  const target = event.target
+  if (target instanceof Element && target.closest('.section-context-menu')) return
+  closeSectionContextMenu()
+}
+
+function onWindowKeydownForContextMenu(event: KeyboardEvent): void {
+  if (event.key === 'Escape') closeSectionContextMenu()
+}
+
+onMounted(() => {
+  window.addEventListener('pointerdown', onWindowPointerDownForContextMenu)
+  window.addEventListener('keydown', onWindowKeydownForContextMenu)
+})
 
 /** Corner handles sit on the corner; edge handles sit at the midpoint of that edge. */
 function cropHandlePosition(rect: Rect, handle: CropHandle): Point {
@@ -715,6 +805,10 @@ function layoutFor(annotationId: string): CalloutLayoutItem | undefined {
   return props.calloutLayouts.find((item) => item.annotationId === annotationId)
 }
 
+const visibleSections = computed(() =>
+  props.sections.filter((section) => isSectionVisible(section, props.sectionVisibility)),
+)
+
 const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
 
 function calloutTextPadding(): { horizontal: number; vertical: number } {
@@ -813,6 +907,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
       @dblclick="onDblClick"
+      @contextmenu="onSceneContextMenu"
     >
       <rect
         class="page-bg"
@@ -834,7 +929,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 
       <!-- Section outlines (margin-expanded frame around UI elements, see Section.outlineEnabled) -->
       <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
-        <template v-for="section in sections" :key="`outline-${section.id}`">
+        <template v-for="section in visibleSections" :key="`outline-${section.id}`">
           <template v-if="section.outlineEnabled">
             <rect
               v-if="section.outlineHaloEnabled && lineHaloWidth > 0 && lineStyle !== 'invert'"
@@ -868,9 +963,9 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
       </g>
 
       <!-- Sections -->
-      <g v-if="showSections">
+      <g>
         <g
-          v-for="section in sections"
+          v-for="section in visibleSections"
           :key="section.id"
           class="section"
           :class="{ selected: selectedSectionIds.includes(section.id) }"
@@ -1176,6 +1271,29 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
       </div>
     </div>
 
+    <div
+      v-if="sectionContextMenu"
+      class="section-context-menu"
+      role="menu"
+      :style="{ left: `${sectionContextMenu.x}px`, top: `${sectionContextMenu.y}px` }"
+    >
+      <button
+        v-for="section in sectionContextMenu.sections"
+        :key="section.id"
+        class="section-context-item"
+        type="button"
+        role="menuitem"
+        @click="onSelectFromSectionContextMenu(section.id)"
+      >
+        <span class="section-context-item-title">{{ sectionContextMenuLabel(section) }}</span>
+        <span
+          v-if="sectionContextMenuOcrExcerpt(section)"
+          class="section-context-item-ocr"
+        >
+          {{ sectionContextMenuOcrExcerpt(section) }}
+        </span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -1342,5 +1460,55 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 .canvas-banner.detecting {
   background: rgba(0, 122, 255, 0.88);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+.section-context-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 200px;
+  max-width: 320px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+.section-context-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-context-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.section-context-item-title {
+  font-size: 0.85rem;
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section-context-item-ocr {
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

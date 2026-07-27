@@ -25,11 +25,24 @@ export interface Section {
   kind: SectionKind
   /** ScreenParser class name; unset for manually drawn sections. */
   label?: string
+  /** Where this section came from — AI detection (further split by `kind`) or drawn by the user. Missing/old data is treated as 'ai'. */
+  source?: SectionSource
   /** When true, draw a margin-expanded outline (+ optional fill) around this section. */
   outlineEnabled?: boolean
   /** When true (and `outlineEnabled`), also draw the shared line-halo edging around the outline. */
   outlineHaloEnabled?: boolean
 }
+
+export type SectionSource = 'ai' | 'manual'
+
+/**
+ * Section-visibility toggle categories. Add a new value here (plus a label
+ * and a case in `categoryForSection`, both in `utils/sectionVisibility.ts`)
+ * when a new kind of section needs its own show/hide toggle — every other
+ * piece (defaults, persistence, the toolbar menu) reads this list rather
+ * than hardcoding fields, so nothing else needs to change.
+ */
+export type SectionVisibilityCategory = 'ai-region' | 'ai-text' | 'manual'
 
 /** Text lumps vs generic regions — no button/menu/panel taxonomy. */
 export type SectionKind = 'region' | 'text'
@@ -123,7 +136,12 @@ export interface ProjectState {
   calloutFillOpacity: number
   /** Page / export canvas color behind the screenshot and margins. */
   pageBackgroundColor: string
-  showSections: boolean
+  /**
+   * Per-category visibility for section outlines (see `utils/sectionVisibility.ts`).
+   * A single open-ended map so adding a new category later doesn't require
+   * touching every place a fixed set of booleans would.
+   */
+  sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   calloutLayouts: CalloutLayoutItem[]
   document: DocumentLayout
   /** Additional annotation-text variations beyond the base `description` (free-text names, e.g. "English", "Casual"). */

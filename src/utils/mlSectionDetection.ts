@@ -23,6 +23,7 @@ function detectionToSection(detection: Detection, offsetX: number, offsetY: numb
     },
     kind: classifyKind(detection.className),
     label: detection.className,
+    source: 'ai',
   }
 }
 
@@ -73,5 +74,6 @@ export function createManualSection(rect: Rect): Section {
     id: createId('section'),
     rect: normalizeRect(rect),
     kind: 'region',
+    source: 'manual',
   }
 }

@@ -11,6 +11,7 @@ import { sortByOrder } from '../utils/circledNumbers'
 import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from '../utils/anchorStyle'
 import { containmentRatio } from '../utils/geometry'
 import { type OcrLineHit } from '../utils/ocr'
+import { defaultSectionVisibility, normalizeSectionVisibility } from '../utils/sectionVisibility'
 import { useScreenParser } from './useScreenParser'
 import {
   layoutCalloutsForImage,
@@ -89,7 +90,7 @@ export const state = reactive<ProjectState>({
   calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
   calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
   pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
-  showSections: true,
+  sectionVisibility: defaultSectionVisibility(),
   calloutLayouts: [],
   document: createDefaultDocumentLayout(0, 0, 0),
   variations: [],
@@ -369,7 +370,9 @@ export interface RestorableFields {
   calloutFillColor?: string
   calloutFillOpacity?: number
   pageBackgroundColor?: string
-  showSections: boolean
+  /** @deprecated superseded by `sectionVisibility`, kept for old saves. */
+  showSections?: boolean
+  sectionVisibility?: unknown
   variations?: string[]
 }
 
@@ -412,7 +415,10 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
   state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
   state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
-  state.showSections = fields.showSections
+  state.sectionVisibility = normalizeSectionVisibility(
+    fields.sectionVisibility,
+    fields.showSections ?? true,
+  )
   state.variations = Array.isArray(fields.variations)
     ? fields.variations.filter((name): name is string => typeof name === 'string')
     : []

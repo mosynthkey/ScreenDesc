@@ -8,6 +8,7 @@ import type {
   Point,
   Rect,
   Section,
+  SectionVisibilityCategory,
   ToolMode,
 } from '../types/annotation'
 import { createId } from '../utils/id'
@@ -70,6 +71,7 @@ import {
   isDetecting,
   isRecognizingText,
   isExporting,
+  ocrLines,
   pushEditUndo,
   reindexOrders,
   refreshDocumentAndLayouts,
@@ -207,8 +209,9 @@ export function useAnnotationStore() {
     state.pageBackgroundColor = normalizePageBackgroundColor(color)
   }
 
-  function toggleShowSections(): void {
-    state.showSections = !state.showSections
+  function toggleSectionVisibility(category: SectionVisibilityCategory): void {
+    const current = state.sectionVisibility[category] !== false
+    state.sectionVisibility = { ...state.sectionVisibility, [category]: !current }
   }
 
   function clearSelection(): void {
@@ -795,6 +798,7 @@ export function useAnnotationStore() {
     isDetecting: readonly(isDetecting),
     isRecognizingText: readonly(isRecognizingText),
     isExporting: readonly(isExporting),
+    ocrLines: readonly(ocrLines),
     modelStatus: screenParser.status,
     modelDownloadProgress: screenParser.downloadProgress,
     modelError: screenParser.error,
@@ -844,7 +848,7 @@ export function useAnnotationStore() {
     setCalloutFillColor,
     setCalloutFillOpacity,
     setPageBackgroundColor,
-    toggleShowSections,
+    toggleSectionVisibility,
     clearSelection,
     selectSection,
     selectAnnotation,
