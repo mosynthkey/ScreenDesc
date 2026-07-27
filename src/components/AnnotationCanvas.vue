@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import type {
   Annotation,
   AnchorStyleId,
@@ -184,7 +184,11 @@ const { stageWidth, stageHeight } = useCanvasViewport({
   },
 })
 
-function clientToDocument(event: PointerEvent): Point {
+onBeforeUnmount(() => {
+  stopEdgeAutoScroll()
+})
+
+function clientToDocument(clientX: number, clientY: number): Point {
   const svg = svgRef.value
   if (!svg) return { x: 0, y: 0 }
   const rect = svg.getBoundingClientRect()
@@ -192,8 +196,8 @@ function clientToDocument(event: PointerEvent): Point {
   const scaleX = documentWidth.value / rect.width
   const scaleY = documentHeight.value / rect.height
   return {
-    x: (event.clientX - rect.left) * scaleX,
-    y: (event.clientY - rect.top) * scaleY,
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
   }
 }
 
@@ -209,6 +213,60 @@ function clampToImage(point: Point): Point {
     x: Math.min(props.document.imageWidth, Math.max(0, point.x)),
     y: Math.min(props.document.imageHeight, Math.max(0, point.y)),
   }
+}
+
+// Auto-scroll the viewport while drawing a new section near its edge, the
+// way design tools do — otherwise a section can't extend past whatever
+// happens to be on screen when the drag started.
+const EDGE_SCROLL_THRESHOLD = 32
+const EDGE_SCROLL_MAX_SPEED = 18
+let lastPointerClient: { x: number; y: number } | null = null
+let edgeScrollRafId: number | null = null
+
+function edgeScrollAmount(distanceFromEdge: number): number {
+  if (distanceFromEdge >= EDGE_SCROLL_THRESHOLD) return 0
+  const ratio = 1 - Math.max(0, distanceFromEdge) / EDGE_SCROLL_THRESHOLD
+  return ratio * EDGE_SCROLL_MAX_SPEED
+}
+
+function stopEdgeAutoScroll(): void {
+  if (edgeScrollRafId !== null) {
+    cancelAnimationFrame(edgeScrollRafId)
+    edgeScrollRafId = null
+  }
+}
+
+function tickEdgeAutoScroll(): void {
+  edgeScrollRafId = null
+  const viewport = viewportRef.value
+  if (!viewport || drag.value?.kind !== 'create-section' || !lastPointerClient) return
+
+  const bounds = viewport.getBoundingClientRect()
+  const dx =
+    edgeScrollAmount(bounds.right - lastPointerClient.x) -
+    edgeScrollAmount(lastPointerClient.x - bounds.left)
+  const dy =
+    edgeScrollAmount(bounds.bottom - lastPointerClient.y) -
+    edgeScrollAmount(lastPointerClient.y - bounds.top)
+
+  if (dx !== 0 || dy !== 0) {
+    viewport.scrollLeft += dx
+    viewport.scrollTop += dy
+    // The pointer hasn't moved, but the canvas just scrolled beneath it —
+    // re-derive the draft rect's current corner from the same client point.
+    const docPoint = clientToDocument(lastPointerClient.x, lastPointerClient.y)
+    const imagePoint = clampToImage(toImagePoint(docPoint))
+    if (drag.value.kind === 'create-section') {
+      drag.value = { ...drag.value, current: imagePoint }
+    }
+  }
+
+  edgeScrollRafId = requestAnimationFrame(tickEdgeAutoScroll)
+}
+
+function startEdgeAutoScroll(): void {
+  if (edgeScrollRafId !== null) return
+  edgeScrollRafId = requestAnimationFrame(tickEdgeAutoScroll)
 }
 
 function findSectionAt(imagePoint: Point): Section | undefined {
@@ -240,7 +298,7 @@ function cropHandleCursor(handle: CropHandle): string {
 function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return
   const target = event.target as Element
-  const docPoint = clientToDocument(event)
+  const docPoint = clientToDocument(event.clientX, event.clientY)
   const imagePoint = clampToImage(toImagePoint(docPoint))
 
   if (props.toolMode === 'crop') {
@@ -377,6 +435,8 @@ function onPointerDown(event: PointerEvent): void {
       origin: imagePoint,
       current: imagePoint,
     }
+    lastPointerClient = { x: event.clientX, y: event.clientY }
+    startEdgeAutoScroll()
     return
   }
 
@@ -402,7 +462,10 @@ function onPointerDown(event: PointerEvent): void {
 
 function onPointerMove(event: PointerEvent): void {
   if (!drag.value) return
-  const docPoint = clientToDocument(event)
+  if (drag.value.kind === 'create-section') {
+    lastPointerClient = { x: event.clientX, y: event.clientY }
+  }
+  const docPoint = clientToDocument(event.clientX, event.clientY)
   const imagePoint = clampToImage(toImagePoint(docPoint))
 
   if (
@@ -558,6 +621,8 @@ function onPointerUp(): void {
     }
   }
 
+  stopEdgeAutoScroll()
+  lastPointerClient = null
   pointerMoved.value = false
   drag.value = null
 }

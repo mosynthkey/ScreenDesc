@@ -46,7 +46,7 @@ export const en = {
   'tooltip.replaceImage':
     'Replace the screenshot. Different sizes are cropped or padded to match.',
   'tooltip.toolSelect': 'Select / move (V)',
-  'tooltip.toolAddSection': 'Draw a region to propose one section (F)',
+  'tooltip.toolAddSection': 'Draw a region to add a section (F)',
   'tooltip.toolAnnotate': 'Click a section to add an annotation (A)',
   'tooltip.toolCrop': 'Drag the handles to crop the image (X)',
   'tooltip.cropMenu': 'Crop menu',
@@ -56,7 +56,7 @@ export const en = {
 
   'aria.editToolbar': 'Editing tools',
   'aria.toolSelect': 'Select / move',
-  'aria.toolAddSection': 'Draw to propose',
+  'aria.toolAddSection': 'Draw to add',
   'aria.toolAnnotate': 'Annotate',
   'aria.toolCrop': 'Crop',
   'aria.cropMenu': 'Open crop menu',
@@ -128,7 +128,7 @@ export const en = {
   'annotationList.resizePane': 'Drag to resize annotation list and editor',
 
   'canvas.emptyHint':
-    'Drag the region you want to annotate. One matching section will be proposed.',
+    'Drag to draw the region you want to annotate — it becomes a section.',
   'canvas.detecting': 'Proposing sections…',
 
   'export.defaultFilename': 'annotation',

@@ -493,13 +493,23 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           @click="setTool('add-section')"
         >
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path
-              d="M8 5h8M5 8v8M19 8v8M8 19h8"
+            <rect
+              x="4"
+              y="5"
+              width="13"
+              height="13"
+              rx="1.5"
+              fill="none"
               stroke="currentColor"
-              stroke-width="1.8"
+              stroke-width="1.7"
+              stroke-dasharray="2.6 2.4"
+            />
+            <path
+              d="M17.5 13v7M14 16.5h7"
+              stroke="currentColor"
+              stroke-width="2"
               stroke-linecap="round"
             />
-            <rect x="8" y="8" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </button>
 

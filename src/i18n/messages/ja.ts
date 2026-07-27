@@ -48,7 +48,7 @@ export const ja: Record<MessageKey, string> = {
   'tooltip.replaceImage':
     'スクリーンショットを差し替えます。サイズが違う場合はクロップまたは余白で合わせます。',
   'tooltip.toolSelect': '選択・移動 (V)',
-  'tooltip.toolAddSection': '範囲を描いてセクションを1件提案 (F)',
+  'tooltip.toolAddSection': '範囲を描いてセクションを追加 (F)',
   'tooltip.toolAnnotate': 'セクションをクリックして注釈を追加 (A)',
   'tooltip.toolCrop': 'ハンドルをドラッグして画像を切り抜く (X)',
   'tooltip.cropMenu': '切り抜きメニュー',
@@ -58,7 +58,7 @@ export const ja: Record<MessageKey, string> = {
 
   'aria.editToolbar': '編集ツール',
   'aria.toolSelect': '選択・移動',
-  'aria.toolAddSection': '範囲を描いて提案',
+  'aria.toolAddSection': '範囲を描いて追加',
   'aria.toolAnnotate': '注釈',
   'aria.toolCrop': '切り抜き',
   'aria.cropMenu': '切り抜きメニューを開く',
@@ -130,7 +130,7 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.resizePane': 'ドラッグして注釈一覧と編集パネルの高さを変更',
 
   'canvas.emptyHint':
-    '注釈したい範囲をドラッグしてください。その範囲に合うセクションを1件提案します。',
+    '注釈したい範囲をドラッグしてセクションを追加してください。',
   'canvas.detecting': 'セクションを提案中…',
 
   'export.defaultFilename': '注釈',
