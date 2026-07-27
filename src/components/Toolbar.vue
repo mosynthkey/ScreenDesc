@@ -8,6 +8,26 @@ import {
   SECTION_VISIBILITY_LABEL_KEYS,
   type SectionVisibilityMap,
 } from '../utils/sectionVisibility'
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  CropIcon,
+  DownloadIcon,
+  EyeIcon,
+  EyeOffIcon,
+  FileDownIcon,
+  FileUpIcon,
+  FolderIcon,
+  ImageIcon,
+  InfoIcon,
+  ListChecksIcon,
+  MousePointer2Icon,
+  PlusIcon,
+  SquarePlusIcon,
+  TargetIcon,
+  XIcon,
+} from '@lucide/vue'
 
 const { t, tr } = useI18n()
 
@@ -220,48 +240,16 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :data-tooltip="t('tooltip.projectMenu')"
             @click.stop="toggleProjectMenu"
           >
-            <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <path
-                d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M3.5 7.5V6A1.5 1.5 0 0 1 5 4.5h4.2L11 6.2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <FolderIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
             <span>{{ t('button.project') }}</span>
           </button>
           <div v-if="projectMenuOpen" class="project-menu" @click.stop>
             <button class="project-menu-item" type="button" @click="chooseNewProject">
-              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                <path
-                  d="M12 5v14M5 12h14"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <PlusIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               <span>{{ t('menu.newProject') }}</span>
             </button>
             <button class="project-menu-item" type="button" @click="chooseProjectStorage">
-              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                <path
-                  d="M3.5 7.5h6.2l1.6 1.8H20.5v9.2a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V7.5Z"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linejoin="round"
-                />
-              </svg>
+              <FolderIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               <span>{{ tr('menu.projectStorage') }}</span>
             </button>
             <div class="project-menu-sep" />
@@ -271,57 +259,11 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               :disabled="!hasImage"
               @click="chooseExportProjectFile"
             >
-              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                <path
-                  d="M12 4v10"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-                <path
-                  d="M8 8l4-4 4 4"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <FileUpIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               <span>{{ t('menu.exportProjectFile') }}</span>
             </button>
             <button class="project-menu-item" type="button" @click="chooseImportProject">
-              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                <path
-                  d="M12 14V4"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-                <path
-                  d="M8 10l4 4 4-4"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <FileDownIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               <span>{{ t('menu.importProjectFile') }}</span>
             </button>
             <div class="project-menu-sep" />
@@ -332,27 +274,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               :title="t('tooltip.replaceImage')"
               @click="chooseReplaceImage"
             >
-              <svg class="project-menu-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                <rect
-                  x="3.5"
-                  y="5.5"
-                  width="17"
-                  height="13"
-                  rx="2"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                />
-                <circle cx="9" cy="10.5" r="1.6" fill="currentColor" />
-                <path
-                  d="M4.5 16.5l4.2-4.2a1.2 1.2 0 0 1 1.7 0L14 16l2.2-2.2a1.2 1.2 0 0 1 1.7 0l1.6 1.6"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
+              <ImageIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               <span>{{ t('menu.replaceImage') }}</span>
             </button>
           </div>
@@ -377,30 +299,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :data-tooltip="t('tooltip.importProjectFile')"
         @click="chooseImportProject"
       >
-        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-          <path
-            d="M12 21V10"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-          <path
-            d="M8 14l4-4 4 4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M5 6h14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
+        <FileDownIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
         <span>{{ t('button.importProject') }}</span>
       </button>
       <button
@@ -409,22 +308,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :data-tooltip="t('tooltip.newProject')"
         @click="chooseNewProject"
       >
-        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-          <path
-            d="M12 5v14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-          <path
-            d="M5 12h14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
+        <PlusIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
         <span>{{ t('button.newProject') }}</span>
       </button>
     </div>
@@ -439,23 +323,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :data-tooltip="t('tooltip.variationMenu')"
           @click.stop="toggleVariationMenu"
         >
-          <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path
-              d="M4 6h9M4 12h6M4 18h11"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-            <path
-              d="M15 15l3 3 5-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <ListChecksIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
           <span>{{ t('variation.buttonLabel', { name: activeVariation ?? t('variation.default') }) }}</span>
         </button>
         <div v-if="variationMenuOpen" class="variation-menu" @click.stop>
@@ -493,24 +361,12 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               :aria-label="t('variation.addButton')"
               :title="t('variation.addButton')"
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                <path
-                  d="M12 5v14M5 12h14"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <PlusIcon :size="14" :stroke-width="2" aria-hidden="true" />
             </button>
           </form>
           <div class="variation-menu-sep" />
           <div class="variation-menu-hint">
-            <svg class="variation-menu-hint-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6" />
-              <path d="M12 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-              <circle cx="12" cy="7.75" r="1.05" fill="currentColor" />
-            </svg>
+            <InfoIcon class="variation-menu-hint-icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
             <span>{{ t('variation.hint') }}</span>
           </div>
         </div>
@@ -523,49 +379,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :disabled="!canExport"
         @click="emit('copyClipboard')"
       >
-        <svg
-          v-if="!copyJustSucceeded"
-          class="header-btn-icon"
-          viewBox="0 0 24 24"
-          width="15"
-          height="15"
-          aria-hidden="true"
-        >
-          <path
-            d="M9 4.5h5.2a1.8 1.8 0 0 1 1.8 1.8V7H9.8A1.8 1.8 0 0 0 8 8.8V18H7a1.8 1.8 0 0 1-1.8-1.8V6.3A1.8 1.8 0 0 1 7 4.5h2Z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linejoin="round"
-          />
-          <rect
-            x="9"
-            y="7"
-            width="10.5"
-            height="12.5"
-            rx="1.8"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-          />
-        </svg>
-        <svg
-          v-else
-          class="header-btn-icon"
-          viewBox="0 0 24 24"
-          width="15"
-          height="15"
-          aria-hidden="true"
-        >
-          <path
-            d="M5 12.5l4.2 4.2L19 7"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
+        <CopyIcon v-if="!copyJustSucceeded" class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
+        <CheckIcon v-else class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
         <span>{{ copyJustSucceeded ? t('button.copied') : t('button.copyClipboard') }}</span>
       </button>
       <button
@@ -575,30 +390,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         :disabled="!canExport"
         @click="emit('export')"
       >
-        <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-          <path
-            d="M12 3v11"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-          <path
-            d="M8 10l4 4 4-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M5 18h14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
+        <DownloadIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
         <span>{{ t('button.export') }}</span>
       </button>
     </div>
@@ -616,9 +408,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolSelect')"
           @click="setTool('select')"
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path d="M6 4.5 17.5 12l-5.2 1.3L10 20.5 6 4.5Z" fill="currentColor" />
-          </svg>
+          <MousePointer2Icon :size="20" :stroke-width="2" aria-hidden="true" />
         </button>
 
         <button
@@ -629,10 +419,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolAnnotate')"
           @click="setTool('annotate')"
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-            <circle cx="12" cy="12" r="2.2" fill="currentColor" />
-          </svg>
+          <TargetIcon :size="22" :stroke-width="1.8" aria-hidden="true" />
         </button>
 
         <button
@@ -643,25 +430,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolAddSection')"
           @click="setTool('add-section')"
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <rect
-              x="4"
-              y="5"
-              width="13"
-              height="13"
-              rx="1.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-dasharray="2.6 2.4"
-            />
-            <path
-              d="M17.5 13v7M14 16.5h7"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
+          <SquarePlusIcon :size="22" :stroke-width="1.8" aria-hidden="true" />
         </button>
 
         <button
@@ -672,16 +441,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolCrop')"
           @click="setTool('crop')"
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path
-              d="M7 3v14a1 1 0 0 0 1 1h14M17 21V7a1 1 0 0 0-1-1H3"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <CropIcon :size="22" :stroke-width="1.8" aria-hidden="true" />
         </button>
 
         <div class="crop-menu-wrap">
@@ -692,9 +452,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :aria-label="t('aria.cropMenu')"
             @click.stop="toggleCropMenu"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-              <path d="M5 8l7 8 7-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
+            <ChevronDownIcon :size="14" :stroke-width="2" aria-hidden="true" />
           </button>
 
           <div v-if="cropMenuOpen" class="crop-menu" @click.stop>
@@ -717,16 +475,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :aria-label="t('aria.cropApply')"
             @click="emit('confirmCrop')"
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <path
-                d="M5 12.5 10 17.5 19 7"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <CheckIcon :size="20" :stroke-width="2.2" aria-hidden="true" />
           </button>
           <button
             class="tool-btn"
@@ -735,15 +484,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             :aria-label="t('aria.cropCancel')"
             @click="emit('cancelCrop')"
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <path
-                d="M6 6 18 18M18 6 6 18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-              />
-            </svg>
+            <XIcon :size="20" :stroke-width="2.2" aria-hidden="true" />
           </button>
         </template>
       </div>
@@ -760,19 +501,8 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-expanded="sectionsMenuOpen"
           @click="toggleSectionsMenu"
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <rect
-              x="5"
-              y="6"
-              width="14"
-              height="12"
-              rx="2"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-dasharray="3 2"
-            />
-          </svg>
+          <EyeIcon v-if="anySectionVisible" :size="22" :stroke-width="1.8" aria-hidden="true" />
+          <EyeOffIcon v-else :size="22" :stroke-width="1.8" aria-hidden="true" />
         </button>
         <div v-if="sectionsMenuOpen" class="sections-menu" role="menu" @click.stop>
           <label

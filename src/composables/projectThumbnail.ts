@@ -40,6 +40,7 @@ export async function renderThumbnailBlob(): Promise<Blob | null> {
     highlightMargin: state.highlightMargin,
     highlightFillEnabled: state.highlightFillEnabled,
     highlightFillOpacity: state.highlightFillOpacity,
+    highlightCornerRadius: state.highlightCornerRadius,
     calloutFontSize: state.calloutFontSize,
     calloutFontWeight: state.calloutFontWeight,
     calloutFontItalic: state.calloutFontItalic,
@@ -47,6 +48,7 @@ export async function renderThumbnailBlob(): Promise<Blob | null> {
     calloutFillEnabled: state.calloutFillEnabled,
     calloutFillColor: state.calloutFillColor,
     calloutFillOpacity: state.calloutFillOpacity,
+    calloutCornerRadius: state.calloutCornerRadius,
     pageBackgroundColor: state.pageBackgroundColor,
     fontFamily: state.defaultFontFamily,
   })

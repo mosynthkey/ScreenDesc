@@ -14,10 +14,14 @@ import {
   CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
+  DEFAULT_CALLOUT_CORNER_RADIUS,
+  DEFAULT_HIGHLIGHT_CORNER_RADIUS,
   DEFAULT_HIGHLIGHT_MARGIN,
   DEFAULT_IMAGE_GUTTER,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
+  normalizeCalloutCornerRadius,
+  normalizeHighlightCornerRadius,
   normalizeHighlightMargin,
   normalizeImageGutter,
 } from './markerSize'
@@ -44,6 +48,7 @@ export interface CommonSettings {
   highlightFillEnabled: boolean
   /** 0–1 */
   highlightFillOpacity: number
+  highlightCornerRadius: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -55,6 +60,7 @@ export interface CommonSettings {
   calloutFillColor: string
   /** 0–1 */
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
 }
 
@@ -79,6 +85,7 @@ export function createDefaultCommonSettings(): CommonSettings {
     highlightMargin: DEFAULT_HIGHLIGHT_MARGIN,
     highlightFillEnabled: DEFAULT_HIGHLIGHT_FILL_ENABLED,
     highlightFillOpacity: DEFAULT_HIGHLIGHT_FILL_OPACITY,
+    highlightCornerRadius: DEFAULT_HIGHLIGHT_CORNER_RADIUS,
     anchorStyle: DEFAULT_ANCHOR_STYLE,
     lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
     lineHaloColor: DEFAULT_LINE_HALO_COLOR,
@@ -89,6 +96,7 @@ export function createDefaultCommonSettings(): CommonSettings {
     calloutFillEnabled: true,
     calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
     calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
+    calloutCornerRadius: DEFAULT_CALLOUT_CORNER_RADIUS,
     pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
   }
 }
@@ -215,6 +223,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     highlightMargin,
     highlightFillEnabled: normalizeHighlightFillEnabled(raw.highlightFillEnabled),
     highlightFillOpacity: normalizeHighlightFillOpacity(raw.highlightFillOpacity),
+    highlightCornerRadius: normalizeHighlightCornerRadius(raw.highlightCornerRadius),
     anchorStyle: normalizeAnchorStyle(raw.anchorStyle),
     lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth),
     lineHaloColor: normalizeLineHaloColor(raw.lineHaloColor),
@@ -225,6 +234,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     calloutFillEnabled: normalizeCalloutFillEnabled(raw.calloutFillEnabled),
     calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),
     calloutFillOpacity: normalizeCalloutFillOpacity(raw.calloutFillOpacity),
+    calloutCornerRadius: normalizeCalloutCornerRadius(raw.calloutCornerRadius),
     pageBackgroundColor: normalizePageBackgroundColor(raw.pageBackgroundColor),
   }
 }

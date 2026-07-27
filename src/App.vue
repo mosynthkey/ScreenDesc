@@ -62,6 +62,7 @@ const {
   setHighlightMargin,
   setHighlightFillEnabled,
   setHighlightFillOpacity,
+  setHighlightCornerRadius,
   setAnchorStyle,
   setLineHaloWidth,
   setLineHaloColor,
@@ -73,6 +74,7 @@ const {
   setCalloutFillColor,
   setPageBackgroundColor,
   setCalloutFillOpacity,
+  setCalloutCornerRadius,
   toggleSectionVisibility,
   clearSelection,
   selectSection,
@@ -942,6 +944,7 @@ function onKeydown(event: KeyboardEvent): void {
             :highlight-margin="state.highlightMargin"
             :highlight-fill-enabled="state.highlightFillEnabled"
             :highlight-fill-opacity="state.highlightFillOpacity"
+            :highlight-corner-radius="state.highlightCornerRadius"
             :callout-font-size="state.calloutFontSize"
             :callout-font-weight="state.calloutFontWeight"
             :callout-font-italic="state.calloutFontItalic"
@@ -949,6 +952,7 @@ function onKeydown(event: KeyboardEvent): void {
             :callout-fill-enabled="state.calloutFillEnabled"
             :callout-fill-color="state.calloutFillColor"
             :callout-fill-opacity="state.calloutFillOpacity"
+            :callout-corner-radius="state.calloutCornerRadius"
             :page-background-color="state.pageBackgroundColor"
             :font-family="state.defaultFontFamily"
             :is-detecting="isDetecting"
@@ -981,6 +985,7 @@ function onKeydown(event: KeyboardEvent): void {
                 :highlight-margin="state.highlightMargin"
                 :highlight-fill-enabled="state.highlightFillEnabled"
                 :highlight-fill-opacity="state.highlightFillOpacity"
+                :highlight-corner-radius="state.highlightCornerRadius"
                 :anchor-style="state.anchorStyle"
                 :line-halo-width="state.lineHaloWidth"
                 :line-halo-color="state.lineHaloColor"
@@ -991,6 +996,7 @@ function onKeydown(event: KeyboardEvent): void {
                 :callout-fill-enabled="state.calloutFillEnabled"
                 :callout-fill-color="state.calloutFillColor"
                 :callout-fill-opacity="state.calloutFillOpacity"
+                :callout-corner-radius="state.calloutCornerRadius"
                 :page-background-color="state.pageBackgroundColor"
                 @update:default-font-family="setDefaultFontFamily"
                 @update:line-style="setLineStyle"
@@ -1001,6 +1007,7 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:highlight-margin="setHighlightMargin"
                 @update:highlight-fill-enabled="setHighlightFillEnabled"
                 @update:highlight-fill-opacity="setHighlightFillOpacity"
+                @update:highlight-corner-radius="setHighlightCornerRadius"
                 @update:anchor-style="setAnchorStyle"
                 @update:line-halo-width="setLineHaloWidth"
                 @update:line-halo-color="setLineHaloColor"
@@ -1011,6 +1018,7 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:callout-fill-enabled="setCalloutFillEnabled"
                 @update:callout-fill-color="setCalloutFillColor"
                 @update:callout-fill-opacity="setCalloutFillOpacity"
+                @update:callout-corner-radius="setCalloutCornerRadius"
                 @update:page-background-color="setPageBackgroundColor"
                 @open-presets="onOpenCommonSettings"
               />

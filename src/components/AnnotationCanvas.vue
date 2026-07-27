@@ -65,6 +65,7 @@ const props = defineProps<{
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
@@ -72,6 +73,7 @@ const props = defineProps<{
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
   fontFamily: string
   isDetecting?: boolean
@@ -927,9 +929,11 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
         preserveAspectRatio="none"
       />
 
-      <!-- Section outlines (margin-expanded frame around UI elements, see Section.outlineEnabled) -->
+      <!-- Section outlines (margin-expanded frame around UI elements, see Section.outlineEnabled).
+           Independent of the section show/hide toggle below: this is a user-added decoration,
+           not the raw selection-rect visibility. -->
       <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
-        <template v-for="section in visibleSections" :key="`outline-${section.id}`">
+        <template v-for="section in sections" :key="`outline-${section.id}`">
           <template v-if="section.outlineEnabled">
             <rect
               v-if="section.outlineHaloEnabled && lineHaloWidth > 0 && lineStyle !== 'invert'"
@@ -938,6 +942,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
               :y="document.marginTop + section.rect.y - highlightMargin"
               :width="section.rect.width + highlightMargin * 2"
               :height="section.rect.height + highlightMargin * 2"
+              :rx="highlightCornerRadius"
               fill="none"
               :style="{
                 stroke: lineHaloColor,
@@ -950,6 +955,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
               :y="document.marginTop + section.rect.y - highlightMargin"
               :width="section.rect.width + highlightMargin * 2"
               :height="section.rect.height + highlightMargin * 2"
+              :rx="highlightCornerRadius"
               :fill="highlightFill.fill"
               :fill-opacity="highlightFill.fillOpacity"
               :style="{
@@ -999,6 +1005,8 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
               "
               width="8"
               height="8"
+              rx="2"
+              ry="2"
             />
           </template>
         </g>
@@ -1161,7 +1169,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
               :y="layoutFor(annotation.id)!.labelPosition.y"
               :width="layoutFor(annotation.id)!.labelWidth"
               :height="layoutFor(annotation.id)!.labelHeight"
-              rx="6"
+              :rx="calloutCornerRadius"
               :style="{
                 fill: calloutFill.fill,
                 fillOpacity: calloutFill.fillOpacity,
@@ -1239,6 +1247,8 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           :y="document.marginTop + cropHandlePosition(cropDraft, handle).y - 6"
           width="12"
           height="12"
+          rx="3"
+          ry="3"
           :style="{ cursor: cropHandleCursor(handle) }"
         />
       </g>

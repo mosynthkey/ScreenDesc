@@ -52,6 +52,38 @@ export function normalizeHighlightMargin(value: unknown): number {
   return DEFAULT_HIGHLIGHT_MARGIN
 }
 
+/** Corner radius of the callout label box. */
+export const DEFAULT_CALLOUT_CORNER_RADIUS = 6
+export const CALLOUT_CORNER_RADIUS_MIN = 0
+export const CALLOUT_CORNER_RADIUS_MAX = 24
+export const CALLOUT_CORNER_RADIUS_STEP = 1
+
+export function normalizeCalloutCornerRadius(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(
+      CALLOUT_CORNER_RADIUS_MAX,
+      Math.max(CALLOUT_CORNER_RADIUS_MIN, Math.round(value)),
+    )
+  }
+  return DEFAULT_CALLOUT_CORNER_RADIUS
+}
+
+/** Corner radius of a section's margin-expanded outline (see `Section.outlineEnabled`). */
+export const DEFAULT_HIGHLIGHT_CORNER_RADIUS = 0
+export const HIGHLIGHT_CORNER_RADIUS_MIN = 0
+export const HIGHLIGHT_CORNER_RADIUS_MAX = 24
+export const HIGHLIGHT_CORNER_RADIUS_STEP = 1
+
+export function normalizeHighlightCornerRadius(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(
+      HIGHLIGHT_CORNER_RADIUS_MAX,
+      Math.max(HIGHLIGHT_CORNER_RADIUS_MIN, Math.round(value)),
+    )
+  }
+  return DEFAULT_HIGHLIGHT_CORNER_RADIUS
+}
+
 export function anchorOffsetExtent(imageSize: number): number {
   if (!Number.isFinite(imageSize) || imageSize <= 0) return ANCHOR_OFFSET_FALLBACK
   return Math.max(1, Math.round(imageSize))

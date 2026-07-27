@@ -130,6 +130,16 @@ button {
   cursor: pointer;
 }
 
+/* Native controls default to hard-cornered browser chrome; round them to
+   match the rest of the UI's soft, modern feel. */
+input[type='checkbox'] {
+  border-radius: 4px;
+}
+
+input[type='radio'] {
+  border-radius: 50%;
+}
+
 .btn,
 .header-btn,
 .icon-btn,
@@ -342,6 +352,9 @@ button {
 }
 
 .icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   background: rgba(120, 120, 128, 0.12);
   border-radius: 8px;

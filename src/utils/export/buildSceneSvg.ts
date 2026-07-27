@@ -52,6 +52,7 @@ function renderCallout(
   calloutFillEnabled: boolean,
   calloutFillColor: string,
   calloutFillOpacity: number,
+  calloutCornerRadius: number,
   fontFamily: string,
 ): string {
   const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, targetCenter } = layout
@@ -158,7 +159,7 @@ function renderCallout(
       <g${blendAttr}>
         ${body}
       </g>
-      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="6" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
+      <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="${calloutCornerRadius}" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
       <text font-family="${escapeXml(fontCss)}" font-size="${calloutFontSize}" font-weight="${calloutFontWeight}" font-style="${calloutFontItalic ? 'italic' : 'normal'}" fill="#111111">${tspans}</text>
     </g>
   `
@@ -175,6 +176,7 @@ function renderSectionOutline(
   highlightMargin: number,
   highlightFillEnabled: boolean,
   highlightFillOpacity: number,
+  highlightCornerRadius: number,
 ): string {
   const spec = getLineStyleSpec(lineStyle, lineWidth)
   const isInvert = lineStyle === 'invert'
@@ -192,9 +194,9 @@ function renderSectionOutline(
   const height = section.rect.height + highlightMargin * 2
   const halo =
     section.outlineHaloEnabled && lineHaloWidth > 0 && !isInvert
-      ? `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
+      ? `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${highlightCornerRadius}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
       : ''
-  return `${halo}<rect x="${x}" y="${y}" width="${width}" height="${height}" ${fillAttr} stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${blendAttr} />`
+  return `${halo}<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${highlightCornerRadius}" ${fillAttr} stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${blendAttr} />`
 }
 
 export function buildSceneSvg(params: {
@@ -215,6 +217,7 @@ export function buildSceneSvg(params: {
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
@@ -222,6 +225,7 @@ export function buildSceneSvg(params: {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
   fontFamily: string
   /** Optional embedded @font-face CSS (data URIs) for portable export */
@@ -245,6 +249,7 @@ export function buildSceneSvg(params: {
     highlightMargin,
     highlightFillEnabled,
     highlightFillOpacity,
+    highlightCornerRadius,
     calloutFontSize,
     calloutFontWeight,
     calloutFontItalic,
@@ -252,6 +257,7 @@ export function buildSceneSvg(params: {
     calloutFillEnabled,
     calloutFillColor,
     calloutFillOpacity,
+    calloutCornerRadius,
     pageBackgroundColor,
     fontFamily,
     fontCss = '',
@@ -273,6 +279,7 @@ export function buildSceneSvg(params: {
         highlightMargin,
         highlightFillEnabled,
         highlightFillOpacity,
+        highlightCornerRadius,
       ),
     )
     .join('')
@@ -308,6 +315,7 @@ export function buildSceneSvg(params: {
         calloutFillEnabled,
         calloutFillColor,
         calloutFillOpacity,
+        calloutCornerRadius,
         fontFamily,
       )
     })

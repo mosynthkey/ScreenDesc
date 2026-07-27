@@ -5,6 +5,7 @@ import type {
   LineStyleId,
 } from '../types/annotation'
 import { useI18n } from '../i18n'
+import { SlidersHorizontalIcon } from '@lucide/vue'
 import FontFamilyPicker from './FontFamilyPicker.vue'
 import {
   calloutFontWeightForBold,
@@ -20,11 +21,17 @@ import {
   LINE_WIDTH_MIN,
 } from '../utils/lineStyle'
 import {
+  CALLOUT_CORNER_RADIUS_MAX,
+  CALLOUT_CORNER_RADIUS_MIN,
+  CALLOUT_CORNER_RADIUS_STEP,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   DOT_RADIUS_STEP,
+  HIGHLIGHT_CORNER_RADIUS_MAX,
+  HIGHLIGHT_CORNER_RADIUS_MIN,
+  HIGHLIGHT_CORNER_RADIUS_STEP,
   HIGHLIGHT_MARGIN_MAX,
   HIGHLIGHT_MARGIN_MIN,
   HIGHLIGHT_MARGIN_STEP,
@@ -47,6 +54,7 @@ const props = defineProps<{
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -57,6 +65,7 @@ const props = defineProps<{
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
 }>()
 
@@ -70,6 +79,7 @@ const emit = defineEmits<{
   'update:highlightMargin': [margin: number]
   'update:highlightFillEnabled': [enabled: boolean]
   'update:highlightFillOpacity': [opacity: number]
+  'update:highlightCornerRadius': [radius: number]
   'update:anchorStyle': [style: AnchorStyleId]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
@@ -80,6 +90,7 @@ const emit = defineEmits<{
   'update:calloutFillEnabled': [enabled: boolean]
   'update:calloutFillColor': [color: string]
   'update:calloutFillOpacity': [opacity: number]
+  'update:calloutCornerRadius': [radius: number]
   'update:pageBackgroundColor': [color: string]
   openPresets: []
 }>()
@@ -161,6 +172,32 @@ function onDotRadiusChange(event: Event): void {
   onProjectPxChange(event, DOT_RADIUS_MIN, DOT_RADIUS_MAX, DOT_RADIUS_STEP, (value) => {
     emit('update:dotRadius', value)
   }, props.dotRadius)
+}
+
+function onHighlightCornerRadiusChange(event: Event): void {
+  onProjectPxChange(
+    event,
+    HIGHLIGHT_CORNER_RADIUS_MIN,
+    HIGHLIGHT_CORNER_RADIUS_MAX,
+    HIGHLIGHT_CORNER_RADIUS_STEP,
+    (value) => {
+      emit('update:highlightCornerRadius', value)
+    },
+    props.highlightCornerRadius,
+  )
+}
+
+function onCalloutCornerRadiusChange(event: Event): void {
+  onProjectPxChange(
+    event,
+    CALLOUT_CORNER_RADIUS_MIN,
+    CALLOUT_CORNER_RADIUS_MAX,
+    CALLOUT_CORNER_RADIUS_STEP,
+    (value) => {
+      emit('update:calloutCornerRadius', value)
+    },
+    props.calloutCornerRadius,
+  )
 }
 
 function onImageGutterChange(event: Event): void {
@@ -245,24 +282,7 @@ watch(
   <div class="settings-stack">
     <div class="settings-stack-header">
       <h3 class="panel-heading settings-stack-title">
-        <svg
-          class="panel-heading-icon"
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          aria-hidden="true"
-        >
-          <path
-            d="M4 7h8M16 7h4M4 12h4M12 12h8M4 17h10M18 17h2"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle cx="14" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2" />
-          <circle cx="10" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="2" />
-          <circle cx="16" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2" />
-        </svg>
+        <SlidersHorizontalIcon class="panel-heading-icon" :size="18" :stroke-width="2" aria-hidden="true" />
         {{ t('style.projectSettingsTitle') }}
       </h3>
       <button class="presets-btn" type="button" @click="emit('openPresets')">
@@ -577,7 +597,7 @@ watch(
           <span>{{ t('style.highlightFill') }}</span>
         </label>
       </div>
-      <div v-if="highlightFillEnabled" class="field" style="margin-bottom: 0; margin-top: 8px">
+      <div v-if="highlightFillEnabled" class="field" style="margin-top: 8px">
         <label class="slider-label">
           <span>{{ t('style.highlightFillOpacity') }}</span>
           <div class="px-field px-field-compact">
@@ -604,6 +624,30 @@ watch(
               Number(($event.target as HTMLInputElement).value),
             )
           "
+        />
+      </div>
+      <div class="field" style="margin-bottom: 0">
+        <label class="slider-label">
+          <span>{{ t('style.highlightCornerRadius') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="numeric"
+              :value="highlightCornerRadius"
+              @change="onHighlightCornerRadiusChange"
+              @keydown.enter.prevent="onHighlightCornerRadiusChange"
+            />
+            <span class="px-unit">px</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="HIGHLIGHT_CORNER_RADIUS_MIN"
+          :max="HIGHLIGHT_CORNER_RADIUS_MAX"
+          :step="HIGHLIGHT_CORNER_RADIUS_STEP"
+          :value="highlightCornerRadius"
+          @input="emit('update:highlightCornerRadius', Number(($event.target as HTMLInputElement).value))"
         />
       </div>
     </div>
@@ -719,6 +763,30 @@ watch(
           />
         </div>
       </template>
+      <div class="field">
+        <label class="slider-label">
+          <span>{{ t('style.calloutCornerRadius') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="numeric"
+              :value="calloutCornerRadius"
+              @change="onCalloutCornerRadiusChange"
+              @keydown.enter.prevent="onCalloutCornerRadiusChange"
+            />
+            <span class="px-unit">px</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="CALLOUT_CORNER_RADIUS_MIN"
+          :max="CALLOUT_CORNER_RADIUS_MAX"
+          :step="CALLOUT_CORNER_RADIUS_STEP"
+          :value="calloutCornerRadius"
+          @input="emit('update:calloutCornerRadius', Number(($event.target as HTMLInputElement).value))"
+        />
+      </div>
       <div class="field" style="margin-bottom: 0">
         <label class="check">
           <input

@@ -28,6 +28,8 @@ import { normalizeCalloutFontItalic, normalizeCalloutFontWeight } from './google
 import {
   clampAnchorOffsetAxis,
   normalizeAnchorOutsideGap,
+  normalizeCalloutCornerRadius,
+  normalizeHighlightCornerRadius,
   normalizeHighlightMargin,
   normalizeImageGutter,
 } from './markerSize'
@@ -56,6 +58,7 @@ export interface ProjectFileData {
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -66,6 +69,7 @@ export interface ProjectFileData {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
@@ -201,6 +205,7 @@ export async function contentHashFromSnapshot(snapshot: {
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -211,6 +216,7 @@ export async function contentHashFromSnapshot(snapshot: {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   variations: string[]
@@ -275,6 +281,9 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   project.calloutFillOpacity = normalizeCalloutFillOpacity(
     (project as { calloutFillOpacity?: unknown }).calloutFillOpacity,
   )
+  project.calloutCornerRadius = normalizeCalloutCornerRadius(
+    (project as { calloutCornerRadius?: unknown }).calloutCornerRadius,
+  )
   project.pageBackgroundColor = normalizePageBackgroundColor(
     (project as { pageBackgroundColor?: unknown }).pageBackgroundColor,
   )
@@ -299,6 +308,9 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   )
   project.highlightFillOpacity = normalizeHighlightFillOpacity(
     (project as { highlightFillOpacity?: unknown }).highlightFillOpacity,
+  )
+  project.highlightCornerRadius = normalizeHighlightCornerRadius(
+    (project as { highlightCornerRadius?: unknown }).highlightCornerRadius,
   )
   project.calloutFontWeight = normalizeCalloutFontWeight(
     (project as { calloutFontWeight?: unknown }).calloutFontWeight,
@@ -403,6 +415,7 @@ export function projectFileFieldsFromSnapshot(
     highlightMargin: number
     highlightFillEnabled: boolean
     highlightFillOpacity: number
+    highlightCornerRadius: number
     anchorStyle: AnchorStyleId
     lineHaloWidth: number
     lineHaloColor: string
@@ -413,6 +426,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFillEnabled: boolean
     calloutFillColor: string
     calloutFillOpacity: number
+    calloutCornerRadius: number
     pageBackgroundColor: string
     sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
     variations: string[]
@@ -434,6 +448,7 @@ export function projectFileFieldsFromSnapshot(
     highlightMargin: snapshot.highlightMargin,
     highlightFillEnabled: snapshot.highlightFillEnabled,
     highlightFillOpacity: snapshot.highlightFillOpacity,
+    highlightCornerRadius: snapshot.highlightCornerRadius,
     anchorStyle: snapshot.anchorStyle,
     lineHaloWidth: snapshot.lineHaloWidth,
     lineHaloColor: snapshot.lineHaloColor,
@@ -444,6 +459,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFillEnabled: snapshot.calloutFillEnabled,
     calloutFillColor: snapshot.calloutFillColor,
     calloutFillOpacity: snapshot.calloutFillOpacity,
+    calloutCornerRadius: snapshot.calloutCornerRadius,
     pageBackgroundColor: snapshot.pageBackgroundColor,
     sectionVisibility: snapshot.sectionVisibility,
     variations: snapshot.variations,

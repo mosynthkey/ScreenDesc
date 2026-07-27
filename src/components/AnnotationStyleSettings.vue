@@ -8,6 +8,7 @@ import type {
 } from '../types/annotation'
 import { useI18n } from '../i18n'
 import { resolveAnnotationDescription } from '../utils/calloutLayout'
+import { PenLineIcon } from '@lucide/vue'
 import {
   ANCHOR_OFFSET_STEP,
   ANCHOR_OUTSIDE_GAP_MAX,
@@ -406,28 +407,7 @@ function resetLabelPosition(): void {
     >
       <div class="settings-stack-header">
         <h3 class="panel-heading settings-stack-title">
-          <svg
-            class="panel-heading-icon"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            aria-hidden="true"
-          >
-            <path
-              d="M4 20l4.5-1.2L19 8.3a2.1 2.1 0 0 0 0-3l-.3-.3a2.1 2.1 0 0 0-3 0L5.2 15.5 4 20z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M14.5 6.5l3 3"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
+          <PenLineIcon class="panel-heading-icon" :size="18" :stroke-width="2" aria-hidden="true" />
           {{ selectionTitle }}
         </h3>
         <button
@@ -659,28 +639,7 @@ function resetLabelPosition(): void {
     >
       <div class="settings-stack-header">
         <h3 class="panel-heading settings-stack-title">
-          <svg
-            class="panel-heading-icon"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            aria-hidden="true"
-          >
-            <path
-              d="M4 20l4.5-1.2L19 8.3a2.1 2.1 0 0 0 0-3l-.3-.3a2.1 2.1 0 0 0-3 0L5.2 15.5 4 20z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M14.5 6.5l3 3"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
+          <PenLineIcon class="panel-heading-icon" :size="18" :stroke-width="2" aria-hidden="true" />
           {{ t('style.selectedSectionTitle') }}
         </h3>
         <button
@@ -720,28 +679,7 @@ function resetLabelPosition(): void {
     </div>
     <div v-else class="settings-stack-header settings-stack-header-idle">
       <h3 class="panel-heading settings-stack-title">
-        <svg
-          class="panel-heading-icon"
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          aria-hidden="true"
-        >
-          <path
-            d="M4 20l4.5-1.2L19 8.3a2.1 2.1 0 0 0 0-3l-.3-.3a2.1 2.1 0 0 0-3 0L5.2 15.5 4 20z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M14.5 6.5l3 3"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-        </svg>
+        <PenLineIcon class="panel-heading-icon" :size="18" :stroke-width="2" aria-hidden="true" />
         {{ t('style.selectedAnnotationTitle') }}
       </h3>
     </div>

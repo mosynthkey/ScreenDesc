@@ -118,6 +118,8 @@ export interface ProjectState {
   highlightFillEnabled: boolean
   /** Outline fill opacity (0–1). */
   highlightFillOpacity: number
+  /** Corner radius of the outline (0 = sharp corners). */
+  highlightCornerRadius: number
   /** Marker at the leader start: filled dot, filled arrow, or open chevron. */
   anchorStyle: AnchorStyleId
   /** Extra outline underlay width in px (0 = none). */
@@ -134,6 +136,8 @@ export interface ProjectState {
   calloutFillColor: string
   /** Label background opacity (0–1). */
   calloutFillOpacity: number
+  /** Corner radius of the callout label box. */
+  calloutCornerRadius: number
   /** Page / export canvas color behind the screenshot and margins. */
   pageBackgroundColor: string
   /**

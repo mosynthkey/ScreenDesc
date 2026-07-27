@@ -26,6 +26,7 @@ export interface ExportScene {
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
@@ -33,6 +34,7 @@ export interface ExportScene {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
   fontFamily: string
 }

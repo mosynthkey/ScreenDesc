@@ -4,6 +4,7 @@ import { APP_LICENSE, APP_LICENSE_URL, APP_NAME, APP_VERSION } from '../appMeta'
 import { RUNTIME_LIBRARIES } from '../credits'
 import { LOCALE_OPTIONS, useI18n } from '../i18n'
 import { useTheme, type ThemePreference } from '../composables/useTheme'
+import { FileTextIcon, GlobeIcon, MonitorIcon, MoonIcon, PenLineIcon, SettingsIcon, SunIcon } from '@lucide/vue'
 
 export type AppPageId = 'files' | 'edit'
 
@@ -71,22 +72,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
         :title="t('nav.files')"
         @click="emit('navigate', 'files')"
       >
-        <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <path
-            d="M7 3.5h7.2L19.5 8.8V20a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M14 3.5V8a1 1 0 0 0 1 1h4.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linejoin="round"
-          />
-        </svg>
+        <FileTextIcon class="nav-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
         <span class="nav-label">{{ t('nav.files') }}</span>
       </button>
 
@@ -100,22 +86,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
         :disabled="!editAvailable"
         @click="emit('navigate', 'edit')"
       >
-        <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <path
-            d="M4 20h4.2L18.8 9.4a1.6 1.6 0 0 0 0-2.3L16.9 5.2a1.6 1.6 0 0 0-2.3 0L4 15.8V20Z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M13.5 6.5 17.5 10.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
+        <PenLineIcon class="nav-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
         <span class="nav-label">{{ t('nav.edit') }}</span>
       </button>
     </div>
@@ -129,23 +100,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
         :title="t('settings.openAria')"
         @click="openSettings"
       >
-        <svg
-          class="nav-icon"
-          viewBox="0 0 24 24"
-          width="20"
-          height="20"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 14H2.91A2 2 0 0 1 3 10h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-          />
-        </svg>
+        <SettingsIcon class="nav-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
         <span class="nav-label">{{ t('settings.title') }}</span>
       </button>
       <button
@@ -239,22 +194,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
 
         <section class="settings-section" :aria-label="t('about.theme.title')">
           <h3 class="settings-section-title">
-            <svg
-              class="settings-section-icon"
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="4.5" />
-              <path
-                d="M12 2.8v2.1M12 19.1v2.1M21.2 12h-2.1M4.9 12H2.8M18.1 5.9l-1.5 1.5M7.4 16.6l-1.5 1.5M18.1 18.1l-1.5-1.5M7.4 7.4 5.9 5.9"
-              />
-            </svg>
+            <SunIcon class="settings-section-icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
             {{ t('about.theme.title') }}
           </h3>
           <div class="settings-theme-buttons" role="group" :aria-label="t('about.theme.title')">
@@ -267,34 +207,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
               :aria-pressed="themePreference === option.value"
               @click="setThemePreference(option.value)"
             >
-              <svg
-                class="settings-theme-btn-icon"
-                viewBox="0 0 24 24"
-                width="15"
-                height="15"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <template v-if="option.value === 'system'">
-                  <rect x="2.5" y="4" width="19" height="13" rx="1.6" />
-                  <path d="M8.5 20.5h7M12 17v3.5" />
-                </template>
-                <template v-else-if="option.value === 'light'">
-                  <circle cx="12" cy="12" r="4.5" />
-                  <path
-                    d="M12 2.8v2.1M12 19.1v2.1M21.2 12h-2.1M4.9 12H2.8M18.1 5.9l-1.5 1.5M7.4 16.6l-1.5 1.5M18.1 18.1l-1.5-1.5M7.4 7.4 5.9 5.9"
-                  />
-                </template>
-                <template v-else>
-                  <path
-                    d="M20 13.2A8.5 8.5 0 1 1 10.8 4 6.8 6.8 0 0 0 20 13.2Z"
-                  />
-                </template>
-              </svg>
+              <MonitorIcon v-if="option.value === 'system'" class="settings-theme-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
+              <SunIcon v-else-if="option.value === 'light'" class="settings-theme-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
+              <MoonIcon v-else class="settings-theme-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               {{ t(option.labelKey) }}
             </button>
           </div>
@@ -302,15 +217,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
 
         <section class="settings-section" :aria-label="t('settings.language.title')">
           <h3 class="settings-section-title">
-            <svg class="settings-section-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6" />
-              <path
-                d="M3.5 12h17M12 3.5c2.2 2.3 3.4 5.2 3.4 8.5s-1.2 6.2-3.4 8.5c-2.2-2.3-3.4-5.2-3.4-8.5S9.8 5.8 12 3.5Z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.4"
-              />
-            </svg>
+            <GlobeIcon class="settings-section-icon" :size="16" :stroke-width="1.6" aria-hidden="true" />
             {{ t('settings.language.title') }}
           </h3>
           <div class="settings-language-list" role="group" :aria-label="t('settings.language.title')">

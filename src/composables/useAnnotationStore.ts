@@ -41,6 +41,8 @@ import {
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   normalizeAnchorOutsideGap,
+  normalizeCalloutCornerRadius,
+  normalizeHighlightCornerRadius,
   normalizeHighlightMargin,
   normalizeImageGutter,
 } from '../utils/markerSize'
@@ -152,6 +154,10 @@ export function useAnnotationStore() {
     state.highlightFillOpacity = normalizeHighlightFillOpacity(opacity)
   }
 
+  function setHighlightCornerRadius(radius: number): void {
+    state.highlightCornerRadius = normalizeHighlightCornerRadius(radius)
+  }
+
   function setAnchorStyle(style: AnchorStyleId): void {
     state.anchorStyle = style
   }
@@ -203,6 +209,10 @@ export function useAnnotationStore() {
 
   function setCalloutFillOpacity(opacity: number): void {
     state.calloutFillOpacity = normalizeCalloutFillOpacity(opacity)
+  }
+
+  function setCalloutCornerRadius(radius: number): void {
+    state.calloutCornerRadius = normalizeCalloutCornerRadius(radius)
   }
 
   function setPageBackgroundColor(color: string): void {
@@ -408,6 +418,7 @@ export function useAnnotationStore() {
       highlightMargin: state.highlightMargin,
       highlightFillEnabled: state.highlightFillEnabled,
       highlightFillOpacity: state.highlightFillOpacity,
+      highlightCornerRadius: state.highlightCornerRadius,
       anchorStyle: state.anchorStyle,
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
@@ -418,6 +429,7 @@ export function useAnnotationStore() {
       calloutFillEnabled: state.calloutFillEnabled,
       calloutFillColor: state.calloutFillColor,
       calloutFillOpacity: state.calloutFillOpacity,
+      calloutCornerRadius: state.calloutCornerRadius,
       pageBackgroundColor: state.pageBackgroundColor,
     }
   }
@@ -443,6 +455,7 @@ export function useAnnotationStore() {
     state.highlightMargin = settings.highlightMargin
     state.highlightFillEnabled = settings.highlightFillEnabled
     state.highlightFillOpacity = settings.highlightFillOpacity
+    state.highlightCornerRadius = settings.highlightCornerRadius
     state.anchorStyle = settings.anchorStyle
     state.lineHaloWidth = settings.lineHaloWidth
     state.lineHaloColor = settings.lineHaloColor
@@ -453,6 +466,7 @@ export function useAnnotationStore() {
     state.calloutFillEnabled = settings.calloutFillEnabled
     state.calloutFillColor = settings.calloutFillColor
     state.calloutFillOpacity = settings.calloutFillOpacity
+    state.calloutCornerRadius = settings.calloutCornerRadius
     state.pageBackgroundColor = settings.pageBackgroundColor
 
     await ensureGoogleFontsLoaded([state.defaultFontFamily], {
@@ -721,6 +735,7 @@ export function useAnnotationStore() {
       highlightMargin: state.highlightMargin,
       highlightFillEnabled: state.highlightFillEnabled,
       highlightFillOpacity: state.highlightFillOpacity,
+      highlightCornerRadius: state.highlightCornerRadius,
       calloutFontSize: state.calloutFontSize,
       calloutFontWeight: state.calloutFontWeight,
       calloutFontItalic: state.calloutFontItalic,
@@ -731,6 +746,7 @@ export function useAnnotationStore() {
       calloutFillEnabled: state.calloutFillEnabled,
       calloutFillColor: state.calloutFillColor,
       calloutFillOpacity: state.calloutFillOpacity,
+      calloutCornerRadius: state.calloutCornerRadius,
       pageBackgroundColor: state.pageBackgroundColor,
       fontFamily: state.defaultFontFamily,
     })
@@ -837,6 +853,7 @@ export function useAnnotationStore() {
     setHighlightMargin,
     setHighlightFillEnabled,
     setHighlightFillOpacity,
+    setHighlightCornerRadius,
     setAnchorStyle,
     setLineHaloWidth,
     setLineHaloColor,
@@ -847,6 +864,7 @@ export function useAnnotationStore() {
     setCalloutFillEnabled,
     setCalloutFillColor,
     setCalloutFillOpacity,
+    setCalloutCornerRadius,
     setPageBackgroundColor,
     toggleSectionVisibility,
     clearSelection,

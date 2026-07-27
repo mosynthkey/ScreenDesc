@@ -4,6 +4,7 @@ import type { SavedProjectMeta } from '../utils/projectStorage'
 import { loadNamedProjectImageBlob, loadNamedProjectThumbnail } from '../utils/projectStorage'
 import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
+import { InfoIcon } from '@lucide/vue'
 
 const props = defineProps<{
   projects: SavedProjectMeta[]
@@ -255,11 +256,7 @@ defineExpose({ openFilePicker })
       role="note"
       :aria-label="t('home.devNotice.aria')"
     >
-      <svg class="dev-notice-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6" />
-        <path d="M12 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-        <circle cx="12" cy="7.75" r="1.05" fill="currentColor" />
-      </svg>
+      <InfoIcon class="dev-notice-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
       <div class="dev-notice-lines">
         <p class="dev-notice-text">
           {{ t('home.devNotice.body') }}

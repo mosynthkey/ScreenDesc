@@ -29,10 +29,14 @@ import {
 } from '../utils/googleFonts'
 import {
   CALLOUT_FONT_SIZE,
+  DEFAULT_CALLOUT_CORNER_RADIUS,
+  DEFAULT_HIGHLIGHT_CORNER_RADIUS,
   DEFAULT_HIGHLIGHT_MARGIN,
   DEFAULT_IMAGE_GUTTER,
   clampAnchorOffsetAxis,
   normalizeAnchorOutsideGap,
+  normalizeCalloutCornerRadius,
+  normalizeHighlightCornerRadius,
   normalizeHighlightMargin,
   normalizeImageGutter,
 } from '../utils/markerSize'
@@ -79,6 +83,7 @@ export const state = reactive<ProjectState>({
   highlightMargin: DEFAULT_HIGHLIGHT_MARGIN,
   highlightFillEnabled: DEFAULT_HIGHLIGHT_FILL_ENABLED,
   highlightFillOpacity: DEFAULT_HIGHLIGHT_FILL_OPACITY,
+  highlightCornerRadius: DEFAULT_HIGHLIGHT_CORNER_RADIUS,
   anchorStyle: DEFAULT_ANCHOR_STYLE,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
@@ -89,6 +94,7 @@ export const state = reactive<ProjectState>({
   calloutFillEnabled: true,
   calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
   calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
+  calloutCornerRadius: DEFAULT_CALLOUT_CORNER_RADIUS,
   pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
   sectionVisibility: defaultSectionVisibility(),
   calloutLayouts: [],
@@ -359,6 +365,7 @@ export interface RestorableFields {
   highlightMargin?: number
   highlightFillEnabled?: boolean
   highlightFillOpacity?: number
+  highlightCornerRadius?: number
   anchorStyle?: AnchorStyleId
   lineHaloWidth?: number
   lineHaloColor?: string
@@ -369,6 +376,7 @@ export interface RestorableFields {
   calloutFillEnabled?: boolean
   calloutFillColor?: string
   calloutFillOpacity?: number
+  calloutCornerRadius?: number
   pageBackgroundColor?: string
   /** @deprecated superseded by `sectionVisibility`, kept for old saves. */
   showSections?: boolean
@@ -401,6 +409,7 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.highlightMargin = normalizeHighlightMargin(fields.highlightMargin)
   state.highlightFillEnabled = normalizeHighlightFillEnabled(fields.highlightFillEnabled)
   state.highlightFillOpacity = normalizeHighlightFillOpacity(fields.highlightFillOpacity)
+  state.highlightCornerRadius = normalizeHighlightCornerRadius(fields.highlightCornerRadius)
   state.anchorStyle = normalizeAnchorStyle(fields.anchorStyle)
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
@@ -414,6 +423,7 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
   state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
   state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
+  state.calloutCornerRadius = normalizeCalloutCornerRadius(fields.calloutCornerRadius)
   state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
   state.sectionVisibility = normalizeSectionVisibility(
     fields.sectionVisibility,

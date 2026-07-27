@@ -24,6 +24,7 @@ export interface ProjectSnapshot {
   highlightMargin: number
   highlightFillEnabled: boolean
   highlightFillOpacity: number
+  highlightCornerRadius: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -34,6 +35,7 @@ export interface ProjectSnapshot {
   calloutFillEnabled: boolean
   calloutFillColor: string
   calloutFillOpacity: number
+  calloutCornerRadius: number
   pageBackgroundColor: string
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
