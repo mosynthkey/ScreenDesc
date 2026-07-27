@@ -9,7 +9,6 @@ const props = defineProps<{
   projects: SavedProjectMeta[]
   activeProjectId?: string | null
   isBusy: boolean
-  isImporting?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -141,10 +140,6 @@ defineExpose({ openFilePicker })
 
 <template>
   <div class="home">
-    <div v-if="isImporting" class="importing-overlay" role="status">
-      <span class="importing-spinner" aria-hidden="true" />
-      <span>{{ t('home.importing') }}</span>
-    </div>
 
     <section
       class="new-card"
@@ -304,36 +299,6 @@ defineExpose({ openFilePicker })
 
 .home:has(> .dev-notice) {
   padding-bottom: 96px;
-}
-
-.importing-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.28);
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  backdrop-filter: blur(2px);
-}
-
-.importing-spinner {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2.5px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
-  animation: importing-spin 0.8s linear infinite;
-}
-
-@keyframes importing-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .new-card {

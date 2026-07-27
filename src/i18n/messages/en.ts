@@ -30,6 +30,7 @@ export const en = {
   'status.modelEditBlocked': 'Please wait a moment.',
   'status.modelRetry': 'Retry',
   'status.proposing': 'Proposing…',
+  'status.recognizingText': 'Recognizing text…',
 
   'variation.default': 'Default',
   'variation.buttonLabel': 'Variation: {name}',

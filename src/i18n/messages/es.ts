@@ -32,6 +32,7 @@ export const es: Record<MessageKey, string> = {
   'status.modelEditBlocked': 'Un momento, por favor.',
   'status.modelRetry': 'Reintentar',
   'status.proposing': 'Proponiendo…',
+  'status.recognizingText': 'Reconociendo texto…',
 
   'variation.default': 'Predeterminada',
   'variation.buttonLabel': 'Variación: {name}',

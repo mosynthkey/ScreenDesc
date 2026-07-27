@@ -12,7 +12,7 @@ import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
 import DeleteSavedProjectDialog from './components/DeleteSavedProjectDialog.vue'
 import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
-import ModelLoadBanner from './components/ModelLoadBanner.vue'
+import ImportStatusBanner from './components/ImportStatusBanner.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { useAnnotationStore } from './composables/useAnnotationStore'
 import type { Annotation, ExportOptions, Point, Rect } from './types/annotation'
@@ -29,6 +29,7 @@ const store = useAnnotationStore()
 const {
   state,
   isDetecting,
+  isRecognizingText,
   isExporting,
   modelStatus,
   modelDownloadProgress,
@@ -207,8 +208,11 @@ const effectiveCalloutBorderWidth = computed(() =>
 const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
 const modelReady = computed(() => modelStatus.value === 'ready')
 const canOpenEdit = computed(() => hasImage.value)
-const modelGateBlocking = computed(
-  () => modelAwaitingUse.value && !modelReady.value,
+// Blocking for either reason: waiting on the section-detection model outside
+// a fresh import (e.g. replacing the image), or the whole import pipeline
+// itself (decode → model → detect → OCR) — one banner covers both.
+const importBannerBlocking = computed(
+  () => (modelAwaitingUse.value && !modelReady.value) || isImportingFile.value,
 )
 
 function clearAppNotice(): void {
@@ -775,11 +779,13 @@ function onKeydown(event: KeyboardEvent): void {
       @navigate="goToPage"
     />
 
-    <ModelLoadBanner
-      :blocking="modelGateBlocking"
+    <ImportStatusBanner
+      :blocking="importBannerBlocking"
       :status="modelStatus"
       :progress="modelDownloadProgress"
       :error-message="modelError"
+      :is-detecting="isDetecting"
+      :is-recognizing-text="isRecognizingText"
       @retry="onRetryModelLoad"
     />
 
@@ -852,7 +858,6 @@ function onKeydown(event: KeyboardEvent): void {
           :projects="savedProjects"
           :active-project-id="activeNamedProject?.id ?? null"
           :is-busy="projectStorageBusy"
-          :is-importing="isImportingFile"
           @file="onFile"
           @open="onLoadSavedProject"
           @remove="onRemoveSavedProject"

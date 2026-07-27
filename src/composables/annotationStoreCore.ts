@@ -99,6 +99,7 @@ export const state = reactive<ProjectState>({
 loadGoogleFont(DEFAULT_FONT_FAMILY)
 
 export const isDetecting = ref(false)
+export const isRecognizingText = ref(false)
 export const isExporting = ref(false)
 export const imageElement = ref<HTMLImageElement | null>(null)
 export const ocrLines = ref<OcrLineHit[]>([])

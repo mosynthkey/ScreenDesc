@@ -32,6 +32,7 @@ export const zh: Record<MessageKey, string> = {
   'status.modelEditBlocked': '请稍候。',
   'status.modelRetry': '重试',
   'status.proposing': '正在生成建议…',
+  'status.recognizingText': '正在识别文字…',
 
   'variation.default': '默认',
   'variation.buttonLabel': '变体：{name}',

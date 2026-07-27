@@ -12,6 +12,7 @@ import {
   cropHistory,
   imageElement,
   isDetecting,
+  isRecognizingText,
   loadImageElement,
   ocrLines,
   pushEditUndo,
@@ -69,9 +70,12 @@ async function applyImageSource(
   state.showSections = true
   ocrLines.value = []
 
+  isRecognizingText.value = true
   const [, ocrResult] = await Promise.all([
     runSectionDetection(),
-    recognizeTextFromImage(image),
+    recognizeTextFromImage(image).finally(() => {
+      isRecognizingText.value = false
+    }),
   ])
   ocrLines.value = ocrResult.lines
   refreshDocumentAndLayouts()

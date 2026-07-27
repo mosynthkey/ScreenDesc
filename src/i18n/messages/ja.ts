@@ -32,6 +32,7 @@ export const ja: Record<MessageKey, string> = {
   'status.modelEditBlocked': 'しばらくお待ちください。',
   'status.modelRetry': '再試行',
   'status.proposing': '提案中…',
+  'status.recognizingText': '文字を認識しています…',
 
   'variation.default': '既定',
   'variation.buttonLabel': 'バリエーション: {name}',

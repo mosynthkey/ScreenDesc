@@ -9,6 +9,10 @@ const props = defineProps<{
   status: ModelStatus
   progress: number
   errorMessage?: string | null
+  /** Section-detection inference running (model already loaded). */
+  isDetecting?: boolean
+  /** OCR client init/inference running. */
+  isRecognizingText?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -17,19 +21,42 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const visible = computed(
-  () => Boolean(props.blocking) && props.status !== 'ready',
-)
+const visible = computed(() => Boolean(props.blocking))
 
 const percent = computed(() => Math.round(Math.min(1, Math.max(0, props.progress)) * 100))
 
-const title = computed(() => {
-  if (props.status === 'error') return t('status.modelLoadFailed')
-  if (props.status === 'downloading') return t('status.modelDownloading', { percent: percent.value })
-  return t('status.modelPreparing')
+type Stage = 'error' | 'downloading' | 'loading' | 'detecting' | 'recognizing' | 'generic'
+
+const stage = computed<Stage>(() => {
+  if (props.status === 'error') return 'error'
+  if (props.status === 'downloading') return 'downloading'
+  if (props.status === 'loading') return 'loading'
+  if (props.isDetecting) return 'detecting'
+  if (props.isRecognizingText) return 'recognizing'
+  return 'generic'
 })
 
-const showBar = computed(() => props.status === 'downloading' || props.status === 'loading')
+const title = computed(() => {
+  switch (stage.value) {
+    case 'error':
+      return t('status.modelLoadFailed')
+    case 'downloading':
+      return t('status.modelDownloading', { percent: percent.value })
+    case 'loading':
+      return t('status.modelPreparing')
+    case 'detecting':
+      return t('canvas.detecting')
+    case 'recognizing':
+      return t('status.recognizingText')
+    default:
+      return t('home.importing')
+  }
+})
+
+// Only the model download stage has real byte-level progress; every other
+// blocking stage shows an indeterminate bar instead of a fake percentage.
+const showBar = computed(() => stage.value !== 'error')
+const barDeterminate = computed(() => stage.value === 'downloading')
 </script>
 
 <template>
@@ -41,20 +68,20 @@ const showBar = computed(() => props.status === 'downloading' || props.status ==
       aria-modal="true"
       :aria-label="title"
     >
-      <div class="modal model-load-modal" :class="{ error: status === 'error' }">
+      <div class="modal model-load-modal" :class="{ error: stage === 'error' }">
         <h2>{{ title }}</h2>
-        <p v-if="status === 'error' && errorMessage" class="body">{{ errorMessage }}</p>
+        <p v-if="stage === 'error' && errorMessage" class="body">{{ errorMessage }}</p>
         <p v-else class="body">{{ t('status.modelEditBlocked') }}</p>
 
         <div v-if="showBar" class="model-load-track" aria-hidden="true">
           <div
             class="model-load-fill"
-            :class="{ indeterminate: status === 'loading' }"
-            :style="status === 'downloading' ? { width: `${percent}%` } : undefined"
+            :class="{ indeterminate: !barDeterminate }"
+            :style="barDeterminate ? { width: `${percent}%` } : undefined"
           />
         </div>
 
-        <div v-if="status === 'error'" class="modal-actions">
+        <div v-if="stage === 'error'" class="modal-actions">
           <button class="btn btn-primary" type="button" @click="emit('retry')">
             {{ t('status.modelRetry') }}
           </button>
