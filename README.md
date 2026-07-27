@@ -5,7 +5,7 @@ It uses AI-assisted UI element detection so you can create annotated images with
 
 ## License
 
-This software (ScreenDesc) is released under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+This software (ScreenDesc) is released under the [MIT License](LICENSE).
 
 ## Try it
 
