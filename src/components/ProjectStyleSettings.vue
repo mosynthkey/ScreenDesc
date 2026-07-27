@@ -25,6 +25,9 @@ import {
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   DOT_RADIUS_STEP,
+  HIGHLIGHT_MARGIN_MAX,
+  HIGHLIGHT_MARGIN_MIN,
+  HIGHLIGHT_MARGIN_STEP,
   IMAGE_GUTTER_MAX,
   IMAGE_GUTTER_MIN,
   IMAGE_GUTTER_STEP,
@@ -41,6 +44,9 @@ const props = defineProps<{
   lineColor: string
   dotRadius: number
   imageGutter: number
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -61,6 +67,9 @@ const emit = defineEmits<{
   'update:lineColor': [color: string]
   'update:dotRadius': [radius: number]
   'update:imageGutter': [gutter: number]
+  'update:highlightMargin': [margin: number]
+  'update:highlightFillEnabled': [enabled: boolean]
+  'update:highlightFillOpacity': [opacity: number]
   'update:anchorStyle': [style: AnchorStyleId]
   'update:lineHaloWidth': [width: number]
   'update:lineHaloColor': [color: string]
@@ -165,6 +174,34 @@ function onImageGutterChange(event: Event): void {
     },
     props.imageGutter,
   )
+}
+
+function onHighlightMarginChange(event: Event): void {
+  onProjectPxChange(
+    event,
+    HIGHLIGHT_MARGIN_MIN,
+    HIGHLIGHT_MARGIN_MAX,
+    HIGHLIGHT_MARGIN_STEP,
+    (value) => {
+      emit('update:highlightMargin', value)
+    },
+    props.highlightMargin,
+  )
+}
+
+function displayHighlightFillOpacityPercent(): string {
+  return String(Math.round(props.highlightFillOpacity * 100))
+}
+
+function onHighlightFillOpacityChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const percent = parseBoundedNumber(input.value, 0, 100, 5)
+  if (percent === null) {
+    input.value = displayHighlightFillOpacityPercent()
+    return
+  }
+  input.value = String(percent)
+  emit('update:highlightFillOpacity', percent / 100)
 }
 
 function onCalloutFontSizeChange(event: Event): void {
@@ -496,6 +533,78 @@ watch(
           @input="emit('update:imageGutter', Number(($event.target as HTMLInputElement).value))"
         />
         <p class="field-hint">{{ t('style.imageGutterHint') }}</p>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="field">
+        <label class="slider-label">
+          <span>{{ t('style.highlightMargin') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="decimal"
+              :value="highlightMargin"
+              @change="onHighlightMarginChange"
+              @keydown.enter.prevent="onHighlightMarginChange"
+            />
+            <span class="px-unit">px</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="HIGHLIGHT_MARGIN_MIN"
+          :max="HIGHLIGHT_MARGIN_MAX"
+          :step="HIGHLIGHT_MARGIN_STEP"
+          :value="highlightMargin"
+          @input="emit('update:highlightMargin', Number(($event.target as HTMLInputElement).value))"
+        />
+        <p class="field-hint">{{ t('style.highlightMarginHint') }}</p>
+      </div>
+      <div class="field" style="margin-bottom: 0">
+        <label class="check">
+          <input
+            type="checkbox"
+            :checked="highlightFillEnabled"
+            @change="
+              emit(
+                'update:highlightFillEnabled',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
+          />
+          <span>{{ t('style.highlightFill') }}</span>
+        </label>
+      </div>
+      <div v-if="highlightFillEnabled" class="field" style="margin-bottom: 0; margin-top: 8px">
+        <label class="slider-label">
+          <span>{{ t('style.highlightFillOpacity') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="numeric"
+              :value="displayHighlightFillOpacityPercent()"
+              @change="onHighlightFillOpacityChange"
+              @keydown.enter.prevent="onHighlightFillOpacityChange"
+            />
+            <span class="px-unit">%</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="CALLOUT_FILL_OPACITY_MIN"
+          :max="CALLOUT_FILL_OPACITY_MAX"
+          :step="0.05"
+          :value="highlightFillOpacity"
+          @input="
+            emit(
+              'update:highlightFillOpacity',
+              Number(($event.target as HTMLInputElement).value),
+            )
+          "
+        />
       </div>
     </div>
 

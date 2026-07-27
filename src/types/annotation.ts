@@ -25,6 +25,10 @@ export interface Section {
   kind: SectionKind
   /** ScreenParser class name; unset for manually drawn sections. */
   label?: string
+  /** When true, draw a margin-expanded outline (+ optional fill) around this section. */
+  outlineEnabled?: boolean
+  /** When true (and `outlineEnabled`), also draw the shared line-halo edging around the outline. */
+  outlineHaloEnabled?: boolean
 }
 
 /** Text lumps vs generic regions — no button/menu/panel taxonomy. */
@@ -34,7 +38,10 @@ export interface Annotation {
   id: string
   sectionId: string | null
   order: number
+  /** Base/default variation text. Always present. */
   description: string
+  /** Per-variation override text, keyed by an entry in `ProjectState.variations`. Missing/empty means not yet written for that variation. */
+  variationText: Record<string, string>
   /** Step number text (e.g. "①"), shown before the description. Set via the "Number" utility. */
   numberPrefix: string
   /** Anchor point in image coordinates (leader start). */
@@ -44,9 +51,7 @@ export interface Annotation {
   calloutPosition: Point | null
   /** Extra X/Y shift of the anchor from its default position (image coords). */
   anchorOffset: Point
-  /** When true, the anchor sits outside the section border instead of inside it. */
-  anchorOutside: boolean
-  /** Distance in px from the section border when `anchorOutside` is true. */
+  /** Distance in px from the section border (the anchor always sits outside it). */
   anchorOutsideGap: number
 }
 
@@ -94,6 +99,12 @@ export interface ProjectState {
   dotRadius: number
   /** Baseline distance in px between the image edge and a callout label. */
   imageGutter: number
+  /** How far a section's outline (see `Section.outlineEnabled`) expands beyond its raw rect. */
+  highlightMargin: number
+  /** When true, the outline's interior uses `lineColor` at `highlightFillOpacity`. */
+  highlightFillEnabled: boolean
+  /** Outline fill opacity (0–1). */
+  highlightFillOpacity: number
   /** Marker at the leader start: filled dot, filled arrow, or open chevron. */
   anchorStyle: AnchorStyleId
   /** Extra outline underlay width in px (0 = none). */
@@ -115,6 +126,10 @@ export interface ProjectState {
   showSections: boolean
   calloutLayouts: CalloutLayoutItem[]
   document: DocumentLayout
+  /** Additional annotation-text variations beyond the base `description` (free-text names, e.g. "English", "Casual"). */
+  variations: string[]
+  /** Currently displayed/edited variation; `null` means the base `description`. */
+  activeVariation: string | null
 }
 
 export type ExportFormat = 'png' | 'svg'

@@ -20,6 +20,9 @@ export interface ProjectSnapshot {
   dotColor: string
   dotRadius: number
   imageGutter: number
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -32,6 +35,8 @@ export interface ProjectSnapshot {
   calloutFillOpacity: number
   pageBackgroundColor: string
   showSections: boolean
+  /** Additional annotation-text variations beyond the base `description` (free-text names). */
+  variations: string[]
   /** When set, edits auto-overwrite this named save. */
   activeNamedProjectId?: string | null
   activeNamedProjectName?: string | null

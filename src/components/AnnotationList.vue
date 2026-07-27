@@ -2,11 +2,14 @@
 import { ref } from 'vue'
 import type { Annotation } from '../types/annotation'
 import type { NumberPrefixDirection, NumberPrefixStyle } from '../utils/numberPrefix'
+import { resolveAnnotationDescription } from '../utils/calloutLayout'
 import { useI18n, type MessageKey } from '../i18n'
 
 const props = defineProps<{
   annotations: Annotation[]
   selectedIds: string[]
+  /** Currently displayed/edited variation; `null` means the base description. */
+  activeVariation: string | null
 }>()
 
 const emit = defineEmits<{
@@ -50,7 +53,8 @@ function clearNumbering(): void {
 
 function displayText(annotation: Annotation): string {
   const prefix = annotation.numberPrefix ? `${annotation.numberPrefix} ` : ''
-  return `${prefix}${annotation.description || t('annotationList.emptyDescription')}`
+  const text = resolveAnnotationDescription(annotation, props.activeVariation)
+  return `${prefix}${text || t('annotationList.emptyDescription')}`
 }
 
 function onDragStart(id: string, event: DragEvent): void {

@@ -19,6 +19,9 @@ interface StoredSnapshot {
   dotColor: string
   dotRadius: number
   imageGutter: number
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   anchorStyle: ProjectSnapshot['anchorStyle']
   lineHaloWidth: number
   lineHaloColor: string
@@ -31,6 +34,7 @@ interface StoredSnapshot {
   calloutFillOpacity: number
   pageBackgroundColor: string
   showSections: boolean
+  variations: string[]
   activeNamedProjectId?: string | null
   activeNamedProjectName?: string | null
 }

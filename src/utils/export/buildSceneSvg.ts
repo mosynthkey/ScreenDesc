@@ -22,7 +22,7 @@ import {
   calloutLabelTextX,
   leaderAttachOnLabel,
 } from '../calloutLayout'
-import { resolveCalloutFill } from '../commonSettings'
+import { resolveCalloutFill, resolveHighlightFill } from '../commonSettings'
 import { measureTextBaselineFromCenter } from '../textMeasure'
 
 function escapeXml(value: string): string {
@@ -164,6 +164,39 @@ function renderCallout(
   `
 }
 
+function renderSectionOutline(
+  section: Section,
+  document: DocumentLayout,
+  lineStyle: LineStyleId,
+  lineWidth: number,
+  lineColor: string,
+  lineHaloWidth: number,
+  lineHaloColor: string,
+  highlightMargin: number,
+  highlightFillEnabled: boolean,
+  highlightFillOpacity: number,
+): string {
+  const spec = getLineStyleSpec(lineStyle, lineWidth)
+  const isInvert = lineStyle === 'invert'
+  const effectiveLineColor = isInvert ? '#ffffff' : lineColor
+  const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
+  const blendAttr = spec.blendMode ? ` style="mix-blend-mode:${spec.blendMode}"` : ''
+  const fillPaint = resolveHighlightFill(highlightFillEnabled, effectiveLineColor, highlightFillOpacity)
+  const fillAttr =
+    fillPaint.fill === 'none'
+      ? 'fill="none"'
+      : `fill="${fillPaint.fill}" fill-opacity="${fillPaint.fillOpacity}"`
+  const x = document.marginLeft + section.rect.x - highlightMargin
+  const y = document.marginTop + section.rect.y - highlightMargin
+  const width = section.rect.width + highlightMargin * 2
+  const height = section.rect.height + highlightMargin * 2
+  const halo =
+    section.outlineHaloEnabled && lineHaloWidth > 0 && !isInvert
+      ? `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="none" stroke="${lineHaloColor}" stroke-width="${spec.strokeWidth + lineHaloWidth}" />`
+      : ''
+  return `${halo}<rect x="${x}" y="${y}" width="${width}" height="${height}" ${fillAttr} stroke="${effectiveLineColor}" stroke-width="${spec.strokeWidth}"${dasharrayAttr}${blendAttr} />`
+}
+
 export function buildSceneSvg(params: {
   imageHref: string
   sections: Section[]
@@ -179,6 +212,9 @@ export function buildSceneSvg(params: {
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
@@ -206,6 +242,9 @@ export function buildSceneSvg(params: {
     anchorStyle,
     lineHaloWidth,
     lineHaloColor,
+    highlightMargin,
+    highlightFillEnabled,
+    highlightFillOpacity,
     calloutFontSize,
     calloutFontWeight,
     calloutFontItalic,
@@ -219,6 +258,24 @@ export function buildSceneSvg(params: {
   } = params
   const width = document.marginLeft + document.imageWidth + document.marginRight
   const height = document.marginTop + document.imageHeight + document.marginBottom
+
+  const sectionOutlines = sections
+    .filter((section) => section.outlineEnabled === true)
+    .map((section) =>
+      renderSectionOutline(
+        section,
+        document,
+        lineStyle,
+        lineWidth,
+        lineColor,
+        lineHaloWidth,
+        lineHaloColor,
+        highlightMargin,
+        highlightFillEnabled,
+        highlightFillOpacity,
+      ),
+    )
+    .join('')
 
   const sectionGuides = includeSectionGuides
     ? sections
@@ -265,6 +322,7 @@ export function buildSceneSvg(params: {
   ${styleBlock}
   <rect width="100%" height="100%" fill="${escapeXml(pageBackgroundColor)}" />
   <image xlink:href="${escapeXml(imageHref)}" x="${document.marginLeft}" y="${document.marginTop}" width="${document.imageWidth}" height="${document.imageHeight}" preserveAspectRatio="none" />
+  ${sectionOutlines}
   ${sectionGuides}
   ${callouts}
 </svg>`

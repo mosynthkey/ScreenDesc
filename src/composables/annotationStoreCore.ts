@@ -28,9 +28,11 @@ import {
 } from '../utils/googleFonts'
 import {
   CALLOUT_FONT_SIZE,
+  DEFAULT_HIGHLIGHT_MARGIN,
   DEFAULT_IMAGE_GUTTER,
   clampAnchorOffsetAxis,
   normalizeAnchorOutsideGap,
+  normalizeHighlightMargin,
   normalizeImageGutter,
 } from '../utils/markerSize'
 import {
@@ -44,11 +46,15 @@ import {
 import {
   DEFAULT_CALLOUT_FILL_COLOR,
   DEFAULT_CALLOUT_FILL_OPACITY,
+  DEFAULT_HIGHLIGHT_FILL_ENABLED,
+  DEFAULT_HIGHLIGHT_FILL_OPACITY,
   DEFAULT_PAGE_BACKGROUND_COLOR,
   normalizeCalloutBorderEnabled,
   normalizeCalloutFillColor,
   normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
+  normalizeHighlightFillEnabled,
+  normalizeHighlightFillOpacity,
   normalizePageBackgroundColor,
 } from '../utils/commonSettings'
 
@@ -69,6 +75,9 @@ export const state = reactive<ProjectState>({
   dotColor: '#ffd60a',
   dotRadius: 4.5,
   imageGutter: DEFAULT_IMAGE_GUTTER,
+  highlightMargin: DEFAULT_HIGHLIGHT_MARGIN,
+  highlightFillEnabled: DEFAULT_HIGHLIGHT_FILL_ENABLED,
+  highlightFillOpacity: DEFAULT_HIGHLIGHT_FILL_OPACITY,
   anchorStyle: DEFAULT_ANCHOR_STYLE,
   lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
   lineHaloColor: DEFAULT_LINE_HALO_COLOR,
@@ -83,6 +92,8 @@ export const state = reactive<ProjectState>({
   showSections: true,
   calloutLayouts: [],
   document: createDefaultDocumentLayout(0, 0, 0),
+  variations: [],
+  activeVariation: null,
 })
 
 loadGoogleFont(DEFAULT_FONT_FAMILY)
@@ -131,12 +142,24 @@ export function sanitizeAnchorOffset(raw: unknown): Point {
   }
 }
 
+function sanitizeVariationText(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object') return {}
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'string') result[key] = value
+  }
+  return result
+}
+
 export function sanitizeAnnotation(raw: Annotation): Annotation {
   return {
     id: raw.id,
     sectionId: raw.sectionId,
     order: raw.order,
     description: raw.description,
+    variationText: sanitizeVariationText(
+      (raw as Annotation & { variationText?: unknown }).variationText,
+    ),
     numberPrefix:
       typeof (raw as Annotation & { numberPrefix?: unknown }).numberPrefix === 'string'
         ? raw.numberPrefix
@@ -149,7 +172,6 @@ export function sanitizeAnnotation(raw: Annotation): Annotation {
     anchorOffset: sanitizeAnchorOffset(
       (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,
     ),
-    anchorOutside: (raw as Annotation & { anchorOutside?: unknown }).anchorOutside === true,
     anchorOutsideGap: normalizeAnchorOutsideGap(
       (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
     ),
@@ -175,6 +197,8 @@ export function refreshDocumentAndLayouts(): void {
     state.dotRadius,
     state.lineWidth,
     state.imageGutter,
+    state.highlightMargin,
+    state.activeVariation,
   )
   state.document = document
   state.calloutLayouts = layouts
@@ -266,6 +290,7 @@ watch(
       id: annotation.id,
       order: annotation.order,
       description: annotation.description,
+      variationText: { ...annotation.variationText },
       numberPrefix: annotation.numberPrefix,
       sectionId: annotation.sectionId,
       markerPosition: { ...annotation.markerPosition },
@@ -274,7 +299,6 @@ watch(
         ? { ...annotation.calloutPosition }
         : null,
       anchorOffset: { ...annotation.anchorOffset },
-      anchorOutside: annotation.anchorOutside,
       anchorOutsideGap: annotation.anchorOutsideGap,
     })),
   () => {
@@ -288,6 +312,7 @@ watch(
     state.sections.map((section) => ({
       id: section.id,
       rect: { ...section.rect },
+      outlineEnabled: section.outlineEnabled === true,
     })),
   () => {
     refreshDocumentAndLayouts()
@@ -308,6 +333,8 @@ watch(
       state.dotRadius,
       state.lineWidth,
       state.imageGutter,
+      state.highlightMargin,
+      state.activeVariation,
     ] as const,
   () => {
     refreshDocumentAndLayouts()
@@ -327,6 +354,9 @@ export interface RestorableFields {
   dotColor: string
   dotRadius: number
   imageGutter?: number
+  highlightMargin?: number
+  highlightFillEnabled?: boolean
+  highlightFillOpacity?: number
   anchorStyle?: AnchorStyleId
   lineHaloWidth?: number
   lineHaloColor?: string
@@ -339,6 +369,7 @@ export interface RestorableFields {
   calloutFillOpacity?: number
   pageBackgroundColor?: string
   showSections: boolean
+  variations?: string[]
 }
 
 /** Restore state from a saved image + fields without re-running detection/OCR. */
@@ -363,6 +394,9 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.dotColor = fields.lineColor
   state.dotRadius = fields.dotRadius
   state.imageGutter = normalizeImageGutter(fields.imageGutter)
+  state.highlightMargin = normalizeHighlightMargin(fields.highlightMargin)
+  state.highlightFillEnabled = normalizeHighlightFillEnabled(fields.highlightFillEnabled)
+  state.highlightFillOpacity = normalizeHighlightFillOpacity(fields.highlightFillOpacity)
   state.anchorStyle = normalizeAnchorStyle(fields.anchorStyle)
   state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth)
   state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
@@ -378,6 +412,10 @@ export async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableF
   state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
   state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
   state.showSections = fields.showSections
+  state.variations = Array.isArray(fields.variations)
+    ? fields.variations.filter((name): name is string => typeof name === 'string')
+    : []
+  state.activeVariation = null
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   ocrLines.value = fields.ocrLines

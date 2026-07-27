@@ -57,6 +57,9 @@ const {
   setLineColor,
   setDotRadius,
   setImageGutter,
+  setHighlightMargin,
+  setHighlightFillEnabled,
+  setHighlightFillOpacity,
   setAnchorStyle,
   setLineHaloWidth,
   setLineHaloColor,
@@ -74,10 +77,15 @@ const {
   selectAnnotation,
   selectAllAnnotations,
   updateSectionRect,
+  setSectionOutlineEnabled,
+  setSectionOutlineHaloEnabled,
   createAnnotationForSection,
   addAnnotationAtPoint,
   updateAnnotation,
   updateAnnotations,
+  updateAnnotationVariationText,
+  addVariation,
+  setActiveVariation,
   nudgeCalloutPositions,
   removeAnnotations,
   reorderAnnotations,
@@ -667,11 +675,9 @@ const labelPositions = computed(() => {
 function onPatchSelectedAnnotations(
   patch: Partial<{
     calloutSide: 'auto' | 'left' | 'right' | 'top' | 'bottom'
-    description: string
     anchorOffset: { x: number; y: number }
     anchorOffsetX: number
     anchorOffsetY: number
-    anchorOutside: boolean
     anchorOutsideGap: number
     calloutPosition: Point | null
     calloutPositionX: number
@@ -683,8 +689,29 @@ function onPatchSelectedAnnotations(
   updateAnnotations([...ids], patch)
 }
 
+/** Sections behind the current selection: directly selected, or via a selected annotation. */
+function targetSectionIdsForOutlineToggle(): string[] {
+  const sectionIds = new Set<string>(state.selectedSectionIds)
+  for (const annotation of selectedAnnotations.value) {
+    if (annotation.sectionId) sectionIds.add(annotation.sectionId)
+  }
+  return [...sectionIds]
+}
+
+function onToggleSectionOutline(enabled: boolean): void {
+  setSectionOutlineEnabled(targetSectionIdsForOutlineToggle(), enabled)
+}
+
+function onToggleSectionOutlineHalo(enabled: boolean): void {
+  setSectionOutlineHaloEnabled(targetSectionIdsForOutlineToggle(), enabled)
+}
+
 function onCommitDescription(annotationId: string, description: string): void {
-  updateAnnotation(annotationId, { description })
+  if (state.activeVariation) {
+    updateAnnotationVariationText(annotationId, state.activeVariation, description)
+  } else {
+    updateAnnotation(annotationId, { description })
+  }
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -768,6 +795,8 @@ function onKeydown(event: KeyboardEvent): void {
         :has-image="hasImage"
         :show-tool-dock="showToolDock"
         :can-undo-crop="canUndoCrop"
+        :variations="[...state.variations]"
+        :active-variation="state.activeVariation"
         @update:tool-mode="setToolMode"
         @toggle-sections="toggleShowSections"
         @copy-clipboard="onCopyClipboard"
@@ -781,6 +810,8 @@ function onKeydown(event: KeyboardEvent): void {
         @rename-project="onRenameProject"
         @confirm-crop="confirmCrop"
         @cancel-crop="cancelCrop"
+        @update:active-variation="setActiveVariation"
+        @add-variation="addVariation"
       />
 
       <input
@@ -839,6 +870,7 @@ function onKeydown(event: KeyboardEvent): void {
               <AnnotationList
                 :annotations="sortedAnnotations"
                 :selected-ids="[...state.selectedAnnotationIds]"
+                :active-variation="state.activeVariation"
                 @select="selectAnnotation"
                 @reorder="reorderAnnotations"
                 @assign-numbers="assignNumberPrefixes"
@@ -864,12 +896,18 @@ function onKeydown(event: KeyboardEvent): void {
             >
               <AnnotationStyleSettings
                 :selected-annotations="selectedAnnotations"
+                :sections="[...state.sections]"
+                :selected-section-ids="[...state.selectedSectionIds]"
+                :active-variation="state.activeVariation"
                 :image-width="state.imageWidth"
                 :image-height="state.imageHeight"
                 :document-width="documentWidth"
                 :document-height="documentHeight"
                 :label-positions="labelPositions"
                 @patch="onPatchSelectedAnnotations"
+                @commit-description="onCommitDescription"
+                @toggle-section-outline="onToggleSectionOutline"
+                @toggle-section-outline-halo="onToggleSectionOutlineHalo"
                 @close="clearSelection"
               />
             </div>
@@ -880,6 +918,7 @@ function onKeydown(event: KeyboardEvent): void {
             :document="state.document"
             :sections="[...state.sections]"
             :annotations="[...state.annotations]"
+            :active-variation="state.activeVariation"
             :callout-layouts="state.calloutLayouts.map((item) => ({ ...item, lines: [...item.lines] }))"
             :selected-section-ids="[...state.selectedSectionIds]"
             :selected-annotation-ids="[...state.selectedAnnotationIds]"
@@ -893,6 +932,9 @@ function onKeydown(event: KeyboardEvent): void {
             :anchor-style="state.anchorStyle"
             :line-halo-width="state.lineHaloWidth"
             :line-halo-color="state.lineHaloColor"
+            :highlight-margin="state.highlightMargin"
+            :highlight-fill-enabled="state.highlightFillEnabled"
+            :highlight-fill-opacity="state.highlightFillOpacity"
             :callout-font-size="state.calloutFontSize"
             :callout-font-weight="state.calloutFontWeight"
             :callout-font-italic="state.calloutFontItalic"
@@ -929,6 +971,9 @@ function onKeydown(event: KeyboardEvent): void {
                 :line-color="state.lineColor"
                 :dot-radius="state.dotRadius"
                 :image-gutter="state.imageGutter"
+                :highlight-margin="state.highlightMargin"
+                :highlight-fill-enabled="state.highlightFillEnabled"
+                :highlight-fill-opacity="state.highlightFillOpacity"
                 :anchor-style="state.anchorStyle"
                 :line-halo-width="state.lineHaloWidth"
                 :line-halo-color="state.lineHaloColor"
@@ -946,6 +991,9 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:line-color="setLineColor"
                 @update:dot-radius="setDotRadius"
                 @update:image-gutter="setImageGutter"
+                @update:highlight-margin="setHighlightMargin"
+                @update:highlight-fill-enabled="setHighlightFillEnabled"
+                @update:highlight-fill-opacity="setHighlightFillOpacity"
                 @update:anchor-style="setAnchorStyle"
                 @update:line-halo-width="setLineHaloWidth"
                 @update:line-halo-color="setLineHaloColor"

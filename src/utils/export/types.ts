@@ -23,6 +23,9 @@ export interface ExportScene {
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean

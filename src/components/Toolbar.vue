@@ -19,6 +19,8 @@ const props = withDefaults(
     /** When false, hide the floating edit dock (e.g. files page while a project remains open). */
     showToolDock?: boolean
     canUndoCrop: boolean
+    variations: string[]
+    activeVariation: string | null
   }>(),
   {
     projectTitle: null,
@@ -41,10 +43,14 @@ const emit = defineEmits<{
   renameProject: [name: string]
   confirmCrop: []
   cancelCrop: []
+  'update:activeVariation': [variation: string | null]
+  addVariation: [name: string]
 }>()
 
 const cropMenuOpen = ref(false)
 const projectMenuOpen = ref(false)
+const variationMenuOpen = ref(false)
+const newVariationDraft = ref('')
 const titleDraft = ref('')
 const titleInputRef = ref<HTMLInputElement | null>(null)
 
@@ -139,6 +145,24 @@ function chooseReplaceImage(): void {
   projectMenuOpen.value = false
 }
 
+function toggleVariationMenu(): void {
+  variationMenuOpen.value = !variationMenuOpen.value
+  if (variationMenuOpen.value) newVariationDraft.value = ''
+}
+
+function chooseVariation(variation: string | null): void {
+  emit('update:activeVariation', variation)
+  variationMenuOpen.value = false
+}
+
+function submitNewVariation(): void {
+  const name = newVariationDraft.value.trim()
+  if (!name) return
+  emit('addVariation', name)
+  newVariationDraft.value = ''
+  variationMenuOpen.value = false
+}
+
 function handleWindowClick(event: MouseEvent): void {
   const target = event.target as HTMLElement | null
   if (cropMenuOpen.value && !target?.closest('.crop-menu-wrap')) {
@@ -146,6 +170,9 @@ function handleWindowClick(event: MouseEvent): void {
   }
   if (projectMenuOpen.value && !target?.closest('.project-menu-wrap')) {
     projectMenuOpen.value = false
+  }
+  if (variationMenuOpen.value && !target?.closest('.variation-menu-wrap')) {
+    variationMenuOpen.value = false
   }
 }
 
@@ -378,6 +405,90 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
     <div v-else class="header-actions">
       <span v-if="isDetecting" class="status-chip">{{ t('status.proposing') }}</span>
+
+      <div class="variation-menu-wrap">
+        <button
+          class="header-btn"
+          type="button"
+          :data-tooltip="t('tooltip.variationMenu')"
+          @click.stop="toggleVariationMenu"
+        >
+          <svg class="header-btn-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path
+              d="M4 6h9M4 12h6M4 18h11"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+            <path
+              d="M15 15l3 3 5-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>{{ t('variation.buttonLabel', { name: activeVariation ?? t('variation.default') }) }}</span>
+        </button>
+        <div v-if="variationMenuOpen" class="variation-menu" @click.stop>
+          <button
+            class="variation-menu-item"
+            type="button"
+            :class="{ active: activeVariation === null }"
+            @click="chooseVariation(null)"
+          >
+            {{ t('variation.default') }}
+          </button>
+          <button
+            v-for="variation in variations"
+            :key="variation"
+            class="variation-menu-item"
+            type="button"
+            :class="{ active: activeVariation === variation }"
+            @click="chooseVariation(variation)"
+          >
+            {{ variation }}
+          </button>
+          <div class="variation-menu-sep" />
+          <form class="variation-add-row" @submit.prevent="submitNewVariation">
+            <input
+              v-model="newVariationDraft"
+              class="variation-add-input"
+              type="text"
+              :placeholder="t('variation.addPlaceholder')"
+              :aria-label="t('variation.addPlaceholder')"
+            />
+            <button
+              class="variation-add-btn"
+              type="submit"
+              :disabled="!newVariationDraft.trim()"
+              :aria-label="t('variation.addButton')"
+              :title="t('variation.addButton')"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path
+                  d="M12 5v14M5 12h14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </form>
+          <div class="variation-menu-sep" />
+          <div class="variation-menu-hint">
+            <svg class="variation-menu-hint-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <path d="M12 11v5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <circle cx="12" cy="7.75" r="1.05" fill="currentColor" />
+            </svg>
+            <span>{{ t('variation.hint') }}</span>
+          </div>
+        </div>
+      </div>
 
       <button
         class="header-btn"
@@ -897,6 +1008,106 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
   height: 1px;
   margin: 4px 6px;
   background: var(--line);
+}
+
+.variation-menu-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.variation-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  min-width: 280px;
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+}
+
+.variation-menu-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px 4px;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.variation-menu-hint-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.variation-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 590;
+  padding: 8px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+.variation-menu-item:hover {
+  background: rgba(120, 120, 128, 0.12);
+}
+
+.variation-menu-item.active {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.variation-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--line);
+}
+
+.variation-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 2px;
+}
+
+.variation-add-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
+.variation-add-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.variation-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .tool-btn-caret {

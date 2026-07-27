@@ -14,9 +14,11 @@ import {
   CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
+  DEFAULT_HIGHLIGHT_MARGIN,
   DEFAULT_IMAGE_GUTTER,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
+  normalizeHighlightMargin,
   normalizeImageGutter,
 } from './markerSize'
 
@@ -28,6 +30,9 @@ export const CALLOUT_FILL_OPACITY_MIN = 0
 export const CALLOUT_FILL_OPACITY_MAX = 1
 export const DEFAULT_PAGE_BACKGROUND_COLOR = '#ffffff'
 
+export const DEFAULT_HIGHLIGHT_FILL_ENABLED = true
+export const DEFAULT_HIGHLIGHT_FILL_OPACITY = 0.2
+
 export interface CommonSettings {
   defaultFontFamily: string
   lineStyle: LineStyleId
@@ -35,6 +40,10 @@ export interface CommonSettings {
   lineColor: string
   dotRadius: number
   imageGutter: number
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  /** 0–1 */
+  highlightFillOpacity: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -67,6 +76,9 @@ export function createDefaultCommonSettings(): CommonSettings {
     lineColor: '#ffd60a',
     dotRadius: 4.5,
     imageGutter: DEFAULT_IMAGE_GUTTER,
+    highlightMargin: DEFAULT_HIGHLIGHT_MARGIN,
+    highlightFillEnabled: DEFAULT_HIGHLIGHT_FILL_ENABLED,
+    highlightFillOpacity: DEFAULT_HIGHLIGHT_FILL_OPACITY,
     anchorStyle: DEFAULT_ANCHOR_STYLE,
     lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
     lineHaloColor: DEFAULT_LINE_HALO_COLOR,
@@ -131,6 +143,30 @@ export function resolveCalloutFill(
   }
 }
 
+export function normalizeHighlightFillEnabled(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : DEFAULT_HIGHLIGHT_FILL_ENABLED
+}
+
+export function normalizeHighlightFillOpacity(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(CALLOUT_FILL_OPACITY_MAX, Math.max(CALLOUT_FILL_OPACITY_MIN, value))
+  }
+  return DEFAULT_HIGHLIGHT_FILL_OPACITY
+}
+
+/** Outline fill uses `lineColor` (the same stroke color), not an independent color setting. */
+export function resolveHighlightFill(
+  enabled: boolean,
+  lineColor: string,
+  opacity: number,
+): { fill: string; fillOpacity: number } {
+  if (!enabled) return { fill: 'none', fillOpacity: 1 }
+  return {
+    fill: lineColor,
+    fillOpacity: normalizeHighlightFillOpacity(opacity),
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -158,6 +194,10 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
       : defaults.dotRadius
   const imageGutter =
     raw.imageGutter === undefined ? defaults.imageGutter : normalizeImageGutter(raw.imageGutter)
+  const highlightMargin =
+    raw.highlightMargin === undefined
+      ? defaults.highlightMargin
+      : normalizeHighlightMargin(raw.highlightMargin)
   const calloutFontSize =
     typeof raw.calloutFontSize === 'number' && Number.isFinite(raw.calloutFontSize)
       ? Math.min(CALLOUT_FONT_SIZE_MAX, Math.max(CALLOUT_FONT_SIZE_MIN, raw.calloutFontSize))
@@ -172,6 +212,9 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     lineColor,
     dotRadius,
     imageGutter,
+    highlightMargin,
+    highlightFillEnabled: normalizeHighlightFillEnabled(raw.highlightFillEnabled),
+    highlightFillOpacity: normalizeHighlightFillOpacity(raw.highlightFillOpacity),
     anchorStyle: normalizeAnchorStyle(raw.anchorStyle),
     lineHaloWidth: normalizeLineHaloWidth(raw.lineHaloWidth),
     lineHaloColor: normalizeLineHaloColor(raw.lineHaloColor),

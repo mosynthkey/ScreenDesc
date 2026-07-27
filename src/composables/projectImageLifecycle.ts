@@ -1,5 +1,6 @@
+import type { Annotation, Section } from '../types/annotation'
 import type { Rect } from '../types/annotation'
-import { normalizeRect } from '../utils/geometry'
+import { normalizeRect, pointInRect, containmentRatio } from '../utils/geometry'
 import { createDefaultDocumentLayout } from '../utils/calloutLayout'
 import { recognizeTextFromImage } from '../utils/ocr'
 import { detectSectionsML } from '../utils/mlSectionDetection'
@@ -84,6 +85,8 @@ export async function loadImageFile(file: File): Promise<void> {
   activeNamedProject.value = null
   clearNamedSaveSchedule()
   clearEditUndoStack()
+  state.variations = []
+  state.activeVariation = null
   await applyImageSource(file)
 }
 
@@ -139,8 +142,64 @@ export async function clearCurrentProject(): Promise<void> {
   state.showSections = true
   state.calloutLayouts = []
   state.document = createDefaultDocumentLayout(0, 0, 0)
+  state.variations = []
+  state.activeVariation = null
 
   await clearAutosaveStorage()
+}
+
+/**
+ * Sections/annotations that fall fully inside the crop rect, translated into
+ * the cropped image's coordinate space. A section counts as "inside" when
+ * (almost) entirely covered by the crop, not just touching it — otherwise a
+ * section clipped in half would keep an annotation pointing at a target
+ * that no longer fully exists in the new image.
+ */
+function retainedForCrop(
+  sections: Section[],
+  annotations: Annotation[],
+  cropRect: Rect,
+): { sections: Section[]; annotations: Annotation[] } {
+  const keptSectionIds = new Set<string>()
+  const nextSections: Section[] = []
+  for (const section of sections) {
+    if (containmentRatio(section.rect, cropRect) < 0.999) continue
+    keptSectionIds.add(section.id)
+    nextSections.push({
+      ...section,
+      rect: {
+        x: section.rect.x - cropRect.x,
+        y: section.rect.y - cropRect.y,
+        width: section.rect.width,
+        height: section.rect.height,
+      },
+    })
+  }
+
+  const nextAnnotations: Annotation[] = []
+  for (const annotation of annotations) {
+    if (annotation.sectionId) {
+      if (!keptSectionIds.has(annotation.sectionId)) continue
+      // Section-relative fields (anchorOffset) don't need shifting; the
+      // section itself was already translated above. calloutPosition is a
+      // manual override in document coords, which depend on margins that
+      // are recomputed for the new image — drop it and let auto-layout
+      // place the label again rather than leave it stranded.
+      nextAnnotations.push({ ...annotation, calloutPosition: null })
+      continue
+    }
+    if (!pointInRect(annotation.markerPosition, cropRect)) continue
+    nextAnnotations.push({
+      ...annotation,
+      markerPosition: {
+        x: annotation.markerPosition.x - cropRect.x,
+        y: annotation.markerPosition.y - cropRect.y,
+      },
+      calloutPosition: null,
+    })
+  }
+
+  return { sections: nextSections, annotations: nextAnnotations }
 }
 
 export async function cropImage(
@@ -153,6 +212,7 @@ export async function cropImage(
   const y = Math.max(0, Math.round(normalized.y))
   const width = Math.max(1, Math.round(Math.min(normalized.width, state.imageWidth - x)))
   const height = Math.max(1, Math.round(Math.min(normalized.height, state.imageHeight - y)))
+  const cropRect: Rect = { x, y, width, height }
 
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -180,8 +240,16 @@ export async function cropImage(
     ocrLines: ocrLines.value,
   }
 
+  const retained = retainedForCrop(state.sections, state.annotations, cropRect)
+
   clearEditUndoStack()
   await applyImageSource(blob, { revokePrevious: false })
+
+  if (retained.sections.length > 0 || retained.annotations.length > 0) {
+    state.sections = [...state.sections, ...retained.sections]
+    state.annotations = retained.annotations
+    refreshDocumentAndLayouts()
+  }
 }
 
 export async function undoCrop(): Promise<void> {

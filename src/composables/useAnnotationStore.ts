@@ -12,7 +12,11 @@ import type {
 } from '../types/annotation'
 import { createId } from '../utils/id'
 import { sortByOrder } from '../utils/circledNumbers'
-import { estimateAnnotationLabelSize, resolveAutoSides } from '../utils/calloutLayout'
+import {
+  estimateAnnotationLabelSize,
+  resolveAnnotationDescription,
+  resolveAutoSides,
+} from '../utils/calloutLayout'
 import {
   formatNumberPrefix,
   orderAnnotationsForNumbering,
@@ -36,6 +40,7 @@ import {
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
   normalizeAnchorOutsideGap,
+  normalizeHighlightMargin,
   normalizeImageGutter,
 } from '../utils/markerSize'
 import {
@@ -49,6 +54,7 @@ import {
   normalizeCalloutFillColor,
   normalizeCalloutFillOpacity,
   normalizeCommonSettings,
+  normalizeHighlightFillOpacity,
   normalizePageBackgroundColor,
   resolveCalloutBorderWidth,
   saveCommonSettingsPreset,
@@ -129,6 +135,18 @@ export function useAnnotationStore() {
 
   function setImageGutter(gutter: number): void {
     state.imageGutter = normalizeImageGutter(gutter)
+  }
+
+  function setHighlightMargin(margin: number): void {
+    state.highlightMargin = normalizeHighlightMargin(margin)
+  }
+
+  function setHighlightFillEnabled(enabled: boolean): void {
+    state.highlightFillEnabled = enabled
+  }
+
+  function setHighlightFillOpacity(opacity: number): void {
+    state.highlightFillOpacity = normalizeHighlightFillOpacity(opacity)
   }
 
   function setAnchorStyle(style: AnchorStyleId): void {
@@ -250,6 +268,26 @@ export function useAnnotationStore() {
     section.rect = normalizeRect(rect)
   }
 
+  /** Toggle the margin-expanded outline on the given sections (see `Section.outlineEnabled`). */
+  function setSectionOutlineEnabled(sectionIds: string[], enabled: boolean): void {
+    if (sectionIds.length === 0) return
+    pushEditUndo()
+    const idSet = new Set(sectionIds)
+    for (const section of state.sections) {
+      if (idSet.has(section.id)) section.outlineEnabled = enabled
+    }
+  }
+
+  /** Toggle the halo edging on the given sections' outlines (see `Section.outlineHaloEnabled`). */
+  function setSectionOutlineHaloEnabled(sectionIds: string[], enabled: boolean): void {
+    if (sectionIds.length === 0) return
+    pushEditUndo()
+    const idSet = new Set(sectionIds)
+    for (const section of state.sections) {
+      if (idSet.has(section.id)) section.outlineHaloEnabled = enabled
+    }
+  }
+
   function removeSections(sectionIds: string[]): void {
     if (sectionIds.length === 0) return
     pushEditUndo()
@@ -274,6 +312,7 @@ export function useAnnotationStore() {
       state.calloutFontSize,
       state.calloutFontWeight,
       state.calloutFontItalic,
+      state.activeVariation,
     ] as const
     const sizeById = new Map<string, { width: number; height: number }>()
     for (const existing of state.annotations) {
@@ -303,12 +342,12 @@ export function useAnnotationStore() {
       sectionId: section.id,
       order: state.annotations.length + 1,
       description: buildAutoDescription(section),
+      variationText: {},
       numberPrefix: '',
       markerPosition: { ...center },
       calloutSide: 'auto',
       calloutPosition: null,
       anchorOffset: { x: 0, y: 0 },
-      anchorOutside: true,
       anchorOutsideGap: DEFAULT_ANCHOR_OUTSIDE_GAP,
     }
     annotation.calloutSide = resolveInitialSide(annotation)
@@ -326,12 +365,12 @@ export function useAnnotationStore() {
       sectionId,
       order: state.annotations.length + 1,
       description: '',
+      variationText: {},
       numberPrefix: '',
       markerPosition: { ...point },
       calloutSide: 'auto',
       calloutPosition: null,
       anchorOffset: { x: 0, y: 0 },
-      anchorOutside: true,
       anchorOutsideGap: DEFAULT_ANCHOR_OUTSIDE_GAP,
     }
     annotation.calloutSide = resolveInitialSide(annotation)
@@ -362,6 +401,9 @@ export function useAnnotationStore() {
       lineColor: state.lineColor,
       dotRadius: state.dotRadius,
       imageGutter: state.imageGutter,
+      highlightMargin: state.highlightMargin,
+      highlightFillEnabled: state.highlightFillEnabled,
+      highlightFillOpacity: state.highlightFillOpacity,
       anchorStyle: state.anchorStyle,
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
@@ -394,6 +436,9 @@ export function useAnnotationStore() {
     state.dotColor = settings.lineColor
     state.dotRadius = settings.dotRadius
     state.imageGutter = settings.imageGutter
+    state.highlightMargin = settings.highlightMargin
+    state.highlightFillEnabled = settings.highlightFillEnabled
+    state.highlightFillOpacity = settings.highlightFillOpacity
     state.anchorStyle = settings.anchorStyle
     state.lineHaloWidth = settings.lineHaloWidth
     state.lineHaloColor = settings.lineHaloColor
@@ -445,7 +490,6 @@ export function useAnnotationStore() {
         | 'calloutSide'
         | 'calloutPosition'
         | 'anchorOffset'
-        | 'anchorOutside'
         | 'anchorOutsideGap'
         | 'sectionId'
       >,
@@ -523,6 +567,41 @@ export function useAnnotationStore() {
             : null
     pushEditUndo(coalesceKey)
     applyAnnotationPatch(annotation, patch)
+  }
+
+  function updateAnnotationVariationText(
+    annotationId: string,
+    variation: string,
+    text: string,
+  ): void {
+    const annotation = state.annotations.find((item) => item.id === annotationId)
+    if (!annotation) return
+    pushEditUndo(`variation-text:${annotationId}:${variation}`)
+    annotation.variationText = { ...annotation.variationText, [variation]: text }
+  }
+
+  /**
+   * Add a variation (free-text name) if new, seeded with a copy of the
+   * previously active variation's text (a starting point to translate from,
+   * rather than a blank "needs writing" state), and switch to it.
+   */
+  function addVariation(name: string): void {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    if (!state.variations.includes(trimmed)) {
+      pushEditUndo()
+      state.variations = [...state.variations, trimmed]
+      const sourceVariation = state.activeVariation
+      for (const annotation of state.annotations) {
+        const sourceText = resolveAnnotationDescription(annotation, sourceVariation)
+        annotation.variationText = { ...annotation.variationText, [trimmed]: sourceText }
+      }
+    }
+    state.activeVariation = trimmed
+  }
+
+  function setActiveVariation(variation: string | null): void {
+    state.activeVariation = variation !== null && state.variations.includes(variation) ? variation : null
   }
 
   function updateAnnotations(annotationIds: string[], patch: AnnotationPatch): void {
@@ -635,6 +714,9 @@ export function useAnnotationStore() {
       anchorStyle: state.anchorStyle,
       lineHaloWidth: state.lineHaloWidth,
       lineHaloColor: state.lineHaloColor,
+      highlightMargin: state.highlightMargin,
+      highlightFillEnabled: state.highlightFillEnabled,
+      highlightFillOpacity: state.highlightFillOpacity,
       calloutFontSize: state.calloutFontSize,
       calloutFontWeight: state.calloutFontWeight,
       calloutFontItalic: state.calloutFontItalic,
@@ -746,6 +828,9 @@ export function useAnnotationStore() {
     setLineColor,
     setDotRadius,
     setImageGutter,
+    setHighlightMargin,
+    setHighlightFillEnabled,
+    setHighlightFillOpacity,
     setAnchorStyle,
     setLineHaloWidth,
     setLineHaloColor,
@@ -765,10 +850,15 @@ export function useAnnotationStore() {
     addSection,
     updateSectionRect,
     removeSections,
+    setSectionOutlineEnabled,
+    setSectionOutlineHaloEnabled,
     createAnnotationForSection,
     addAnnotationAtPoint,
     updateAnnotation,
     updateAnnotations,
+    updateAnnotationVariationText,
+    addVariation,
+    setActiveVariation,
     nudgeCalloutPositions,
     removeAnnotations,
     reorderAnnotations,

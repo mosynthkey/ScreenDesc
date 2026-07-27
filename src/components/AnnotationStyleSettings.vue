@@ -4,8 +4,10 @@ import type {
   Annotation,
   CalloutSide,
   Point,
+  Section,
 } from '../types/annotation'
 import { useI18n } from '../i18n'
+import { resolveAnnotationDescription } from '../utils/calloutLayout'
 import {
   ANCHOR_OFFSET_STEP,
   ANCHOR_OUTSIDE_GAP_MAX,
@@ -20,6 +22,11 @@ import {
 const props = withDefaults(
   defineProps<{
     selectedAnnotations?: Annotation[]
+    sections?: Section[]
+    /** Sections selected directly (e.g. clicking the UI element itself), independent of any annotation. */
+    selectedSectionIds?: string[]
+    /** Currently displayed/edited variation; `null` means the base description. */
+    activeVariation?: string | null
     imageWidth?: number
     imageHeight?: number
     documentWidth?: number
@@ -28,6 +35,9 @@ const props = withDefaults(
   }>(),
   {
     selectedAnnotations: () => [],
+    sections: () => [],
+    selectedSectionIds: () => [],
+    activeVariation: null,
     imageWidth: 0,
     imageHeight: 0,
     documentWidth: 0,
@@ -40,17 +50,21 @@ const emit = defineEmits<{
   patch: [
     patch: Partial<{
       calloutSide: CalloutSide
-      description: string
       anchorOffset: { x: number; y: number }
       anchorOffsetX: number
       anchorOffsetY: number
-      anchorOutside: boolean
       anchorOutsideGap: number
       calloutPosition: Point | null
       calloutPositionX: number
       calloutPositionY: number
     }>,
   ]
+  /** Commit edited description text — routed by the caller to the base description or the active variation. */
+  commitDescription: [annotationId: string, description: string]
+  /** Toggle the margin-expanded outline on the section(s) behind the current selection. */
+  toggleSectionOutline: [enabled: boolean]
+  /** Toggle the shared line-halo edging on that outline. */
+  toggleSectionOutlineHalo: [enabled: boolean]
   close: []
 }>()
 
@@ -116,16 +130,6 @@ const sharedAnchorOffsetY = computed<number | null>(() => {
     : null
 })
 
-const sharedAnchorOutside = computed<boolean | null>(() => {
-  const first = activeAnnotations.value[0]
-  if (!first) return null
-  return activeAnnotations.value.every(
-    (item) => item.anchorOutside === first.anchorOutside,
-  )
-    ? first.anchorOutside
-    : null
-})
-
 const sharedAnchorOutsideGap = computed<number | null>(() => {
   const first = activeAnnotations.value[0]
   if (!first) return null
@@ -136,13 +140,59 @@ const sharedAnchorOutsideGap = computed<number | null>(() => {
     : null
 })
 
-const showAnchorOutsideGap = computed(
-  () => sharedAnchorOutside.value === true || sharedAnchorOutside.value === null,
-)
+function sectionForAnnotation(annotation: Annotation): Section | null {
+  if (!annotation.sectionId) return null
+  return props.sections.find((section) => section.id === annotation.sectionId) ?? null
+}
 
-function onAnchorOutsideChange(event: Event): void {
+/**
+ * The UI element(s) the outline toggle applies to: sections behind selected
+ * annotations, plus sections selected directly (clicking the UI element
+ * itself rather than one of its annotations) — either path counts as "the
+ * currently selected UI element".
+ */
+const targetSections = computed<Section[]>(() => {
+  const byId = new Map<string, Section>()
+  for (const annotation of activeAnnotations.value) {
+    const section = sectionForAnnotation(annotation)
+    if (section) byId.set(section.id, section)
+  }
+  for (const section of props.sections) {
+    if (props.selectedSectionIds.includes(section.id)) byId.set(section.id, section)
+  }
+  return [...byId.values()]
+})
+
+const showSectionOutlineToggle = computed(() => targetSections.value.length > 0)
+
+const sharedSectionOutlineEnabled = computed<boolean | null>(() => {
+  const items = targetSections.value
+  const first = items[0]
+  if (!first) return null
+  const firstEnabled = first.outlineEnabled === true
+  return items.every((section) => (section.outlineEnabled === true) === firstEnabled)
+    ? firstEnabled
+    : null
+})
+
+function onSectionOutlineEnabledChange(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
-  emit('patch', { anchorOutside: checked })
+  emit('toggleSectionOutline', checked)
+}
+
+const sharedSectionOutlineHaloEnabled = computed<boolean | null>(() => {
+  const items = targetSections.value
+  const first = items[0]
+  if (!first) return null
+  const firstEnabled = first.outlineHaloEnabled === true
+  return items.every((section) => (section.outlineHaloEnabled === true) === firstEnabled)
+    ? firstEnabled
+    : null
+})
+
+function onSectionOutlineHaloEnabledChange(event: Event): void {
+  const checked = (event.target as HTMLInputElement).checked
+  emit('toggleSectionOutlineHalo', checked)
 }
 
 function parseAnchorOutsideGapPx(raw: string): number | null {
@@ -396,11 +446,43 @@ function resetLabelPosition(): void {
           <textarea
             class="description-input"
             rows="2"
-            :value="primaryAnnotation.description"
+            :value="resolveAnnotationDescription(primaryAnnotation, activeVariation)"
             :placeholder="t('style.description')"
             :aria-label="t('style.description')"
-            @input="emit('patch', { description: ($event.target as HTMLTextAreaElement).value })"
+            @input="
+              emit(
+                'commitDescription',
+                primaryAnnotation.id,
+                ($event.target as HTMLTextAreaElement).value,
+              )
+            "
           />
+        </div>
+      </div>
+
+      <div v-if="showSectionOutlineToggle" class="settings-group settings-group-compact">
+        <h4 class="section-title">{{ t('style.section.uiElement') }}</h4>
+        <div class="field field-tight">
+          <label class="check">
+            <input
+              type="checkbox"
+              :checked="sharedSectionOutlineEnabled ?? false"
+              :indeterminate.prop="sharedSectionOutlineEnabled === null"
+              @change="onSectionOutlineEnabledChange"
+            />
+            <span>{{ t('style.sectionOutlineEnabled') }}</span>
+          </label>
+        </div>
+        <div class="field field-tight" style="margin-bottom: 0">
+          <label class="check">
+            <input
+              type="checkbox"
+              :checked="sharedSectionOutlineHaloEnabled ?? false"
+              :indeterminate.prop="sharedSectionOutlineHaloEnabled === null"
+              @change="onSectionOutlineHaloEnabledChange"
+            />
+            <span>{{ t('style.sectionOutlineHaloEnabled') }}</span>
+          </label>
         </div>
       </div>
 
@@ -495,17 +577,6 @@ function resetLabelPosition(): void {
       <div class="settings-group settings-group-compact">
         <h4 class="section-title">{{ t('style.section.anchor') }}</h4>
         <div class="field field-tight">
-          <label class="check">
-            <input
-              type="checkbox"
-              :checked="sharedAnchorOutside ?? false"
-              :indeterminate.prop="sharedAnchorOutside === null"
-              @change="onAnchorOutsideChange"
-            />
-            <span>{{ t('style.anchorOutside') }}</span>
-          </label>
-        </div>
-        <div v-if="showAnchorOutsideGap" class="field field-tight">
           <label class="slider-label">
             <span>{{ t('style.anchorOutsideGap') }}</span>
             <div class="px-field px-field-compact">
@@ -582,6 +653,71 @@ function resetLabelPosition(): void {
         </div>
       </div>
     </div>
+    <div
+      v-else-if="showSectionOutlineToggle"
+      class="settings-stack settings-stack-annotation"
+    >
+      <div class="settings-stack-header">
+        <h3 class="panel-heading settings-stack-title">
+          <svg
+            class="panel-heading-icon"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 20l4.5-1.2L19 8.3a2.1 2.1 0 0 0 0-3l-.3-.3a2.1 2.1 0 0 0-3 0L5.2 15.5 4 20z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M14.5 6.5l3 3"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          {{ t('style.selectedSectionTitle') }}
+        </h3>
+        <button
+          class="clear-selection-btn"
+          type="button"
+          :title="t('style.clearSelection')"
+          @click="emit('close')"
+        >
+          {{ t('style.clearSelection') }}
+        </button>
+      </div>
+      <div class="settings-group settings-group-compact">
+        <h4 class="section-title">{{ t('style.section.uiElement') }}</h4>
+        <div class="field field-tight">
+          <label class="check">
+            <input
+              type="checkbox"
+              :checked="sharedSectionOutlineEnabled ?? false"
+              :indeterminate.prop="sharedSectionOutlineEnabled === null"
+              @change="onSectionOutlineEnabledChange"
+            />
+            <span>{{ t('style.sectionOutlineEnabled') }}</span>
+          </label>
+        </div>
+        <div class="field field-tight" style="margin-bottom: 0">
+          <label class="check">
+            <input
+              type="checkbox"
+              :checked="sharedSectionOutlineHaloEnabled ?? false"
+              :indeterminate.prop="sharedSectionOutlineHaloEnabled === null"
+              @change="onSectionOutlineHaloEnabledChange"
+            />
+            <span>{{ t('style.sectionOutlineHaloEnabled') }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
     <div v-else class="settings-stack-header settings-stack-header-idle">
       <h3 class="panel-heading settings-stack-title">
         <svg
@@ -609,7 +745,9 @@ function resetLabelPosition(): void {
         {{ t('style.selectedAnnotationTitle') }}
       </h3>
     </div>
-    <p v-if="selectionCount === 0" class="hint">{{ t('style.noSelectionHint') }}</p>
+    <p v-if="selectionCount === 0 && !showSectionOutlineToggle" class="hint">
+      {{ t('style.noSelectionHint') }}
+    </p>
   </div>
 </template>
 

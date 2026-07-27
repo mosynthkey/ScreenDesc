@@ -18,10 +18,17 @@ import {
   normalizeCalloutFillColor,
   normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
+  normalizeHighlightFillEnabled,
+  normalizeHighlightFillOpacity,
   normalizePageBackgroundColor,
 } from './commonSettings'
 import { normalizeCalloutFontItalic, normalizeCalloutFontWeight } from './googleFonts'
-import { clampAnchorOffsetAxis, normalizeAnchorOutsideGap, normalizeImageGutter } from './markerSize'
+import {
+  clampAnchorOffsetAxis,
+  normalizeAnchorOutsideGap,
+  normalizeHighlightMargin,
+  normalizeImageGutter,
+} from './markerSize'
 import { computeProjectContentHash, isContentHash } from './contentHash'
 
 const FILE_VERSION = 1
@@ -44,6 +51,9 @@ export interface ProjectFileData {
   dotColor: string
   dotRadius: number
   imageGutter: number
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -56,6 +66,8 @@ export interface ProjectFileData {
   calloutFillOpacity: number
   pageBackgroundColor: string
   showSections: boolean
+  /** Additional annotation-text variations beyond the base `description` (free-text names). */
+  variations: string[]
   /** SHA-256 hex of canonical project bytes (excluding this field). Written on export. */
   contentHash?: string
 }
@@ -104,6 +116,15 @@ function sanitizeAnchorOffset(
   }
 }
 
+function sanitizeVariationText(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object') return {}
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'string') result[key] = value
+  }
+  return result
+}
+
 function sanitizeAnnotation(
   raw: Annotation,
   imageWidth: number,
@@ -114,6 +135,9 @@ function sanitizeAnnotation(
     sectionId: raw.sectionId,
     order: raw.order,
     description: raw.description,
+    variationText: sanitizeVariationText(
+      (raw as Annotation & { variationText?: unknown }).variationText,
+    ),
     numberPrefix:
       typeof (raw as Annotation & { numberPrefix?: unknown }).numberPrefix === 'string'
         ? raw.numberPrefix
@@ -126,7 +150,6 @@ function sanitizeAnnotation(
       imageWidth,
       imageHeight,
     ),
-    anchorOutside: (raw as Annotation & { anchorOutside?: unknown }).anchorOutside === true,
     anchorOutsideGap: normalizeAnchorOutsideGap(
       (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
     ),
@@ -173,6 +196,9 @@ export async function contentHashFromSnapshot(snapshot: {
   dotColor: string
   dotRadius: number
   imageGutter: number
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
@@ -185,6 +211,7 @@ export async function contentHashFromSnapshot(snapshot: {
   calloutFillOpacity: number
   pageBackgroundColor: string
   showSections: boolean
+  variations: string[]
 }): Promise<string> {
   const data = await buildProjectFileData(
     snapshot.imageBlob,
@@ -254,6 +281,15 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   )
   project.imageGutter = normalizeImageGutter(
     (project as { imageGutter?: unknown }).imageGutter,
+  )
+  project.highlightMargin = normalizeHighlightMargin(
+    (project as { highlightMargin?: unknown }).highlightMargin,
+  )
+  project.highlightFillEnabled = normalizeHighlightFillEnabled(
+    (project as { highlightFillEnabled?: unknown }).highlightFillEnabled,
+  )
+  project.highlightFillOpacity = normalizeHighlightFillOpacity(
+    (project as { highlightFillOpacity?: unknown }).highlightFillOpacity,
   )
   project.calloutFontWeight = normalizeCalloutFontWeight(
     (project as { calloutFontWeight?: unknown }).calloutFontWeight,
@@ -355,6 +391,9 @@ export function projectFileFieldsFromSnapshot(
     dotColor: string
     dotRadius: number
     imageGutter: number
+    highlightMargin: number
+    highlightFillEnabled: boolean
+    highlightFillOpacity: number
     anchorStyle: AnchorStyleId
     lineHaloWidth: number
     lineHaloColor: string
@@ -367,6 +406,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFillOpacity: number
     pageBackgroundColor: string
     showSections: boolean
+    variations: string[]
   },
 ): ProjectFileFields {
   return {
@@ -382,6 +422,9 @@ export function projectFileFieldsFromSnapshot(
     dotColor: snapshot.dotColor,
     dotRadius: snapshot.dotRadius,
     imageGutter: snapshot.imageGutter,
+    highlightMargin: snapshot.highlightMargin,
+    highlightFillEnabled: snapshot.highlightFillEnabled,
+    highlightFillOpacity: snapshot.highlightFillOpacity,
     anchorStyle: snapshot.anchorStyle,
     lineHaloWidth: snapshot.lineHaloWidth,
     lineHaloColor: snapshot.lineHaloColor,
@@ -394,5 +437,6 @@ export function projectFileFieldsFromSnapshot(
     calloutFillOpacity: snapshot.calloutFillOpacity,
     pageBackgroundColor: snapshot.pageBackgroundColor,
     showSections: snapshot.showSections,
+    variations: snapshot.variations,
   }
 }

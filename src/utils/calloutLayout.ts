@@ -21,6 +21,7 @@ import {
   ANCHOR_OUTSIDE_GAP_MAX,
   DEFAULT_IMAGE_GUTTER,
   DOT_RADIUS_MAX,
+  HIGHLIGHT_MARGIN_MAX,
 } from './markerSize'
 import { LINE_WIDTH_MAX } from './lineStyle'
 import { t } from '../i18n'
@@ -36,6 +37,7 @@ import { t } from '../i18n'
  * whatever this produces, so the canvas keeps up automatically.
  */
 const MAX_ANCHOR_OUTSIDE_REACH =
+  HIGHLIGHT_MARGIN_MAX +
   ANCHOR_OUTSIDE_GAP_MAX +
   Math.max(
     anchorOutsideReach('dot', DOT_RADIUS_MAX, LINE_WIDTH_MAX),
@@ -132,7 +134,6 @@ function clampLabelTopLeft(
 }
 
 const LABEL_GAP_MIN = 12
-const LINE_INSET = 8
 const PAGE_PAD = 8
 /** Absolute floor used only where no font size is in scope (e.g. the
  * empty-document default, or a defensive fallback before sizes exist). */
@@ -244,6 +245,7 @@ function leaderStartForAnnotation(
   anchorStyle: AnchorStyleId,
   dotRadius: number,
   lineWidth: number,
+  highlightMargin: number,
 ): Point {
   const anchor = anchorForAnnotation(
     annotation,
@@ -254,6 +256,7 @@ function leaderStartForAnnotation(
     anchorStyle,
     dotRadius,
     lineWidth,
+    highlightMargin,
   )
   if (!isArrowAnchorStyle(anchorStyle)) return dotLeaderAttachPoint(anchor)
   const targetCenter = referencePointForAnnotation(annotation, sections)
@@ -268,9 +271,7 @@ function leaderStartForAnnotation(
  * the anchor for arrow/chevron styles); when a section sits close to that
  * edge, or the marker/stroke is large, that start point can land at or
  * beyond the default 14px gutter, leaving nothing for the eye to read as a
- * line between the marker and the label. Applies regardless of
- * `anchorOutside`: an inset (inside-the-box) anchor with a large arrow has
- * the same problem.
+ * line between the marker and the label.
  */
 function requiredGutterFor(
   items: Annotation[],
@@ -281,6 +282,7 @@ function requiredGutterFor(
   anchorStyle: AnchorStyleId,
   dotRadius: number,
   lineWidth: number,
+  highlightMargin: number,
   baseGutter: number,
 ): number {
   // A round-capped stroke shorter than roughly its own width doesn't read as
@@ -298,6 +300,7 @@ function requiredGutterFor(
       anchorStyle,
       dotRadius,
       lineWidth,
+      highlightMargin,
     )
     const overshoot =
       side === 'left'
@@ -357,6 +360,21 @@ function estimateLabelSize(
   }
 }
 
+/**
+ * Text to display for an annotation in `activeVariation` — the base
+ * `description` when `activeVariation` is null, otherwise that variation's
+ * text (blank, not the base text, when unwritten: an empty callout signals
+ * "needs writing for this variation" rather than silently showing the base
+ * language/tone).
+ */
+export function resolveAnnotationDescription(
+  annotation: Annotation,
+  activeVariation: string | null,
+): string {
+  if (activeVariation === null) return annotation.description
+  return annotation.variationText[activeVariation] ?? ''
+}
+
 function getSectionForAnnotation(
   annotation: Annotation,
   sections: Section[],
@@ -374,21 +392,27 @@ function anchorForAnnotation(
   anchorStyle: AnchorStyleId,
   dotRadius: number,
   lineWidth: number,
+  highlightMargin: number,
 ): Point {
   const section = getSectionForAnnotation(annotation, sections)
   const offset = annotation.anchorOffset
+  // When the section draws its own margin-expanded outline, the anchor
+  // should clear that outline's outer edge (plus its own stroke's
+  // half-width), not just the raw section rect — otherwise the anchor/leader
+  // would sit on top of or inside the drawn outline.
+  const outlineExpand = section?.outlineEnabled ? highlightMargin + lineWidth / 2 : 0
   // The "distance from frame" setting is the empty space the user sees
   // between the section border and the marker's ink — not the distance to
   // the anchor coordinate the marker is centered on — so grow the gap by
   // however far the marker itself (and its stroke) reaches back toward the
   // box. Otherwise a large dot or arrowhead visually overlaps the section
-  // it's supposedly held away from.
-  const inset = annotation.anchorOutside
-    ? -(
-        Math.max(0, annotation.anchorOutsideGap) +
-        anchorOutsideReach(anchorStyle, dotRadius, lineWidth)
-      )
-    : LINE_INSET
+  // it's supposedly held away from. The anchor always sits outside the
+  // section border (never inset into it).
+  const inset = -(
+    outlineExpand +
+    Math.max(0, annotation.anchorOutsideGap) +
+    anchorOutsideReach(anchorStyle, dotRadius, lineWidth)
+  )
   let baseX: number
   let baseY: number
   if (section) {
@@ -606,6 +630,7 @@ function packSide(
   anchorStyle: AnchorStyleId,
   dotRadius: number,
   lineWidth: number,
+  highlightMargin: number,
   gutter: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
@@ -620,6 +645,7 @@ function packSide(
       anchorStyle,
       dotRadius,
       lineWidth,
+      highlightMargin,
     ),
   )
 
@@ -714,6 +740,7 @@ function packBand(
   anchorStyle: AnchorStyleId,
   dotRadius: number,
   lineWidth: number,
+  highlightMargin: number,
   gutter: number,
 ): CalloutLayoutItem[] {
   if (items.length === 0) return []
@@ -728,6 +755,7 @@ function packBand(
       anchorStyle,
       dotRadius,
       lineWidth,
+      highlightMargin,
     ),
   )
 
@@ -818,10 +846,11 @@ function sizesFor(
   fontSize: number,
   fontWeight: number,
   fontItalic: boolean,
+  activeVariation: string | null,
 ): Array<{ width: number; height: number; lines: string[] }> {
   return items.map((annotation) =>
     estimateLabelSize(
-      annotation.description,
+      resolveAnnotationDescription(annotation, activeVariation),
       annotation.numberPrefix,
       fontFamily,
       fontSize,
@@ -838,9 +867,10 @@ export function estimateAnnotationLabelSize(
   fontSize: number,
   fontWeight: number,
   fontItalic: boolean,
+  activeVariation: string | null,
 ): { width: number; height: number } {
   return estimateLabelSize(
-    annotation.description,
+    resolveAnnotationDescription(annotation, activeVariation),
     annotation.numberPrefix,
     fontFamily,
     fontSize,
@@ -880,6 +910,8 @@ export function layoutCalloutsForImage(
   dotRadius: number,
   lineWidth: number,
   imageGutter: number,
+  highlightMargin: number,
+  activeVariation: string | null,
 ): { document: DocumentLayout; layouts: CalloutLayoutItem[] } {
   const callouts = [...annotations].sort((left, right) => left.order - right.order)
   if (callouts.length === 0) {
@@ -890,7 +922,7 @@ export function layoutCalloutsForImage(
   }
 
   const gap = labelGapFor(fontSize)
-  const allSizes = sizesFor(callouts, fontFamily, fontSize, fontWeight, fontItalic)
+  const allSizes = sizesFor(callouts, fontFamily, fontSize, fontWeight, fontItalic, activeVariation)
   const sizeById = new Map(callouts.map((annotation, index) => [annotation.id, allSizes[index]!]))
   const resolvedSides = resolveAutoSides(callouts, sizeById, sections, imageWidth, imageHeight)
   const groups: Record<ResolvedCalloutSide, Annotation[]> = {
@@ -940,6 +972,7 @@ export function layoutCalloutsForImage(
     anchorStyle,
     dotRadius,
     lineWidth,
+    highlightMargin,
     imageGutter,
   )
   const rightGutter = requiredGutterFor(
@@ -951,6 +984,7 @@ export function layoutCalloutsForImage(
     anchorStyle,
     dotRadius,
     lineWidth,
+    highlightMargin,
     imageGutter,
   )
   const topGutter = requiredGutterFor(
@@ -962,6 +996,7 @@ export function layoutCalloutsForImage(
     anchorStyle,
     dotRadius,
     lineWidth,
+    highlightMargin,
     imageGutter,
   )
   const bottomGutter = requiredGutterFor(
@@ -973,6 +1008,7 @@ export function layoutCalloutsForImage(
     anchorStyle,
     dotRadius,
     lineWidth,
+    highlightMargin,
     imageGutter,
   )
 
@@ -1012,10 +1048,10 @@ export function layoutCalloutsForImage(
   return {
     document,
     layouts: [
-      ...packSide(groups.left, leftSizes, sections, document, 'left', gap, anchorStyle, dotRadius, lineWidth, leftGutter),
-      ...packSide(groups.right, rightSizes, sections, document, 'right', gap, anchorStyle, dotRadius, lineWidth, rightGutter),
-      ...packBand(groups.top, topSizes, sections, document, 'top', gap, anchorStyle, dotRadius, lineWidth, topGutter),
-      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap, anchorStyle, dotRadius, lineWidth, bottomGutter),
+      ...packSide(groups.left, leftSizes, sections, document, 'left', gap, anchorStyle, dotRadius, lineWidth, highlightMargin, leftGutter),
+      ...packSide(groups.right, rightSizes, sections, document, 'right', gap, anchorStyle, dotRadius, lineWidth, highlightMargin, rightGutter),
+      ...packBand(groups.top, topSizes, sections, document, 'top', gap, anchorStyle, dotRadius, lineWidth, highlightMargin, topGutter),
+      ...packBand(groups.bottom, bottomSizes, sections, document, 'bottom', gap, anchorStyle, dotRadius, lineWidth, highlightMargin, bottomGutter),
     ],
   }
 }

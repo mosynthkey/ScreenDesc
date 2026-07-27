@@ -10,7 +10,7 @@ export const DOT_RADIUS_STEP = 0.5
 export const ANCHOR_OFFSET_FALLBACK = 200
 export const ANCHOR_OFFSET_STEP = 1
 
-/** Default gap outside the section border when `anchorOutside` is on. */
+/** Default gap between the section border and the anchor (which always sits outside it). */
 export const DEFAULT_ANCHOR_OUTSIDE_GAP = 8
 export const ANCHOR_OUTSIDE_GAP_MIN = 0
 export const ANCHOR_OUTSIDE_GAP_MAX = 120
@@ -37,6 +37,19 @@ export function normalizeImageGutter(value: unknown): number {
     return Math.min(IMAGE_GUTTER_MAX, Math.max(IMAGE_GUTTER_MIN, Math.round(value)))
   }
   return DEFAULT_IMAGE_GUTTER
+}
+
+/** How far a section's outline (`Section.outlineEnabled`) expands beyond its raw rect. */
+export const DEFAULT_HIGHLIGHT_MARGIN = 12
+export const HIGHLIGHT_MARGIN_MIN = 0
+export const HIGHLIGHT_MARGIN_MAX = 120
+export const HIGHLIGHT_MARGIN_STEP = 1
+
+export function normalizeHighlightMargin(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(HIGHLIGHT_MARGIN_MAX, Math.max(HIGHLIGHT_MARGIN_MIN, Math.round(value)))
+  }
+  return DEFAULT_HIGHLIGHT_MARGIN
 }
 
 export function anchorOffsetExtent(imageSize: number): number {

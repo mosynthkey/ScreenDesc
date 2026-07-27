@@ -28,9 +28,10 @@ import {
   calloutLabelPadding,
   calloutLabelTextX,
   leaderAttachOnLabel,
+  resolveAnnotationDescription,
 } from '../utils/calloutLayout'
 import { measureTextBaselineFromCenter } from '../utils/textMeasure'
-import { resolveCalloutFill } from '../utils/commonSettings'
+import { resolveCalloutFill, resolveHighlightFill } from '../utils/commonSettings'
 import { useCanvasViewport } from '../composables/useCanvasViewport'
 import { useI18n } from '../i18n'
 
@@ -42,6 +43,8 @@ const props = defineProps<{
   sections: Section[]
   annotations: Annotation[]
   calloutLayouts: CalloutLayoutItem[]
+  /** Currently displayed/edited variation; `null` means the base description. */
+  activeVariation: string | null
   selectedSectionIds: string[]
   selectedAnnotationIds: string[]
   toolMode: ToolMode
@@ -54,6 +57,9 @@ const props = defineProps<{
   anchorStyle: AnchorStyleId
   lineHaloWidth: number
   lineHaloColor: string
+  highlightMargin: number
+  highlightFillEnabled: boolean
+  highlightFillOpacity: number
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
@@ -634,7 +640,7 @@ async function beginEdit(annotationId: string): Promise<void> {
   pointerMoved.value = false
   suppressEditBlurUntil = performance.now() + 400
   editingId.value = annotationId
-  editDraft.value = annotation.description
+  editDraft.value = resolveAnnotationDescription(annotation, props.activeVariation)
   emit('selectAnnotation', annotationId, false)
   await nextTick()
   const input = editInputRef.value
@@ -752,6 +758,9 @@ const effectiveDotColor = computed(() => (props.lineStyle === 'invert' ? '#fffff
 const calloutFill = computed(() =>
   resolveCalloutFill(props.calloutFillEnabled, props.calloutFillColor, props.calloutFillOpacity),
 )
+const highlightFill = computed(() =>
+  resolveHighlightFill(props.highlightFillEnabled, effectiveLineColor.value, props.highlightFillOpacity),
+)
 
 function leaderEnd(layout: CalloutLayoutItem): Point {
   return leaderAttachOnLabel(layout)
@@ -822,6 +831,41 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
         :height="document.imageHeight"
         preserveAspectRatio="none"
       />
+
+      <!-- Section outlines (margin-expanded frame around UI elements, see Section.outlineEnabled) -->
+      <g :style="activeLineStyle.blendMode ? { mixBlendMode: activeLineStyle.blendMode } : undefined">
+        <template v-for="section in sections" :key="`outline-${section.id}`">
+          <template v-if="section.outlineEnabled">
+            <rect
+              v-if="section.outlineHaloEnabled && lineHaloWidth > 0 && lineStyle !== 'invert'"
+              class="section-outline-halo"
+              :x="document.marginLeft + section.rect.x - highlightMargin"
+              :y="document.marginTop + section.rect.y - highlightMargin"
+              :width="section.rect.width + highlightMargin * 2"
+              :height="section.rect.height + highlightMargin * 2"
+              fill="none"
+              :style="{
+                stroke: lineHaloColor,
+                strokeWidth: activeLineStyle.strokeWidth + lineHaloWidth,
+              }"
+            />
+            <rect
+              class="section-outline"
+              :x="document.marginLeft + section.rect.x - highlightMargin"
+              :y="document.marginTop + section.rect.y - highlightMargin"
+              :width="section.rect.width + highlightMargin * 2"
+              :height="section.rect.height + highlightMargin * 2"
+              :fill="highlightFill.fill"
+              :fill-opacity="highlightFill.fillOpacity"
+              :style="{
+                stroke: effectiveLineColor,
+                strokeWidth: activeLineStyle.strokeWidth,
+                strokeDasharray: activeLineStyle.dasharray ?? undefined,
+              }"
+            />
+          </template>
+        </template>
+      </g>
 
       <!-- Sections -->
       <g v-if="showSections">
@@ -1193,6 +1237,11 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 
 .scene.tool-select {
   cursor: default;
+}
+
+.section-outline,
+.section-outline-halo {
+  pointer-events: none;
 }
 
 .section-rect {
