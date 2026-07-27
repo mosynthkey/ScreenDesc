@@ -19,6 +19,10 @@ export const en = {
   'nav.edit': 'Edit',
   'nav.editDisabledHint': 'Open a project first',
 
+  'settings.title': 'Settings',
+  'settings.openAria': 'Settings',
+  'settings.language.title': 'Language',
+
   'status.modelLoadFailed': 'Model failed to load',
   'status.modelLoading': 'Loading model…',
   'status.modelDownloading': 'Downloading model… {percent}%',

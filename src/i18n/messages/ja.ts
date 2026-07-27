@@ -21,6 +21,10 @@ export const ja: Record<MessageKey, string> = {
   'nav.edit': '編集',
   'nav.editDisabledHint': '先にプロジェクトを開いてください',
 
+  'settings.title': '設定',
+  'settings.openAria': '設定',
+  'settings.language.title': '言語',
+
   'status.modelLoadFailed': 'モデル読み込み失敗',
   'status.modelLoading': 'モデル読み込み中…',
   'status.modelDownloading': 'モデルをダウンロード中… {percent}%',

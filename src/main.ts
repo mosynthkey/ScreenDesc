@@ -9,6 +9,7 @@ import { installDesktopChrome } from './utils/installDesktopChrome'
 import { isDesktopApp } from './runtime'
 import { loadDesktopSettings } from './utils/desktopSettingsStore'
 import { applyStoredThemePreference } from './composables/useTheme'
+import { applyStoredLocalePreference } from './i18n'
 
 installAppViewportSync()
 installDesktopChrome()
@@ -22,6 +23,7 @@ async function bootstrap(): Promise<void> {
   if (isDesktopApp) {
     await loadDesktopSettings()
     applyStoredThemePreference()
+    applyStoredLocalePreference()
   }
   createApp(App).mount('#app')
 }
