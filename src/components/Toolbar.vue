@@ -22,10 +22,10 @@ import {
   ImageIcon,
   InfoIcon,
   ListChecksIcon,
+  MessageSquareIcon,
   MousePointer2Icon,
   PlusIcon,
   SquarePlusIcon,
-  TargetIcon,
   XIcon,
 } from '@lucide/vue'
 
@@ -419,7 +419,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           :aria-label="t('aria.toolAnnotate')"
           @click="setTool('annotate')"
         >
-          <TargetIcon :size="22" :stroke-width="1.8" aria-hidden="true" />
+          <MessageSquareIcon :size="20" :stroke-width="1.8" aria-hidden="true" />
         </button>
 
         <button
