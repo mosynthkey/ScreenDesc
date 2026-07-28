@@ -5,14 +5,12 @@ import './i18n'
 import { DEFAULT_FONT_FAMILY, loadGoogleFont } from './utils/googleFonts'
 import { initGoogleAnalytics } from './analytics/googleAnalytics'
 import { installAppViewportSync } from './utils/syncAppViewport'
-import { installDesktopChrome } from './utils/installDesktopChrome'
 import { isDesktopApp } from './runtime'
 import { loadDesktopSettings } from './utils/desktopSettingsStore'
 import { applyStoredThemePreference } from './composables/useTheme'
 import { applyStoredLocalePreference } from './i18n'
 
 installAppViewportSync()
-installDesktopChrome()
 loadGoogleFont(DEFAULT_FONT_FAMILY)
 initGoogleAnalytics()
 
