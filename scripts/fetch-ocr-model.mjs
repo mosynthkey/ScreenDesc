@@ -16,8 +16,14 @@ import { fileURLToPath } from 'node:url'
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = path.join(rootDir, 'public', 'models', 'paddleocr')
 
-const MODEL_BASE_URL =
+// Baidu's CDN 403s from some CI runner IP ranges (observed on GitHub's macOS
+// runners), so CI mirrors these assets on the "model" GitHub Release instead.
+const defaultModelBaseUrl =
   'https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0'
+const ciModelBaseUrl = 'https://github.com/mosynthkey/ScreenDesc/releases/download/model'
+const MODEL_BASE_URL =
+  process.env.OCR_MODEL_BASE_URL?.trim() ||
+  (process.env.CI || process.env.GITHUB_ACTIONS ? ciModelBaseUrl : defaultModelBaseUrl)
 
 const assets = [
   { file: 'PP-OCRv6_small_det_onnx_infer.tar', role: 'text detection' },

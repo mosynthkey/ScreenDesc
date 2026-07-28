@@ -90,9 +90,16 @@ jobs:
       - name: Build desktop app (unsigned)
         run: npm run desktop:package
 
+      - name: List build output
+        shell: pwsh
+        run: Get-ChildItem -Recurse dist-desktop
+
       - name: Zip exe
         shell: pwsh
-        run: Compress-Archive -Path dist-desktop/ScreenDesc.exe -DestinationPath ScreenDesc-windows.zip
+        run: |
+          $bin = Get-ChildItem dist-desktop -Filter "ScreenDesc*" -File | Select-Object -First 1
+          if (-not $bin) { throw "No ScreenDesc build output found under dist-desktop/" }
+          Compress-Archive -Path $bin.FullName -DestinationPath ScreenDesc-windows.zip
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
