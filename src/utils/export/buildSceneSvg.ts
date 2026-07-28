@@ -61,7 +61,7 @@ function renderCallout(
   const textX = calloutLabelTextX(
     labelPosition.x,
     labelWidth,
-    lines[0] ?? '',
+    lines,
     calloutFontSize,
     fontCss,
     calloutFontWeight,

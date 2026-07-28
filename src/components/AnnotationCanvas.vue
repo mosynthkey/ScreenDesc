@@ -151,7 +151,7 @@ const svgRef = ref<SVGSVGElement | null>(null)
 const drag = ref<DragState | null>(null)
 const editingId = ref<string | null>(null)
 const editDraft = ref('')
-const editInputRef = ref<HTMLInputElement | null>(null)
+const editInputRef = ref<HTMLTextAreaElement | null>(null)
 const pointerMoved = ref(false)
 /** Ignore blur-to-commit while the editor is still mounting / focusing. */
 let suppressEditBlurUntil = 0
@@ -755,9 +755,13 @@ function commitEdit(): void {
   editingId.value = null
 }
 
-/** Ignore the Enter/Escape used to confirm or cancel an IME conversion candidate. */
+/**
+ * Ignore the Enter used to confirm an IME conversion candidate. Shift+Enter
+ * inserts a line break (left to the textarea's own default behavior);
+ * plain Enter commits.
+ */
 function onEditEnterKeydown(event: KeyboardEvent): void {
-  if (event.isComposing) return
+  if (event.isComposing || event.shiftKey) return
   event.preventDefault()
   commitEdit()
 }
@@ -791,6 +795,9 @@ const editingCalloutLayout = computed(() => {
   return props.calloutLayouts.find((item) => item.annotationId === editingId.value) ?? null
 })
 
+/** Grows the in-place edit box with typed line breaks, not just the committed layout's line count. */
+const editDraftRows = computed(() => Math.max(1, editDraft.value.split('\n').length))
+
 const draftSection = computed(() => {
   if (drag.value?.kind !== 'create-section') return null
   const x = Math.min(drag.value.origin.x, drag.value.current.x)
@@ -821,7 +828,7 @@ function calloutTextX(layout: CalloutLayoutItem): number {
   return calloutLabelTextX(
     layout.labelPosition.x,
     layout.labelWidth,
-    layout.lines[0] ?? '',
+    layout.lines,
     props.calloutFontSize,
     activeFontFamily.value,
     props.calloutFontWeight,
@@ -1270,10 +1277,10 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
         }"
         @pointerdown.stop
       >
-        <input
+        <textarea
           ref="editInputRef"
           v-model="editDraft"
-          type="text"
+          :rows="editDraftRows"
           @keydown.enter="onEditEnterKeydown"
           @keydown.escape="onEditEscapeKeydown"
           @blur="onEditBlur"
@@ -1332,12 +1339,15 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   box-shadow: var(--shadow);
 }
 
-.callout-inplace-edit input {
+.callout-inplace-edit textarea {
   width: 100%;
   min-width: 0;
   margin: 0;
+  padding: 0;
   border: none;
   outline: none;
+  resize: none;
+  overflow: hidden;
   background: transparent;
   font: inherit;
   color: #111;

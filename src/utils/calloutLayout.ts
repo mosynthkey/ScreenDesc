@@ -180,22 +180,26 @@ export function calloutLabelPadding(fontSize: number): {
 
 /**
  * X for the text inside a label box. Ordinarily the box is sized to exactly
- * fit the text plus symmetric padding, so left-aligning at the padding edge
- * already looks centered. But a short string (or an empty one) hits
- * `minLabelWidthFor`'s floor, leaving the box wider than the text needs —
- * center the text in that leftover room instead of hugging the left edge.
+ * fit the widest line plus symmetric padding, so left-aligning at the
+ * padding edge already looks centered. But a short string (or an empty one)
+ * hits `minLabelWidthFor`'s floor, leaving the box wider than the text
+ * needs — center the text (all lines share this one x) in that leftover
+ * room instead of hugging the left edge.
  */
 export function calloutLabelTextX(
   labelX: number,
   labelWidth: number,
-  text: string,
+  lines: string[],
   fontSize: number,
   fontFamily: string,
   fontWeight: number,
   fontItalic: boolean,
 ): number {
   const padding = calloutLabelPadding(fontSize)
-  const textWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight, fontItalic)
+  const textWidth = Math.max(
+    0,
+    ...lines.map((line) => measureTextWidth(line, fontSize, fontFamily, fontWeight, fontItalic)),
+  )
   const naturalWidth = textWidth + padding.horizontal * 2
   if (labelWidth <= naturalWidth) return labelX + padding.horizontal
   return labelX + (labelWidth - textWidth) / 2
@@ -342,21 +346,40 @@ function estimateLabelSize(
   fontItalic: boolean,
 ): { width: number; height: number; lines: string[] } {
   const prefix = numberPrefix ? `${numberPrefix} ` : ''
-  const text = description ? `${prefix}${description}` : numberPrefix
-  // A blank description would otherwise measure as ~0px wide, leaving nothing
-  // to click/drag; size against the placeholder, but never draw it — an
-  // intentionally empty label should render empty, not the literal
-  // placeholder word.
-  const measureText = description ? text : `${prefix}${t('callout.emptyDescription')}`
   const fontCss = fontFamilyCss(fontFamily)
   const lineHeight = lineHeightFor(fontSize)
+
+  if (!description) {
+    // A blank description would otherwise measure as ~0px wide, leaving
+    // nothing to click/drag; size against the placeholder, but never draw
+    // it — an intentionally empty label should render empty, not the
+    // literal placeholder word.
+    const measureText = `${prefix}${t('callout.emptyDescription')}`
+    const textWidth =
+      measureTextWidth(measureText, fontSize, fontCss, fontWeight, fontItalic) +
+      labelHPadding(fontSize)
+    return {
+      width: Math.max(minLabelWidthFor(fontSize), Math.ceil(textWidth)),
+      height: Math.max(lineHeight + labelVPadding(fontSize), Math.round(fontSize * 1.5)),
+      lines: [numberPrefix],
+    }
+  }
+
+  // Explicit `\n` line breaks only (no width-based wrapping) — the prefix
+  // rides along with the first line.
+  const descLines = description.split('\n')
+  const lines = descLines.map((line, index) => (index === 0 ? `${prefix}${line}` : line))
   const textWidth =
-    measureTextWidth(measureText, fontSize, fontCss, fontWeight, fontItalic) +
-    labelHPadding(fontSize)
+    Math.max(
+      ...lines.map((line) => measureTextWidth(line, fontSize, fontCss, fontWeight, fontItalic)),
+    ) + labelHPadding(fontSize)
   return {
     width: Math.max(minLabelWidthFor(fontSize), Math.ceil(textWidth)),
-    height: Math.max(lineHeight + labelVPadding(fontSize), Math.round(fontSize * 1.5)),
-    lines: [text],
+    height: Math.max(
+      lineHeight * lines.length + labelVPadding(fontSize),
+      Math.round(fontSize * 1.5),
+    ),
+    lines,
   }
 }
 
