@@ -1,0 +1,111 @@
+name: Release Desktop Apps (unsigned)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Public Release asset used at build time (not fetched by the browser).
+  MODEL_DOWNLOAD_URL: https://github.com/mosynthkey/ScreenDesc/releases/download/model/screenparser.onnx
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.9.4"
+
+      - name: Install
+        run: npm ci
+
+      - name: Download ScreenParser model
+        run: npm run fetch-model
+
+      - name: Download PaddleOCR models
+        run: npm run fetch-ocr-model
+
+      - name: Build desktop app (unsigned)
+        run: npm run desktop:package
+
+      - name: Zip app bundle
+        run: ditto -c -k --sequesterRsrc --keepParent dist-desktop/ScreenDesc.app ScreenDesc-macos.zip
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScreenDesc-macos-unsigned
+          path: ScreenDesc-macos.zip
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
+            || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+          gh release upload "${{ github.ref_name }}" ScreenDesc-macos.zip --repo "${{ github.repository }}" --clobber
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.9.4"
+
+      - name: Install
+        run: npm ci
+
+      - name: Download ScreenParser model
+        run: npm run fetch-model
+
+      - name: Download PaddleOCR models
+        run: npm run fetch-ocr-model
+
+      - name: Build desktop app (unsigned)
+        run: npm run desktop:package
+
+      - name: Zip exe
+        shell: pwsh
+        run: Compress-Archive -Path dist-desktop/ScreenDesc.exe -DestinationPath ScreenDesc-windows.zip
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScreenDesc-windows-unsigned
+          path: ScreenDesc-windows.zip
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
+            || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+          gh release upload "${{ github.ref_name }}" ScreenDesc-windows.zip --repo "${{ github.repository }}" --clobber
