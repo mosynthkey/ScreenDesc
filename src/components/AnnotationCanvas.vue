@@ -907,6 +907,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
       ref="svgRef"
       class="scene"
       :class="`tool-${toolMode}`"
+      data-context-menu-surface="true"
       :viewBox="`0 0 ${documentWidth} ${documentHeight}`"
       :width="documentWidth"
       :height="documentHeight"

@@ -66,14 +66,31 @@ function installNativeWindowChrome(): void {
       try {
         const info = await win.executeJs(`(() => {
           const el = document.elementFromPoint(${event.clientX}, ${event.clientY});
+          const surface = el && el.closest("[data-context-menu-surface]");
+          if (surface) {
+            // This page area (the annotation canvas) renders its own HTML
+            // context menu from the DOM 'contextmenu' event — but CEF never
+            // forwards a real right-click as that event, so synthesize one at
+            // the same point. The page's own preventDefault/positioning logic
+            // takes it from here; we deliberately show no native menu.
+            surface.dispatchEvent(new MouseEvent("contextmenu", {
+              bubbles: true,
+              cancelable: true,
+              clientX: ${event.clientX},
+              clientY: ${event.clientY},
+            }));
+            return { handledByPage: true, projectId: null, ja: false };
+          }
           const item = el && el.closest("[data-project-id]");
           const lang = document.documentElement.lang || "";
           return {
+            handledByPage: false,
             projectId: item ? item.getAttribute("data-project-id") : null,
             ja: lang.toLowerCase().startsWith("ja"),
           };
-        })()`) as { projectId: string | null; ja: boolean } | null;
+        })()`) as { handledByPage: boolean; projectId: string | null; ja: boolean } | null;
 
+        if (info?.handledByPage) return;
         if (!info?.projectId) return;
         win.showContextMenu(event.clientX, event.clientY, [
           {
