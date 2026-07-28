@@ -38,6 +38,9 @@ export async function runSectionDetection(): Promise<void> {
     state.selectedSectionIds = []
   } finally {
     isDetecting.value = false
+    // Only ever loaded for the duration of an analysis — unload right away
+    // instead of holding the model (and its worker/WASM memory) in memory.
+    screenParser.dispose()
   }
 }
 
@@ -71,14 +74,18 @@ async function applyImageSource(
   state.sectionVisibility = defaultSectionVisibility()
   ocrLines.value = []
 
+  // Sequential, not parallel: each analysis step loads its own model, runs,
+  // and unloads before the next one starts, so at most one model is ever
+  // resident in memory at a time.
+  await runSectionDetection()
+
   isRecognizingText.value = true
-  const [, ocrResult] = await Promise.all([
-    runSectionDetection(),
-    recognizeTextFromImage(image).finally(() => {
-      isRecognizingText.value = false
-    }),
-  ])
-  ocrLines.value = ocrResult.lines
+  try {
+    const ocrResult = await recognizeTextFromImage(image)
+    ocrLines.value = ocrResult.lines
+  } finally {
+    isRecognizingText.value = false
+  }
   refreshDocumentAndLayouts()
 }
 

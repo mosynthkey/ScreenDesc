@@ -127,8 +127,6 @@ export interface ImageSnapshot {
 export const cropHistory = ref<ImageSnapshot | null>(null)
 
 export const screenParser = useScreenParser()
-// Prefetch in the background; the edit UI only blocks if still loading when opened.
-void screenParser.loadModel()
 
 export function reindexOrders(): void {
   const sorted = sortByOrder(state.annotations)

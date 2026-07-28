@@ -19,6 +19,19 @@ type OcrClient = Awaited<ReturnType<typeof PaddleOCR.create>>
 
 let clientPromise: Promise<OcrClient> | null = null
 
+/** Torn down right after every recognize call, to keep this out of memory between analyses. */
+async function disposeOcrClient(): Promise<void> {
+  const promise = clientPromise
+  clientPromise = null
+  if (!promise) return
+  try {
+    const client = await promise
+    await client.dispose()
+  } catch {
+    // Client never finished initializing — nothing to dispose.
+  }
+}
+
 async function getOcrClient(): Promise<OcrClient> {
   if (!clientPromise) {
     console.log('[ocr] initializing PaddleOCR client…')
@@ -94,6 +107,8 @@ async function recognizeTextFromImageData(imageData: ImageData): Promise<OcrRunR
   } catch (error) {
     console.error('[ocr] predict() failed', error)
     return empty
+  } finally {
+    await disposeOcrClient()
   }
   if (!result) return empty
 
