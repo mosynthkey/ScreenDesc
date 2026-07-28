@@ -94,12 +94,11 @@ jobs:
         shell: pwsh
         run: Get-ChildItem -Recurse dist-desktop
 
-      - name: Zip exe
+      - name: Zip app folder
         shell: pwsh
-        run: |
-          $bin = Get-ChildItem dist-desktop -Filter "ScreenDesc*" -File | Select-Object -First 1
-          if (-not $bin) { throw "No ScreenDesc build output found under dist-desktop/" }
-          Compress-Archive -Path $bin.FullName -DestinationPath ScreenDesc-windows.zip
+        # deno desktop -o dist-desktop/ScreenDesc writes a folder (ScreenDesc.exe +
+        # ScreenDesc.dll + marker files), same shape as the macOS .app bundle.
+        run: Compress-Archive -Path dist-desktop/ScreenDesc -DestinationPath ScreenDesc-windows.zip
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
