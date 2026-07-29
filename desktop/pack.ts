@@ -30,8 +30,13 @@ export async function buildDesktopApp(outputPath: string) {
     // keeps the scoped grant and then denies ~/Documents/ScreenDesc.
     // Reveal uses `open -R` (macOS) or Explorer (Windows).
     const allowRun = Deno.build.os === "windows" ? "explorer" : "open";
+    // Diagnostic-only: DESKTOP_BACKEND lets CI try an alternate deno desktop
+    // backend (webview/cef/raw) while tracking down a Windows-only "Module
+    // not found" crash at launch. Remove once resolved.
+    const backend = Deno.env.get("DESKTOP_BACKEND");
     const args = [
       "desktop",
+      ...(backend ? ["--backend", backend] : []),
       "--include",
       "./dist",
       "--include",
