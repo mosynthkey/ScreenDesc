@@ -73,13 +73,38 @@ jobs:
             dist-desktop/ScreenDesc.app
           codesign --verify --deep --strict --verbose=2 dist-desktop/ScreenDesc.app
 
+      - name: Notarize
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          # Notarization takes a zip/dmg/pkg as the upload format, but the
+          # notarization ticket itself gets stapled onto the .app afterward —
+          # this zip is just a submission artifact, not the final deliverable.
+          SUBMIT_ZIP="$RUNNER_TEMP/ScreenDesc-notarize-submit.zip"
+          ditto -c -k --keepParent dist-desktop/ScreenDesc.app "$SUBMIT_ZIP"
+          xcrun notarytool submit "$SUBMIT_ZIP" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          rm -f "$SUBMIT_ZIP"
+
+      - name: Staple notarization ticket
+        run: |
+          set -euo pipefail
+          xcrun stapler staple dist-desktop/ScreenDesc.app
+          spctl --assess --type execute --verbose=2 dist-desktop/ScreenDesc.app
+
       - name: Zip app bundle
         run: ditto -c -k --sequesterRsrc --keepParent dist-desktop/ScreenDesc.app ScreenDesc-macos.zip
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ScreenDesc-macos-signed
+          name: ScreenDesc-macos-notarized
           path: ScreenDesc-macos.zip
 
       - name: Attach to GitHub Release
