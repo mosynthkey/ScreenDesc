@@ -11,8 +11,12 @@ export async function buildDesktopApp(outputPath: string) {
   const sourceDir = await Deno.makeTempDir({ prefix: "screendesc-desktop-" });
   try {
     await Deno.mkdir(join(sourceDir, "desktop"), { recursive: true });
-    await Deno.symlink(join(repoRoot, "desktop", "main.ts"), join(sourceDir, "desktop", "main.ts"));
-    await Deno.symlink(
+    // Real copies, not symlinks: on Windows, `deno desktop` bakes the
+    // symlink's resolved absolute path into the compiled binary instead of
+    // embedding the file contents, so the shipped .exe tries to re-read the
+    // (long-gone) build-time temp directory at runtime and fails to launch.
+    await Deno.copyFile(join(repoRoot, "desktop", "main.ts"), join(sourceDir, "desktop", "main.ts"));
+    await Deno.copyFile(
       join(repoRoot, "desktop", "storageApi.ts"),
       join(sourceDir, "desktop", "storageApi.ts"),
     );
