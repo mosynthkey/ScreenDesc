@@ -34,6 +34,8 @@ export async function buildDesktopApp(outputPath: string) {
       "desktop",
       "--include",
       "./dist",
+      "--include",
+      "./desktop",
       "--allow-read",
       "--allow-write",
       "--allow-env=HOME,USERPROFILE",
