@@ -1,4 +1,5 @@
 import { fromFileUrl, isAbsolute, join } from "jsr:@std/path";
+import { copy } from "jsr:@std/fs/copy";
 
 const repoRoot = fromFileUrl(new URL("..", import.meta.url));
 const defaultRunOutput = join(repoRoot, "dist-desktop", "ScreenDesc");
@@ -11,16 +12,18 @@ export async function buildDesktopApp(outputPath: string) {
   const sourceDir = await Deno.makeTempDir({ prefix: "screendesc-desktop-" });
   try {
     await Deno.mkdir(join(sourceDir, "desktop"), { recursive: true });
-    // Real copies, not symlinks: on Windows, `deno desktop` bakes the
-    // symlink's resolved absolute path into the compiled binary instead of
-    // embedding the file contents, so the shipped .exe tries to re-read the
-    // (long-gone) build-time temp directory at runtime and fails to launch.
+    // Real copies, not symlinks: when the symlink target lives on a different
+    // drive than sourceDir (e.g. repo on D:, %TEMP% on C: — the default on
+    // GitHub Actions windows-latest runners), `deno desktop` fails to embed
+    // the linked content under the temp-dir path it bakes into the compiled
+    // binary, so the shipped .exe tries to re-read the (long-gone) build-time
+    // temp directory at runtime and fails to launch with "Module not found".
     await Deno.copyFile(join(repoRoot, "desktop", "main.ts"), join(sourceDir, "desktop", "main.ts"));
     await Deno.copyFile(
       join(repoRoot, "desktop", "storageApi.ts"),
       join(sourceDir, "desktop", "storageApi.ts"),
     );
-    await Deno.symlink(join(repoRoot, "dist"), join(sourceDir, "dist"));
+    await copy(join(repoRoot, "dist"), join(sourceDir, "dist"));
     await Deno.copyFile(join(repoRoot, "deno.json"), join(sourceDir, "deno.json"));
     await Deno.copyFile(join(repoRoot, "deno.lock"), join(sourceDir, "deno.lock"));
     await Deno.copyFile(join(repoRoot, "public", "icon.png"), join(sourceDir, "icon.png"));
@@ -30,13 +33,8 @@ export async function buildDesktopApp(outputPath: string) {
     // keeps the scoped grant and then denies ~/Documents/ScreenDesc.
     // Reveal uses `open -R` (macOS) or Explorer (Windows).
     const allowRun = Deno.build.os === "windows" ? "explorer" : "open";
-    // Diagnostic-only: DESKTOP_BACKEND lets CI try an alternate deno desktop
-    // backend (webview/cef/raw) while tracking down a Windows-only "Module
-    // not found" crash at launch. Remove once resolved.
-    const backend = Deno.env.get("DESKTOP_BACKEND");
     const args = [
       "desktop",
-      ...(backend ? ["--backend", backend] : []),
       "--include",
       "./dist",
       "--include",
