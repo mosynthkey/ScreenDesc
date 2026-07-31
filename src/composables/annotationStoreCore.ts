@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from 'vue'
+import { t } from '../i18n'
 import type {
   Annotation,
   AnchorStyleId,
@@ -270,7 +271,7 @@ export function loadImageElement(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Failed to load image'))
+    image.onerror = () => reject(new Error(t('error.imageReadFailed')))
     image.src = url
   })
 }

@@ -118,7 +118,9 @@ export const zh: Record<MessageKey, string> = {
   'home.editingBadge': '编辑中',
   'home.removeAria': '删除已保存的项目',
   'home.downloadBundle': '全部下载',
+  'home.downloadBundle.desktop': '全部导出',
   'home.downloadBundleTitle': '将所有已保存的项目下载为一个合集文件',
+  'home.downloadBundleTitle.desktop': '将所有已保存的项目导出为一个合集文件',
   'home.openLocation': '在访达中显示',
   'home.openLocationTitle': '在磁盘上打开此项目所在的文件夹',
   'storage.notice.before':
@@ -179,7 +181,9 @@ export const zh: Record<MessageKey, string> = {
   'projectStorage.overwrite': '覆盖',
   'projectStorage.remove': '删除',
   'projectStorage.downloadBundle': '全部下载',
+  'projectStorage.downloadBundle.desktop': '全部导出',
   'projectStorage.downloadBundleTitle': '将所有已保存的项目下载为一个合集文件',
+  'projectStorage.downloadBundleTitle.desktop': '将所有已保存的项目导出为一个合集文件',
   'projectStorage.close': '关闭',
 
   'style.projectSettingsTitle': '共用设置',
@@ -287,6 +291,7 @@ export const zh: Record<MessageKey, string> = {
   'error.projectBundleInvalid': '无效的项目合集文件',
   'error.projectBundleEmpty': '没有可纳入合集的已保存项目',
   'error.projectBundleDownloadFailed': '项目合集下载失败',
+  'error.projectBundleDownloadFailed.desktop': '项目合集导出失败',
   'error.savedProjectNotFound': '未找到已保存的项目',
   'error.projectRenameFailed': '项目重命名失败',
   'error.projectRevealFailed': '无法打开项目所在的文件夹',

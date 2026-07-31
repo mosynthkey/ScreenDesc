@@ -119,7 +119,9 @@ export const en = {
   'home.editingBadge': 'Editing',
   'home.removeAria': 'Delete saved project',
   'home.downloadBundle': 'Download all',
+  'home.downloadBundle.desktop': 'Export all',
   'home.downloadBundleTitle': 'Download all saved projects as one bundle file',
+  'home.downloadBundleTitle.desktop': 'Export all saved projects as one bundle file',
   'home.openLocation': 'Show in Finder',
   'home.openLocationTitle': 'Reveal this project folder on disk',
   'storage.notice.before':
@@ -186,7 +188,9 @@ export const en = {
   'projectStorage.overwrite': 'Overwrite',
   'projectStorage.remove': 'Delete',
   'projectStorage.downloadBundle': 'Download all',
+  'projectStorage.downloadBundle.desktop': 'Export all',
   'projectStorage.downloadBundleTitle': 'Download all saved projects as one bundle file',
+  'projectStorage.downloadBundleTitle.desktop': 'Export all saved projects as one bundle file',
   'projectStorage.close': 'Close',
 
   'style.projectSettingsTitle': 'Shared settings',
@@ -299,6 +303,7 @@ export const en = {
   'error.projectBundleInvalid': 'Invalid project bundle file',
   'error.projectBundleEmpty': 'No saved projects to include in the bundle',
   'error.projectBundleDownloadFailed': 'Failed to download the project bundle',
+  'error.projectBundleDownloadFailed.desktop': 'Failed to export the project bundle',
   'error.savedProjectNotFound': 'Saved project not found',
   'error.projectRenameFailed': 'Failed to rename the project',
   'error.projectRevealFailed': 'Could not open the project folder',

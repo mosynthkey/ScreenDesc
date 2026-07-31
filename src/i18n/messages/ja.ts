@@ -121,7 +121,9 @@ export const ja: Record<MessageKey, string> = {
   'home.editingBadge': '編集中',
   'home.removeAria': '保存済みプロジェクトを削除',
   'home.downloadBundle': 'すべてダウンロード',
+  'home.downloadBundle.desktop': 'すべてエクスポート',
   'home.downloadBundleTitle': '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
+  'home.downloadBundleTitle.desktop': '保存済みプロジェクトを1つのバンドルファイルとしてエクスポート',
   'home.openLocation': 'ファイルの場所を開く',
   'home.openLocationTitle': 'このプロジェクトのフォルダを Finder で表示',
   'storage.notice.before':
@@ -188,8 +190,11 @@ export const ja: Record<MessageKey, string> = {
   'projectStorage.overwrite': '上書き保存',
   'projectStorage.remove': '削除',
   'projectStorage.downloadBundle': 'すべてダウンロード',
+  'projectStorage.downloadBundle.desktop': 'すべてエクスポート',
   'projectStorage.downloadBundleTitle':
     '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
+  'projectStorage.downloadBundleTitle.desktop':
+    '保存済みプロジェクトを1つのバンドルファイルとしてエクスポート',
   'projectStorage.close': '閉じる',
 
   'style.projectSettingsTitle': '共通設定',
@@ -302,6 +307,7 @@ export const ja: Record<MessageKey, string> = {
   'error.projectBundleInvalid': 'プロジェクトバンドルの形式が正しくありません',
   'error.projectBundleEmpty': 'バンドルに含める保存済みプロジェクトがありません',
   'error.projectBundleDownloadFailed': 'プロジェクトバンドルのダウンロードに失敗しました',
+  'error.projectBundleDownloadFailed.desktop': 'プロジェクトバンドルのエクスポートに失敗しました',
   'error.savedProjectNotFound': '保存済みのプロジェクトが見つかりませんでした',
   'error.projectRenameFailed': 'プロジェクト名の変更に失敗しました',
   'error.projectRevealFailed': 'プロジェクトのフォルダを開けませんでした',

@@ -20,7 +20,7 @@ const emit = defineEmits<{
   reveal: [id: string]
 }>()
 
-const { t } = useI18n()
+const { t, tr } = useI18n()
 const isDragging = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 const thumbUrls = ref<Record<string, string>>({})
@@ -203,10 +203,10 @@ defineExpose({ openFilePicker })
           class="btn btn-ghost"
           type="button"
           :disabled="projects.length === 0 || isBusy"
-          :title="t('home.downloadBundleTitle')"
+          :title="tr('home.downloadBundleTitle')"
           @click="emit('downloadBundle')"
         >
-          {{ t('home.downloadBundle') }}
+          {{ tr('home.downloadBundle') }}
         </button>
       </div>
       <p v-if="projects.length === 0" class="hint files-empty">{{ t('home.filesEmpty') }}</p>

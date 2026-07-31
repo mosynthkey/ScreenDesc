@@ -168,10 +168,10 @@ function submitSave(): void {
           class="btn btn-ghost"
           type="button"
           :disabled="projects.length === 0 || isBusy"
-          :title="t('projectStorage.downloadBundleTitle')"
+          :title="tr('projectStorage.downloadBundleTitle')"
           @click="emit('downloadBundle')"
         >
-          {{ t('projectStorage.downloadBundle') }}
+          {{ tr('projectStorage.downloadBundle') }}
         </button>
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('projectStorage.close') }}

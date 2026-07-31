@@ -125,7 +125,9 @@ export const de: Record<MessageKey, string> = {
   'home.editingBadge': 'In Bearbeitung',
   'home.removeAria': 'Gespeichertes Projekt löschen',
   'home.downloadBundle': 'Alle herunterladen',
+  'home.downloadBundle.desktop': 'Alle exportieren',
   'home.downloadBundleTitle': 'Alle gespeicherten Projekte als eine Paketdatei herunterladen',
+  'home.downloadBundleTitle.desktop': 'Alle gespeicherten Projekte als eine Paketdatei exportieren',
   'home.openLocation': 'Im Finder anzeigen',
   'home.openLocationTitle': 'Den Ordner dieses Projekts auf der Festplatte anzeigen',
   'storage.notice.before':
@@ -196,8 +198,11 @@ export const de: Record<MessageKey, string> = {
   'projectStorage.overwrite': 'Überschreiben',
   'projectStorage.remove': 'Löschen',
   'projectStorage.downloadBundle': 'Alle herunterladen',
+  'projectStorage.downloadBundle.desktop': 'Alle exportieren',
   'projectStorage.downloadBundleTitle':
     'Alle gespeicherten Projekte als eine Paketdatei herunterladen',
+  'projectStorage.downloadBundleTitle.desktop':
+    'Alle gespeicherten Projekte als eine Paketdatei exportieren',
   'projectStorage.close': 'Schließen',
 
   'style.projectSettingsTitle': 'Gemeinsame Einstellungen',
@@ -312,6 +317,7 @@ export const de: Record<MessageKey, string> = {
   'error.projectBundleInvalid': 'Ungültige Projektpaketdatei',
   'error.projectBundleEmpty': 'Keine gespeicherten Projekte zum Einschließen in das Paket',
   'error.projectBundleDownloadFailed': 'Projektpaket konnte nicht heruntergeladen werden',
+  'error.projectBundleDownloadFailed.desktop': 'Projektpaket konnte nicht exportiert werden',
   'error.savedProjectNotFound': 'Gespeichertes Projekt nicht gefunden',
   'error.projectRenameFailed': 'Projekt konnte nicht umbenannt werden',
   'error.projectRevealFailed': 'Projektordner konnte nicht geöffnet werden',

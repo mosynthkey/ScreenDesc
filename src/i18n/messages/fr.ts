@@ -125,7 +125,9 @@ export const fr: Record<MessageKey, string> = {
   'home.editingBadge': 'En cours d’édition',
   'home.removeAria': 'Supprimer le projet enregistré',
   'home.downloadBundle': 'Tout télécharger',
+  'home.downloadBundle.desktop': 'Tout exporter',
   'home.downloadBundleTitle': 'Télécharger tous les projets enregistrés en un seul lot',
+  'home.downloadBundleTitle.desktop': 'Exporter tous les projets enregistrés en un seul lot',
   'home.openLocation': 'Afficher dans le Finder',
   'home.openLocationTitle': 'Révéler le dossier de ce projet sur le disque',
   'storage.notice.before':
@@ -194,7 +196,10 @@ export const fr: Record<MessageKey, string> = {
   'projectStorage.overwrite': 'Écraser',
   'projectStorage.remove': 'Supprimer',
   'projectStorage.downloadBundle': 'Tout télécharger',
+  'projectStorage.downloadBundle.desktop': 'Tout exporter',
   'projectStorage.downloadBundleTitle': 'Télécharger tous les projets enregistrés en un seul lot',
+  'projectStorage.downloadBundleTitle.desktop':
+    'Exporter tous les projets enregistrés en un seul lot',
   'projectStorage.close': 'Fermer',
 
   'style.projectSettingsTitle': 'Paramètres partagés',
@@ -310,6 +315,7 @@ export const fr: Record<MessageKey, string> = {
   'error.projectBundleInvalid': 'Fichier de lot de projets invalide',
   'error.projectBundleEmpty': 'Aucun projet enregistré à inclure dans le lot',
   'error.projectBundleDownloadFailed': 'Échec du téléchargement du lot de projets',
+  'error.projectBundleDownloadFailed.desktop': 'Échec de l’exportation du lot de projets',
   'error.savedProjectNotFound': 'Projet enregistré introuvable',
   'error.projectRenameFailed': 'Échec du renommage du projet',
   'error.projectRevealFailed': 'Impossible d’ouvrir le dossier du projet',

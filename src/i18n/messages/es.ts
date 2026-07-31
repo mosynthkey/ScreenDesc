@@ -125,7 +125,9 @@ export const es: Record<MessageKey, string> = {
   'home.editingBadge': 'Editando',
   'home.removeAria': 'Eliminar proyecto guardado',
   'home.downloadBundle': 'Descargar todo',
+  'home.downloadBundle.desktop': 'Exportar todo',
   'home.downloadBundleTitle': 'Descargar todos los proyectos guardados en un solo paquete',
+  'home.downloadBundleTitle.desktop': 'Exportar todos los proyectos guardados en un solo paquete',
   'home.openLocation': 'Mostrar en el Finder',
   'home.openLocationTitle': 'Revelar la carpeta de este proyecto en el disco',
   'storage.notice.before':
@@ -192,7 +194,10 @@ export const es: Record<MessageKey, string> = {
   'projectStorage.overwrite': 'Sobrescribir',
   'projectStorage.remove': 'Eliminar',
   'projectStorage.downloadBundle': 'Descargar todo',
+  'projectStorage.downloadBundle.desktop': 'Exportar todo',
   'projectStorage.downloadBundleTitle': 'Descargar todos los proyectos guardados en un solo paquete',
+  'projectStorage.downloadBundleTitle.desktop':
+    'Exportar todos los proyectos guardados en un solo paquete',
   'projectStorage.close': 'Cerrar',
 
   'style.projectSettingsTitle': 'Ajustes compartidos',
@@ -307,6 +312,7 @@ export const es: Record<MessageKey, string> = {
   'error.projectBundleInvalid': 'Archivo de paquete de proyectos no válido',
   'error.projectBundleEmpty': 'No hay proyectos guardados para incluir en el paquete',
   'error.projectBundleDownloadFailed': 'No se pudo descargar el paquete de proyectos',
+  'error.projectBundleDownloadFailed.desktop': 'No se pudo exportar el paquete de proyectos',
   'error.savedProjectNotFound': 'No se encontró el proyecto guardado',
   'error.projectRenameFailed': 'No se pudo cambiar el nombre del proyecto',
   'error.projectRevealFailed': 'No se pudo abrir la carpeta del proyecto',

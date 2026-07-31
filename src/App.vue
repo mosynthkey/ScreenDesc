@@ -23,7 +23,7 @@ import { resolveCalloutBorderWidth } from './utils/commonSettings'
 import { persistentStorage } from './utils/persistentStorage'
 import { useI18n } from './i18n'
 
-const { t } = useI18n()
+const { t, tr } = useI18n()
 
 const store = useAnnotationStore()
 const {
@@ -470,7 +470,7 @@ async function onDownloadAllProjectsBundle(): Promise<void> {
     await downloadAllProjectsBundle()
   } catch (err) {
     showProjectLoadError(
-      err instanceof Error ? err.message : t('error.projectBundleDownloadFailed'),
+      err instanceof Error ? err.message : tr('error.projectBundleDownloadFailed'),
     )
   } finally {
     projectStorageBusy.value = false
