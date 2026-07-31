@@ -37,10 +37,16 @@ export async function buildDesktopApp(outputPath: string) {
       // No deno.lock: repoRoot's lockfile carries an npm "workspace" section
       // (deno.json + package.json coexist at the repo root), and copying it
       // here without the matching package.json leaves a dangling workspace
-      // reference. That trips a known deno desktop bug where the compiled
-      // app's window opens and immediately closes with no error output.
-      // See https://github.com/denoland/deno/issues/35544
+      // reference (a known trouble spot, see deno#35544). Doesn't hurt to
+      // avoid it even though it wasn't the cause of the crash below.
       "--no-lock",
+      // Windows only: the default `webview` backend (WebView2/laufey) has
+      // open upstream bugs on Windows as of Deno 2.9.4 — the auto-opened
+      // window's title is truncated to its first character (deno#35711) and
+      // the backend can crash with exit code 0xc0000409 shortly after
+      // opening (deno#35645). `cef` is a separate backend implementation
+      // that doesn't share this code path. Remove once upstream is fixed.
+      ...(Deno.build.os === "windows" ? ["--backend", "cef"] : []),
       "--include",
       "./dist",
       "--include",
