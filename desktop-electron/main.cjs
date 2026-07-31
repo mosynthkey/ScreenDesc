@@ -3,7 +3,7 @@
 const http = require('node:http')
 const fs = require('node:fs/promises')
 const path = require('node:path')
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, Menu } = require('electron')
 const { handleStorageRequest } = require('./storageApi.cjs')
 
 const distRoot = path.join(__dirname, '..', 'dist')
@@ -75,7 +75,26 @@ async function createWindow() {
   await win.loadURL(`http://127.0.0.1:${address.port}/`)
 }
 
+/**
+ * Drop Electron's default File/Edit/View/Window menu bar. On macOS the Edit
+ * menu's Cut/Copy/Paste/Undo items are kept (unlike Windows/Linux, macOS
+ * routes those keyboard shortcuts through the app menu, not through Chromium
+ * defaults) but trimmed to just an app-quit item plus Edit — no File/View/Window.
+ */
+function setupMenu() {
+  if (process.platform !== 'darwin') {
+    Menu.setApplicationMenu(null)
+    return
+  }
+  const template = [
+    { role: 'appMenu' },
+    { role: 'editMenu' },
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
 app.whenReady().then(() => {
+  setupMenu()
   void createWindow()
 
   app.on('activate', () => {
