@@ -556,6 +556,24 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const hasImage = computed(() => Boolean(state.imageUrl))
   const sortedAnnotations = computed(() => sortByOrder(state.annotations))
   const canUndoCrop = computed(() => cropHistory.value !== null)
+  const selectedAnnotations = computed(() =>
+    state.selectedAnnotationIds
+      .map((annotationId) => state.annotations.find((item) => item.id === annotationId))
+      .filter((item): item is Annotation => Boolean(item)),
+  )
+  const documentWidth = computed(
+    () => state.document.marginLeft + state.document.imageWidth + state.document.marginRight,
+  )
+  const documentHeight = computed(
+    () => state.document.marginTop + state.document.imageHeight + state.document.marginBottom,
+  )
+  const labelPositions = computed(() => {
+    const positions: Record<string, Point> = {}
+    for (const layout of state.calloutLayouts) {
+      positions[layout.annotationId] = { ...layout.labelPosition }
+    }
+    return positions
+  })
 
   function setToolMode(mode: ToolMode): void {
     state.toolMode = mode
@@ -756,6 +774,23 @@ export const useAnnotationStore = defineStore('annotation', () => {
     for (const section of state.sections) {
       if (idSet.has(section.id)) section.outlineHaloEnabled = enabled
     }
+  }
+
+  /** Sections behind the current selection: directly selected, or via a selected annotation. */
+  function targetSectionIdsForOutlineToggle(): string[] {
+    const sectionIds = new Set<string>(state.selectedSectionIds)
+    for (const annotation of selectedAnnotations.value) {
+      if (annotation.sectionId) sectionIds.add(annotation.sectionId)
+    }
+    return [...sectionIds]
+  }
+
+  function toggleSectionOutline(enabled: boolean): void {
+    setSectionOutlineEnabled(targetSectionIdsForOutlineToggle(), enabled)
+  }
+
+  function toggleSectionOutlineHalo(enabled: boolean): void {
+    setSectionOutlineHaloEnabled(targetSectionIdsForOutlineToggle(), enabled)
   }
 
   function removeSections(sectionIds: string[]): void {
@@ -1106,6 +1141,40 @@ export const useAnnotationStore = defineStore('annotation', () => {
     }
   }
 
+  function updateCalloutPosition(annotationId: string, point: Point): void {
+    updateAnnotation(annotationId, { calloutPosition: point })
+  }
+
+  function updateAnchorOffset(annotationId: string, offset: Point): void {
+    updateAnnotation(annotationId, { anchorOffset: offset })
+  }
+
+  function patchSelectedAnnotations(
+    patch: Partial<{
+      calloutSide: CalloutSide
+      anchorOffset: Point
+      anchorOffsetX: number
+      anchorOffsetY: number
+      anchorOutsideGap: number
+      calloutPosition: Point | null
+      calloutPositionX: number
+      calloutPositionY: number
+    }>,
+  ): void {
+    const ids = state.selectedAnnotationIds
+    if (ids.length === 0) return
+    updateAnnotations([...ids], patch)
+  }
+
+  /** Commit edited description text, routed to the base description or the active variation. */
+  function commitDescription(annotationId: string, description: string): void {
+    if (state.activeVariation) {
+      updateAnnotationVariationText(annotationId, state.activeVariation, description)
+    } else {
+      updateAnnotation(annotationId, { description })
+    }
+  }
+
   /** Move several callouts by the same document-space delta (multi-drag). */
   function nudgeCalloutPositions(
     moves: Array<{ annotationId: string; position: Point }>,
@@ -1289,6 +1358,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
     hasImage,
     activeNamedProject: readonly(activeNamedProject),
     sortedAnnotations,
+    selectedAnnotations,
+    documentWidth,
+    documentHeight,
+    labelPositions,
     canUndoCrop,
     undoEdit,
     canUndoEdit,
@@ -1343,11 +1416,17 @@ export const useAnnotationStore = defineStore('annotation', () => {
     removeSections,
     setSectionOutlineEnabled,
     setSectionOutlineHaloEnabled,
+    toggleSectionOutline,
+    toggleSectionOutlineHalo,
     createAnnotationForSection,
     addAnnotationAtPoint,
     updateAnnotation,
     updateAnnotations,
     updateAnnotationVariationText,
+    updateCalloutPosition,
+    updateAnchorOffset,
+    patchSelectedAnnotations,
+    commitDescription,
     addVariation,
     setActiveVariation,
     nudgeCalloutPositions,
