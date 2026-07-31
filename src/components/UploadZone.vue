@@ -32,8 +32,6 @@ function closeContextMenu(): void {
 }
 
 function onProjectContextMenu(projectId: string, event: MouseEvent): void {
-  // Deno Desktop shows a native menu from the host (page events are unreliable).
-  if (isDesktopApp) return
   event.preventDefault()
   event.stopPropagation()
   contextMenu.value = { projectId, x: event.clientX, y: event.clientY }
@@ -46,7 +44,6 @@ function onRevealFromMenu(): void {
 }
 
 function onWindowPointerDown(event: PointerEvent): void {
-  // CEF may fire pointerdown after contextmenu; ignore non-primary buttons.
   if (event.button !== 0) return
   const target = event.target
   if (!(target instanceof Element)) {

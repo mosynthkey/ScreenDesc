@@ -229,17 +229,17 @@ export async function revealNamedProject(id: string): Promise<void> {
 }
 
 /**
- * Write an exported file straight to Documents/ScreenDesc/exports and reveal
- * it in the OS file manager. Deno Desktop's webview has no delegate to
- * complete a browser-style `<a download>` navigation, so downloads silently
- * never finish.
+ * Prompt a native save dialog and write the exported file to the chosen
+ * path. The webview has no delegate to complete a browser-style
+ * `<a download>` navigation, so downloads silently never finish otherwise.
+ * Returns null if the user canceled the dialog.
  */
-export async function saveExportedFile(blob: Blob, filename: string): Promise<string> {
+export async function saveExportedFile(blob: Blob, filename: string): Promise<string | null> {
   const bytes = new Uint8Array(await blob.arrayBuffer())
-  const result = await requestJson<{ path: string }>('/export', {
+  const result = await requestJson<{ path: string | null; canceled: boolean }>('/export', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ filename, base64: bytesToBase64(bytes) }),
   })
-  return result.path
+  return result.canceled ? null : result.path
 }

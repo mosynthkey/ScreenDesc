@@ -29,10 +29,10 @@ function downloadBlobInBrowser(blob: Blob, filename: string): void {
 }
 
 /**
- * Deno Desktop's webview has no delegate to complete a browser-style
- * `<a download>` navigation, so on desktop this writes the file straight to
- * disk (via `saveExportedFile`, defaulting to Documents/ScreenDesc/exports)
- * and reveals it in the OS file manager instead.
+ * The desktop webview has no delegate to complete a browser-style
+ * `<a download>` navigation, so on desktop this prompts a native save dialog
+ * (via `saveExportedFile`) and writes the file to the chosen path instead.
+ * A canceled dialog is a silent no-op, not an error.
  */
 export async function downloadBlob(blob: Blob, filename: string): Promise<void> {
   if (isDesktopApp) {

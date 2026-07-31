@@ -35,6 +35,10 @@ jobs:
           cache: npm
 
       - name: Install
+        env:
+          # This workflow never launches Electron; skip the binary download it would
+          # otherwise trigger as a postinstall step.
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
         run: npm ci
 
       - name: Download ScreenParser model from Release

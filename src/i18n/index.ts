@@ -69,7 +69,7 @@ export function t(key: MessageKey, vars?: Record<string, string | number>): stri
   return interpolate(catalog[key] ?? en[key] ?? key, vars)
 }
 
-/** Like `t`, but swaps in desktop-specific copy when built for Deno Desktop. */
+/** Like `t`, but swaps in desktop-specific copy when built for the desktop app. */
 export function tr(key: MessageKey, vars?: Record<string, string | number>): string {
   return t(runtimeKey(key), vars)
 }

@@ -26,11 +26,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: "2.9.4"
-
       - name: Install
         run: npm ci
 
@@ -40,72 +35,35 @@ jobs:
       - name: Download PaddleOCR models
         run: npm run fetch-ocr-model
 
-      - name: Build desktop app
-        run: npm run desktop:package
-
-      - name: Import signing certificate
+      # electron-builder imports the certificate, codesigns with hardened
+      # runtime + entitlements, notarizes, and staples in one step (see
+      # package.json "build".mac). CSC_LINK accepts the same base64 p12
+      # content used by the old manual `security import` flow.
+      - name: Build, sign & notarize desktop app
         env:
-          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
-        run: |
-          set -euo pipefail
-          CERT_PATH="$RUNNER_TEMP/certificate.p12"
-          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
-
-          echo "$MACOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$CERT_PATH"
-
-          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$CERT_PATH" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
-
-          rm -f "$CERT_PATH"
-
-      - name: Sign app bundle
-        run: |
-          set -euo pipefail
-          codesign --force --deep --options runtime --timestamp \
-            --entitlements installer/macos/entitlements.plist \
-            --sign "Developer ID Application: Masaki Ono" \
-            dist-desktop/ScreenDesc.app
-          codesign --verify --deep --strict --verbose=2 dist-desktop/ScreenDesc.app
-
-      - name: Notarize
-        env:
+          CSC_LINK: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run desktop:package -- --mac
+
+      - name: Verify notarization
+        # electron-builder's unpacked-app dir name depends on the runner's arch
+        # (mac/ vs mac-arm64/), so locate the bundle instead of hardcoding it.
+        # `spctl --assess` alone would pass for a notarized-but-unstapled app via
+        # the online check, so also validate the staple explicitly (offline-safe).
         run: |
           set -euo pipefail
-          # Notarization takes a zip/dmg/pkg as the upload format, but the
-          # notarization ticket itself gets stapled onto the .app afterward —
-          # this zip is just a submission artifact, not the final deliverable.
-          SUBMIT_ZIP="$RUNNER_TEMP/ScreenDesc-notarize-submit.zip"
-          ditto -c -k --keepParent dist-desktop/ScreenDesc.app "$SUBMIT_ZIP"
-          xcrun notarytool submit "$SUBMIT_ZIP" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --wait
-          rm -f "$SUBMIT_ZIP"
-
-      - name: Staple notarization ticket
-        run: |
-          set -euo pipefail
-          xcrun stapler staple dist-desktop/ScreenDesc.app
-          spctl --assess --type execute --verbose=2 dist-desktop/ScreenDesc.app
-
-      - name: Zip app bundle
-        run: ditto -c -k --sequesterRsrc --keepParent dist-desktop/ScreenDesc.app ScreenDesc-macos.zip
+          APP_PATH=$(find dist-desktop -maxdepth 2 -name "ScreenDesc.app" -print -quit)
+          spctl --assess --type execute --verbose=2 "$APP_PATH"
+          xcrun stapler validate "$APP_PATH"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: ScreenDesc-macos-notarized
-          path: ScreenDesc-macos.zip
+          path: dist-desktop/ScreenDesc-macos.zip
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -114,7 +72,7 @@ jobs:
         run: |
           gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
-          gh release upload "${{ github.ref_name }}" ScreenDesc-macos.zip --repo "${{ github.repository }}" --clobber
+          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-macos.zip --repo "${{ github.repository }}" --clobber
 
   build-windows:
     runs-on: windows-latest
@@ -128,11 +86,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: "2.9.4"
-
       - name: Install
         run: npm ci
 
@@ -143,23 +96,17 @@ jobs:
         run: npm run fetch-ocr-model
 
       - name: Build desktop app (unsigned)
-        run: npm run desktop:package
+        run: npm run desktop:package -- --win
 
       - name: List build output
         shell: pwsh
         run: Get-ChildItem -Recurse dist-desktop
 
-      - name: Zip app folder
-        shell: pwsh
-        # deno desktop -o dist-desktop/ScreenDesc writes a folder (ScreenDesc.exe +
-        # ScreenDesc.dll + marker files), same shape as the macOS .app bundle.
-        run: Compress-Archive -Path dist-desktop/ScreenDesc -DestinationPath ScreenDesc-windows.zip
-
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: ScreenDesc-windows-unsigned
-          path: ScreenDesc-windows.zip
+          path: dist-desktop/ScreenDesc-windows.zip
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -169,4 +116,4 @@ jobs:
         run: |
           gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
-          gh release upload "${{ github.ref_name }}" ScreenDesc-windows.zip --repo "${{ github.repository }}" --clobber
+          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-windows.zip --repo "${{ github.repository }}" --clobber

@@ -4,6 +4,7 @@
   "version": "1.2.3",
   "license": "MIT",
   "type": "module",
+  "main": "desktop-electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "postinstall": "node scripts/copy-ort-assets.mjs",
@@ -13,9 +14,9 @@
     "build:desktop": "vue-tsc -b && vite build --mode desktop",
     "build:pages": "npm run fetch-model && npm run fetch-ocr-model && npm run build",
     "preview": "vite preview",
-    "desktop:run": "npm run build:desktop && deno run -A desktop/pack.ts",
-    "desktop:package": "npm run build:desktop && deno run -A desktop/pack.ts dist-desktop/ScreenDesc",
-    "desktop:release:macos": "deno run -A installer/macos/release.ts"
+    "desktop:run": "npm run build:desktop && electron .",
+    "desktop:package": "npm run build:desktop && electron-builder",
+    "desktop:release:macos": "npm run desktop:package -- --mac dmg"
   },
   "dependencies": {
     "@lucide/vue": "^1.27.0",
@@ -27,9 +28,51 @@
     "@types/node": "^24.13.2",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/tsconfig": "^0.9.1",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "sass": "^1.101.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vue-tsc": "^3.3.5"
+  },
+  "build": {
+    "appId": "com.melissa-audio.screen-desc",
+    "productName": "ScreenDesc",
+    "copyright": "Copyright © Masaki Ono",
+    "directories": {
+      "output": "dist-desktop",
+      "buildResources": "build"
+    },
+    "files": [
+      "desktop-electron/**/*",
+      "dist/**/*",
+      "!**/node_modules/**"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "dist/models/**/*",
+      "dist/ort/**/*"
+    ],
+    "mac": {
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "category": "public.app-category.graphics-design",
+      "hardenedRuntime": true,
+      "entitlements": "installer/macos/entitlements.plist",
+      "entitlementsInherit": "installer/macos/entitlements.plist",
+      "notarize": true,
+      "artifactName": "${productName}-macos.${ext}"
+    },
+    "dmg": {
+      "artifactName": "${productName}_v${version}.${ext}"
+    },
+    "win": {
+      "target": [
+        "zip"
+      ],
+      "artifactName": "${productName}-windows.${ext}"
+    }
   }
 }

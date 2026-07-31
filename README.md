@@ -27,18 +27,18 @@ npm run dev
 
 `npm install` also runs `postinstall` (`scripts/copy-ort-assets.mjs`), which copies the ONNX Runtime Web WASM binary from `node_modules` into `public/ort/` so OCR can load it same-origin instead of from a CDN.
 
-## Desktop app (experimental)
+## Desktop app (macOS / Windows)
 
-Wraps the built app in a native window via Deno's experimental [`deno desktop`](https://docs.deno.com/runtime/desktop/) (requires Deno ≥ 2.9; `deno upgrade` to update).
+Wraps the built app in a native window via [Electron](https://www.electronjs.org/) + [electron-builder](https://www.electron.build/).
 
 ```bash
-npm run desktop:run      # build:desktop, write dist-desktop/ScreenDesc.app, then open it
+npm run desktop:run      # build:desktop, then launch it with Electron
 npm run desktop:package  # build:desktop + output a distributable binary to dist-desktop/
 ```
 
-Desktop builds use `vite build --mode desktop` (`VITE_APP_RUNTIME=desktop`). Saved projects persist under `Documents/ScreenDesc` (via a local host API), avoiding the webview’s ephemeral IndexedDB origin. There's no dev-server/HMR integration; after code changes, rerun `npm run desktop:run`.
+Desktop builds use `vite build --mode desktop` (`VITE_APP_RUNTIME=desktop`). The Electron main process (`desktop-electron/main.cjs`) serves the built app plus a local storage API from a `node:http` server on an ephemeral `127.0.0.1` port. Saved projects persist under `Documents/ScreenDesc`, avoiding the webview's ephemeral IndexedDB origin. Exports go through a native save dialog. There's no dev-server/HMR integration; after code changes, rerun `npm run desktop:run`.
 
-For a signed & notarized `.dmg` (requires the `Developer ID Application: Masaki Ono` certificate and the `Melissa` notarytool keychain profile): `npm run desktop:release:macos`. Run a single step with `deno run -A installer/macos/release.ts <build|sign|dmg|notarize|staple|verify|clean>`.
+For a signed & notarized `.dmg` (requires the `Developer ID Application: Masaki Ono` certificate and `APPLE_ID`/`APPLE_APP_SPECIFIC_PASSWORD`/`APPLE_TEAM_ID` in the environment): `npm run desktop:release:macos`.
 
 ## Model licenses
 

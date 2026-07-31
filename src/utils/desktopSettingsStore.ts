@@ -1,6 +1,6 @@
 const API_PREFIX = '/__screendesc/storage'
 
-// Deno.serve binds to a random port every launch, so the page's origin (and
+// The local storage server binds to a random port every launch, so the page's origin (and
 // therefore localStorage) is different each time the desktop app starts.
 // Settings that must survive a restart (theme, panel sizes, presets…) are
 // mirrored to Documents/ScreenDesc/settings.json instead.
