@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import type {
-  AnchorStyleId,
-  LineStyleId,
-} from '../types/annotation'
+import { computed, toRefs, watch } from 'vue'
+import { useAnnotationStore } from '../stores/annotationStore'
 import { useI18n } from '../i18n'
 import { SlidersHorizontalIcon } from '@lucide/vue'
 import FontFamilyPicker from './FontFamilyPicker.vue'
@@ -48,74 +45,74 @@ import {
   CALLOUT_FILL_OPACITY_MIN,
 } from '../utils/commonSettings'
 
-const props = defineProps<{
-  defaultFontFamily: string
-  lineStyle: LineStyleId
-  lineWidth: number
-  lineDashLength: number
-  lineDashGap: number
-  lineColor: string
-  dotRadius: number
-  imageGutter: number
-  highlightMargin: number
-  highlightFillEnabled: boolean
-  highlightFillOpacity: number
-  highlightCornerRadius: number
-  anchorStyle: AnchorStyleId
-  lineHaloWidth: number
-  lineHaloColor: string
-  calloutFontSize: number
-  calloutFontWeight: number
-  calloutFontItalic: boolean
-  calloutBorderEnabled: boolean
-  calloutFillEnabled: boolean
-  calloutFillColor: string
-  calloutFillOpacity: number
-  calloutCornerRadius: number
-  pageBackgroundColor: string
-}>()
-
 const emit = defineEmits<{
-  'update:defaultFontFamily': [fontFamily: string]
-  'update:lineStyle': [style: LineStyleId]
-  'update:lineWidth': [width: number]
-  'update:lineDashLength': [length: number]
-  'update:lineDashGap': [gap: number]
-  'update:lineColor': [color: string]
-  'update:dotRadius': [radius: number]
-  'update:imageGutter': [gutter: number]
-  'update:highlightMargin': [margin: number]
-  'update:highlightFillEnabled': [enabled: boolean]
-  'update:highlightFillOpacity': [opacity: number]
-  'update:highlightCornerRadius': [radius: number]
-  'update:anchorStyle': [style: AnchorStyleId]
-  'update:lineHaloWidth': [width: number]
-  'update:lineHaloColor': [color: string]
-  'update:calloutFontSize': [size: number]
-  'update:calloutFontWeight': [weight: number]
-  'update:calloutFontItalic': [italic: boolean]
-  'update:calloutBorderEnabled': [enabled: boolean]
-  'update:calloutFillEnabled': [enabled: boolean]
-  'update:calloutFillColor': [color: string]
-  'update:calloutFillOpacity': [opacity: number]
-  'update:calloutCornerRadius': [radius: number]
-  'update:pageBackgroundColor': [color: string]
   openPresets: []
 }>()
+
+const store = useAnnotationStore()
+const {
+  defaultFontFamily,
+  lineStyle,
+  lineWidth,
+  lineDashLength,
+  lineDashGap,
+  lineColor,
+  dotRadius,
+  imageGutter,
+  highlightMargin,
+  highlightFillEnabled,
+  highlightFillOpacity,
+  highlightCornerRadius,
+  anchorStyle,
+  lineHaloWidth,
+  lineHaloColor,
+  calloutFontSize,
+  calloutFontWeight,
+  calloutFontItalic,
+  calloutBorderEnabled,
+  calloutFillEnabled,
+  calloutFillColor,
+  calloutFillOpacity,
+  calloutCornerRadius,
+  pageBackgroundColor,
+} = toRefs(store.state)
+const {
+  setDefaultFontFamily,
+  setLineStyle,
+  setLineWidth,
+  setLineDashLength,
+  setLineDashGap,
+  setLineColor,
+  setDotRadius,
+  setImageGutter,
+  setHighlightMargin,
+  setHighlightFillEnabled,
+  setHighlightFillOpacity,
+  setHighlightCornerRadius,
+  setAnchorStyle,
+  setLineHaloWidth,
+  setLineHaloColor,
+  setCalloutFontSize,
+  setCalloutFontWeight,
+  setCalloutFontItalic,
+  setCalloutBorderEnabled,
+  setCalloutFillEnabled,
+  setCalloutFillColor,
+  setCalloutFillOpacity,
+  setCalloutCornerRadius,
+  setPageBackgroundColor,
+} = store
 
 const { t } = useI18n()
 
 const lineStyleOptions = computed(() => getLineStyleOptions())
 const anchorStyleOptions = computed(() => getAnchorStyleOptions())
 
-const calloutFontBold = computed(() => isCalloutFontBold(props.calloutFontWeight))
+const calloutFontBold = computed(() => isCalloutFontBold(calloutFontWeight.value))
 
 function onCalloutFontBoldChange(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
-  emit(
-    'update:calloutFontWeight',
-    calloutFontWeightForBold(props.defaultFontFamily, checked),
-  )
+  setCalloutFontWeight(calloutFontWeightForBold(defaultFontFamily.value, checked))
 }
 
 function parseBoundedNumber(
@@ -159,20 +156,20 @@ function onProjectPxChange(
 
 function onLineWidthChange(event: Event): void {
   onProjectPxChange(event, LINE_WIDTH_MIN, LINE_WIDTH_MAX, 0.5, (value) => {
-    emit('update:lineWidth', value)
-  }, props.lineWidth)
+    setLineWidth(value)
+  }, lineWidth.value)
 }
 
 function onLineDashLengthChange(event: Event): void {
   onProjectPxChange(event, LINE_DASH_LENGTH_MIN, LINE_DASH_LENGTH_MAX, 0.5, (value) => {
-    emit('update:lineDashLength', value)
-  }, props.lineDashLength)
+    setLineDashLength(value)
+  }, lineDashLength.value)
 }
 
 function onLineDashGapChange(event: Event): void {
   onProjectPxChange(event, LINE_DASH_GAP_MIN, LINE_DASH_GAP_MAX, 0.5, (value) => {
-    emit('update:lineDashGap', value)
-  }, props.lineDashGap)
+    setLineDashGap(value)
+  }, lineDashGap.value)
 }
 
 function onLineHaloWidthChange(event: Event): void {
@@ -182,16 +179,16 @@ function onLineHaloWidthChange(event: Event): void {
     LINE_HALO_WIDTH_MAX,
     0.5,
     (value) => {
-      emit('update:lineHaloWidth', value)
+      setLineHaloWidth(value)
     },
-    props.lineHaloWidth,
+    lineHaloWidth.value,
   )
 }
 
 function onDotRadiusChange(event: Event): void {
   onProjectPxChange(event, DOT_RADIUS_MIN, DOT_RADIUS_MAX, DOT_RADIUS_STEP, (value) => {
-    emit('update:dotRadius', value)
-  }, props.dotRadius)
+    setDotRadius(value)
+  }, dotRadius.value)
 }
 
 function onHighlightCornerRadiusChange(event: Event): void {
@@ -201,9 +198,9 @@ function onHighlightCornerRadiusChange(event: Event): void {
     HIGHLIGHT_CORNER_RADIUS_MAX,
     HIGHLIGHT_CORNER_RADIUS_STEP,
     (value) => {
-      emit('update:highlightCornerRadius', value)
+      setHighlightCornerRadius(value)
     },
-    props.highlightCornerRadius,
+    highlightCornerRadius.value,
   )
 }
 
@@ -214,9 +211,9 @@ function onCalloutCornerRadiusChange(event: Event): void {
     CALLOUT_CORNER_RADIUS_MAX,
     CALLOUT_CORNER_RADIUS_STEP,
     (value) => {
-      emit('update:calloutCornerRadius', value)
+      setCalloutCornerRadius(value)
     },
-    props.calloutCornerRadius,
+    calloutCornerRadius.value,
   )
 }
 
@@ -227,9 +224,9 @@ function onImageGutterChange(event: Event): void {
     IMAGE_GUTTER_MAX,
     IMAGE_GUTTER_STEP,
     (value) => {
-      emit('update:imageGutter', value)
+      setImageGutter(value)
     },
-    props.imageGutter,
+    imageGutter.value,
   )
 }
 
@@ -240,14 +237,14 @@ function onHighlightMarginChange(event: Event): void {
     HIGHLIGHT_MARGIN_MAX,
     HIGHLIGHT_MARGIN_STEP,
     (value) => {
-      emit('update:highlightMargin', value)
+      setHighlightMargin(value)
     },
-    props.highlightMargin,
+    highlightMargin.value,
   )
 }
 
 function displayHighlightFillOpacityPercent(): string {
-  return String(Math.round(props.highlightFillOpacity * 100))
+  return String(Math.round(highlightFillOpacity.value * 100))
 }
 
 function onHighlightFillOpacityChange(event: Event): void {
@@ -258,7 +255,7 @@ function onHighlightFillOpacityChange(event: Event): void {
     return
   }
   input.value = String(percent)
-  emit('update:highlightFillOpacity', percent / 100)
+  setHighlightFillOpacity(percent / 100)
 }
 
 function onCalloutFontSizeChange(event: Event): void {
@@ -268,14 +265,14 @@ function onCalloutFontSizeChange(event: Event): void {
     CALLOUT_FONT_SIZE_MAX,
     1,
     (value) => {
-      emit('update:calloutFontSize', value)
+      setCalloutFontSize(value)
     },
-    props.calloutFontSize,
+    calloutFontSize.value,
   )
 }
 
 function displayFillOpacityPercent(): string {
-  return String(Math.round(props.calloutFillOpacity * 100))
+  return String(Math.round(calloutFillOpacity.value * 100))
 }
 
 function onCalloutFillOpacityChange(event: Event): void {
@@ -286,11 +283,11 @@ function onCalloutFillOpacityChange(event: Event): void {
     return
   }
   input.value = String(percent)
-  emit('update:calloutFillOpacity', percent / 100)
+  setCalloutFillOpacity(percent / 100)
 }
 
 watch(
-  () => props.defaultFontFamily,
+  () => defaultFontFamily.value,
   (family) => {
     loadGoogleFont(family)
   },
@@ -317,7 +314,7 @@ watch(
           <input
             type="color"
             :value="pageBackgroundColor"
-            @input="emit('update:pageBackgroundColor', ($event.target as HTMLInputElement).value)"
+            @input="setPageBackgroundColor(($event.target as HTMLInputElement).value)"
           />
         </label>
       </div>
@@ -335,7 +332,7 @@ watch(
             :class="{ active: lineStyle === option.value }"
             :title="option.value === 'invert' ? t('lineStyle.invertHint') : undefined"
             :aria-pressed="lineStyle === option.value"
-            @click="emit('update:lineStyle', option.value)"
+            @click="setLineStyle(option.value)"
           >
             <svg
               class="line-style-icon"
@@ -403,7 +400,7 @@ watch(
           :max="LINE_WIDTH_MAX"
           :step="0.5"
           :value="lineWidth"
-          @input="emit('update:lineWidth', Number(($event.target as HTMLInputElement).value))"
+          @input="setLineWidth(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div v-if="lineStyle === 'dashed'" class="field">
@@ -427,7 +424,7 @@ watch(
           :max="LINE_DASH_LENGTH_MAX"
           :step="0.5"
           :value="lineDashLength"
-          @input="emit('update:lineDashLength', Number(($event.target as HTMLInputElement).value))"
+          @input="setLineDashLength(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div v-if="lineStyle === 'dashed'" class="field">
@@ -451,7 +448,7 @@ watch(
           :max="LINE_DASH_GAP_MAX"
           :step="0.5"
           :value="lineDashGap"
-          @input="emit('update:lineDashGap', Number(($event.target as HTMLInputElement).value))"
+          @input="setLineDashGap(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div v-if="lineStyle !== 'invert'" class="field">
@@ -460,7 +457,7 @@ watch(
           <input
             type="color"
             :value="lineColor"
-            @input="emit('update:lineColor', ($event.target as HTMLInputElement).value)"
+            @input="setLineColor(($event.target as HTMLInputElement).value)"
           />
         </label>
       </div>
@@ -485,7 +482,7 @@ watch(
           :max="LINE_HALO_WIDTH_MAX"
           :step="0.5"
           :value="lineHaloWidth"
-          @input="emit('update:lineHaloWidth', Number(($event.target as HTMLInputElement).value))"
+          @input="setLineHaloWidth(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div v-if="lineStyle !== 'invert'" class="field" style="margin-bottom: 0">
@@ -494,7 +491,7 @@ watch(
           <input
             type="color"
             :value="lineHaloColor"
-            @input="emit('update:lineHaloColor', ($event.target as HTMLInputElement).value)"
+            @input="setLineHaloColor(($event.target as HTMLInputElement).value)"
           />
         </label>
       </div>
@@ -513,7 +510,7 @@ watch(
             :aria-label="option.label"
             :aria-pressed="anchorStyle === option.value"
             :title="option.label"
-            @click="emit('update:anchorStyle', option.value)"
+            @click="setAnchorStyle(option.value)"
           >
             <svg
               v-if="option.value === 'dot'"
@@ -594,7 +591,7 @@ watch(
           :max="DOT_RADIUS_MAX"
           :step="DOT_RADIUS_STEP"
           :value="dotRadius"
-          @input="emit('update:dotRadius', Number(($event.target as HTMLInputElement).value))"
+          @input="setDotRadius(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div class="field" style="margin-bottom: 0">
@@ -618,7 +615,7 @@ watch(
           :max="IMAGE_GUTTER_MAX"
           :step="IMAGE_GUTTER_STEP"
           :value="imageGutter"
-          @input="emit('update:imageGutter', Number(($event.target as HTMLInputElement).value))"
+          @input="setImageGutter(Number(($event.target as HTMLInputElement).value))"
         />
         <p class="field-hint">{{ t('style.imageGutterHint') }}</p>
       </div>
@@ -646,7 +643,7 @@ watch(
           :max="HIGHLIGHT_MARGIN_MAX"
           :step="HIGHLIGHT_MARGIN_STEP"
           :value="highlightMargin"
-          @input="emit('update:highlightMargin', Number(($event.target as HTMLInputElement).value))"
+          @input="setHighlightMargin(Number(($event.target as HTMLInputElement).value))"
         />
         <p class="field-hint">{{ t('style.highlightMarginHint') }}</p>
       </div>
@@ -655,12 +652,7 @@ watch(
           <input
             type="checkbox"
             :checked="highlightFillEnabled"
-            @change="
-              emit(
-                'update:highlightFillEnabled',
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
+            @change="setHighlightFillEnabled(($event.target as HTMLInputElement).checked)"
           />
           <span>{{ t('style.highlightFill') }}</span>
         </label>
@@ -686,12 +678,7 @@ watch(
           :max="CALLOUT_FILL_OPACITY_MAX"
           :step="0.05"
           :value="highlightFillOpacity"
-          @input="
-            emit(
-              'update:highlightFillOpacity',
-              Number(($event.target as HTMLInputElement).value),
-            )
-          "
+          @input="setHighlightFillOpacity(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div class="field" style="margin-bottom: 0">
@@ -715,7 +702,7 @@ watch(
           :max="HIGHLIGHT_CORNER_RADIUS_MAX"
           :step="HIGHLIGHT_CORNER_RADIUS_STEP"
           :value="highlightCornerRadius"
-          @input="emit('update:highlightCornerRadius', Number(($event.target as HTMLInputElement).value))"
+          @input="setHighlightCornerRadius(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
     </div>
@@ -725,7 +712,7 @@ watch(
         <label>{{ t('style.defaultFont') }}</label>
         <FontFamilyPicker
           :model-value="defaultFontFamily"
-          @update:model-value="emit('update:defaultFontFamily', $event)"
+          @update:model-value="setDefaultFontFamily($event)"
         />
       </div>
       <div class="font-style-row">
@@ -741,12 +728,7 @@ watch(
           <input
             type="checkbox"
             :checked="calloutFontItalic"
-            @change="
-              emit(
-                'update:calloutFontItalic',
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
+            @change="setCalloutFontItalic(($event.target as HTMLInputElement).checked)"
           />
           <span>{{ t('style.fontItalic') }}</span>
         </label>
@@ -772,7 +754,7 @@ watch(
           :max="CALLOUT_FONT_SIZE_MAX"
           :step="1"
           :value="calloutFontSize"
-          @input="emit('update:calloutFontSize', Number(($event.target as HTMLInputElement).value))"
+          @input="setCalloutFontSize(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div class="field">
@@ -780,12 +762,7 @@ watch(
           <input
             type="checkbox"
             :checked="calloutFillEnabled"
-            @change="
-              emit(
-                'update:calloutFillEnabled',
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
+            @change="setCalloutFillEnabled(($event.target as HTMLInputElement).checked)"
           />
           <span>{{ t('style.calloutFill') }}</span>
         </label>
@@ -797,7 +774,7 @@ watch(
             <input
               type="color"
               :value="calloutFillColor"
-              @input="emit('update:calloutFillColor', ($event.target as HTMLInputElement).value)"
+              @input="setCalloutFillColor(($event.target as HTMLInputElement).value)"
             />
           </label>
         </div>
@@ -823,10 +800,7 @@ watch(
             :step="0.05"
             :value="calloutFillOpacity"
             @input="
-              emit(
-                'update:calloutFillOpacity',
-                Number(($event.target as HTMLInputElement).value),
-              )
+              setCalloutFillOpacity(Number(($event.target as HTMLInputElement).value))
             "
           />
         </div>
@@ -852,7 +826,7 @@ watch(
           :max="CALLOUT_CORNER_RADIUS_MAX"
           :step="CALLOUT_CORNER_RADIUS_STEP"
           :value="calloutCornerRadius"
-          @input="emit('update:calloutCornerRadius', Number(($event.target as HTMLInputElement).value))"
+          @input="setCalloutCornerRadius(Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div class="field" style="margin-bottom: 0">
@@ -860,12 +834,7 @@ watch(
           <input
             type="checkbox"
             :checked="calloutBorderEnabled"
-            @change="
-              emit(
-                'update:calloutBorderEnabled',
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
+            @change="setCalloutBorderEnabled(($event.target as HTMLInputElement).checked)"
           />
           <span>{{ t('style.calloutBorder') }}</span>
         </label>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRefs } from 'vue'
+import { storeToRefs } from 'pinia'
 import type {
   Annotation,
   CalloutSide,
@@ -7,6 +8,7 @@ import type {
   Section,
 } from '../types/annotation'
 import { useI18n } from '../i18n'
+import { useAnnotationStore } from '../stores/annotationStore'
 import { resolveAnnotationDescription } from '../utils/calloutLayout'
 import { PenLineIcon } from '@lucide/vue'
 import {
@@ -20,58 +22,22 @@ import {
   normalizeAnchorOutsideGap,
 } from '../utils/markerSize'
 
-const props = withDefaults(
-  defineProps<{
-    selectedAnnotations?: Annotation[]
-    sections?: Section[]
-    /** Sections selected directly (e.g. clicking the UI element itself), independent of any annotation. */
-    selectedSectionIds?: string[]
-    /** Currently displayed/edited variation; `null` means the base description. */
-    activeVariation?: string | null
-    imageWidth?: number
-    imageHeight?: number
-    documentWidth?: number
-    documentHeight?: number
-    labelPositions?: Record<string, Point>
-  }>(),
-  {
-    selectedAnnotations: () => [],
-    sections: () => [],
-    selectedSectionIds: () => [],
-    activeVariation: null,
-    imageWidth: 0,
-    imageHeight: 0,
-    documentWidth: 0,
-    documentHeight: 0,
-    labelPositions: () => ({}),
-  },
-)
-
-const emit = defineEmits<{
-  patch: [
-    patch: Partial<{
-      calloutSide: CalloutSide
-      anchorOffset: { x: number; y: number }
-      anchorOffsetX: number
-      anchorOffsetY: number
-      anchorOutsideGap: number
-      calloutPosition: Point | null
-      calloutPositionX: number
-      calloutPositionY: number
-    }>,
-  ]
-  /** Commit edited description text — routed by the caller to the base description or the active variation. */
-  commitDescription: [annotationId: string, description: string]
-  /** Toggle the margin-expanded outline on the section(s) behind the current selection. */
-  toggleSectionOutline: [enabled: boolean]
-  /** Toggle the shared line-halo edging on that outline. */
-  toggleSectionOutlineHalo: [enabled: boolean]
-  close: []
-}>()
+const store = useAnnotationStore()
+const { selectedAnnotations, documentWidth, documentHeight, labelPositions } =
+  storeToRefs(store)
+const { sections, selectedSectionIds, activeVariation, imageWidth, imageHeight } =
+  toRefs(store.state)
+const {
+  patchSelectedAnnotations,
+  commitDescription,
+  toggleSectionOutline,
+  toggleSectionOutlineHalo,
+  clearSelection,
+} = store
 
 const { t } = useI18n()
 
-const activeAnnotations = computed(() => props.selectedAnnotations)
+const activeAnnotations = computed(() => selectedAnnotations.value)
 const selectionCount = computed(() => activeAnnotations.value.length)
 const isMultiSelection = computed(() => selectionCount.value > 1)
 const primaryAnnotation = computed(() => activeAnnotations.value[0] ?? null)
@@ -143,7 +109,7 @@ const sharedAnchorOutsideGap = computed<number | null>(() => {
 
 function sectionForAnnotation(annotation: Annotation): Section | null {
   if (!annotation.sectionId) return null
-  return props.sections.find((section) => section.id === annotation.sectionId) ?? null
+  return sections.value.find((section) => section.id === annotation.sectionId) ?? null
 }
 
 /**
@@ -158,8 +124,8 @@ const targetSections = computed<Section[]>(() => {
     const section = sectionForAnnotation(annotation)
     if (section) byId.set(section.id, section)
   }
-  for (const section of props.sections) {
-    if (props.selectedSectionIds.includes(section.id)) byId.set(section.id, section)
+  for (const section of sections.value) {
+    if (selectedSectionIds.value.includes(section.id)) byId.set(section.id, section)
   }
   return [...byId.values()]
 })
@@ -178,7 +144,7 @@ const sharedSectionOutlineEnabled = computed<boolean | null>(() => {
 
 function onSectionOutlineEnabledChange(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
-  emit('toggleSectionOutline', checked)
+  toggleSectionOutline(checked)
 }
 
 const sharedSectionOutlineHaloEnabled = computed<boolean | null>(() => {
@@ -193,7 +159,7 @@ const sharedSectionOutlineHaloEnabled = computed<boolean | null>(() => {
 
 function onSectionOutlineHaloEnabledChange(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
-  emit('toggleSectionOutlineHalo', checked)
+  toggleSectionOutlineHalo(checked)
 }
 
 function parseAnchorOutsideGapPx(raw: string): number | null {
@@ -208,7 +174,7 @@ function emitAnchorOutsideGap(raw: string): void {
   if (selectionCount.value === 0) return
   const parsed = parseAnchorOutsideGapPx(raw)
   if (parsed === null) return
-  emit('patch', { anchorOutsideGap: parsed })
+  patchSelectedAnnotations({ anchorOutsideGap: parsed })
 }
 
 function onAnchorOutsideGapChange(event: Event): void {
@@ -238,7 +204,7 @@ function sliderAnchorOutsideGap(): number {
 
 function resolvedLabelPosition(annotation: Annotation): Point {
   if (annotation.calloutPosition) return annotation.calloutPosition
-  return props.labelPositions[annotation.id] ?? { x: 0, y: 0 }
+  return labelPositions.value[annotation.id] ?? { x: 0, y: 0 }
 }
 
 const sharedLabelPositionX = computed<number | null>(() => {
@@ -273,17 +239,17 @@ const selectionTitle = computed(() =>
     : t('style.selectedAnnotationTitle'),
 )
 
-const anchorOffsetXExtent = computed(() => anchorOffsetExtent(props.imageWidth))
-const anchorOffsetYExtent = computed(() => anchorOffsetExtent(props.imageHeight))
-const labelPositionXMax = computed(() => Math.max(0, props.documentWidth - 8))
-const labelPositionYMax = computed(() => Math.max(0, props.documentHeight - 8))
+const anchorOffsetXExtent = computed(() => anchorOffsetExtent(imageWidth.value))
+const anchorOffsetYExtent = computed(() => anchorOffsetExtent(imageHeight.value))
+const labelPositionXMax = computed(() => Math.max(0, documentWidth.value - 8))
+const labelPositionYMax = computed(() => Math.max(0, documentHeight.value - 8))
 
 function parseAnchorOffsetPx(axis: 'x' | 'y', raw: string): number | null {
   const trimmed = raw.trim().replace(/px$/i, '')
   if (trimmed === '' || trimmed === '-' || trimmed === '+') return null
   const value = Number(trimmed)
   if (!Number.isFinite(value)) return null
-  const imageSize = axis === 'x' ? props.imageWidth : props.imageHeight
+  const imageSize = axis === 'x' ? imageWidth.value : imageHeight.value
   return clampAnchorOffsetAxis(value, imageSize)
 }
 
@@ -292,12 +258,12 @@ function emitAnchorOffset(axis: 'x' | 'y', raw: string): void {
   const parsed = parseAnchorOffsetPx(axis, raw)
   if (parsed === null) return
   if (isMultiSelection.value) {
-    emit('patch', axis === 'x' ? { anchorOffsetX: parsed } : { anchorOffsetY: parsed })
+    patchSelectedAnnotations(axis === 'x' ? { anchorOffsetX: parsed } : { anchorOffsetY: parsed })
     return
   }
   const annotation = primaryAnnotation.value
   if (!annotation) return
-  emit('patch', {
+  patchSelectedAnnotations({
     anchorOffset: {
       x: axis === 'x' ? parsed : annotation.anchorOffset.x,
       y: axis === 'y' ? parsed : annotation.anchorOffset.y,
@@ -351,13 +317,13 @@ function emitLabelPosition(axis: 'x' | 'y', raw: string): void {
   if (parsed === null) return
   const value = clampLabelCoord(axis, parsed)
   if (isMultiSelection.value) {
-    emit('patch', axis === 'x' ? { calloutPositionX: value } : { calloutPositionY: value })
+    patchSelectedAnnotations(axis === 'x' ? { calloutPositionX: value } : { calloutPositionY: value })
     return
   }
   const annotation = primaryAnnotation.value
   if (!annotation) return
   const current = resolvedLabelPosition(annotation)
-  emit('patch', {
+  patchSelectedAnnotations({
     calloutPosition: {
       x: axis === 'x' ? value : current.x,
       y: axis === 'y' ? value : current.y,
@@ -395,7 +361,7 @@ function sliderLabelPosition(axis: 'x' | 'y'): number {
 }
 
 function resetLabelPosition(): void {
-  emit('patch', { calloutPosition: null })
+  patchSelectedAnnotations({ calloutPosition: null })
 }
 </script>
 
@@ -414,7 +380,7 @@ function resetLabelPosition(): void {
           class="clear-selection-btn"
           type="button"
           :title="t('style.clearSelection')"
-          @click="emit('close')"
+          @click="clearSelection"
         >
           {{ t('style.clearSelection') }}
         </button>
@@ -430,8 +396,7 @@ function resetLabelPosition(): void {
             :placeholder="t('style.description')"
             :aria-label="t('style.description')"
             @input="
-              emit(
-                'commitDescription',
+              commitDescription(
                 primaryAnnotation.id,
                 ($event.target as HTMLTextAreaElement).value,
               )
@@ -486,7 +451,7 @@ function resetLabelPosition(): void {
               :aria-label="option.title"
               :aria-pressed="sharedCalloutSide === option.value"
               :title="option.title"
-              @click="emit('patch', { calloutSide: option.value })"
+              @click="patchSelectedAnnotations({ calloutSide: option.value })"
             >
               {{ option.label }}
             </button>
@@ -646,7 +611,7 @@ function resetLabelPosition(): void {
           class="clear-selection-btn"
           type="button"
           :title="t('style.clearSelection')"
-          @click="emit('close')"
+          @click="clearSelection"
         >
           {{ t('style.clearSelection') }}
         </button>

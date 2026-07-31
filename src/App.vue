@@ -16,7 +16,7 @@ import ImportStatusBanner from './components/ImportStatusBanner.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { storeToRefs } from 'pinia'
 import { useAnnotationStore } from './stores/annotationStore'
-import type { Annotation, ExportOptions, Point, Rect } from './types/annotation'
+import type { ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
 import { revealNamedProject } from './utils/projectStorage'
 import type { CommonSettingsPresetMeta } from './utils/commonSettings'
@@ -60,43 +60,17 @@ const {
   addSection,
   setToolMode,
   setCropDraft,
-  setDefaultFontFamily,
-  setLineStyle,
-  setLineWidth,
-  setLineDashLength,
-  setLineDashGap,
-  setLineColor,
-  setDotRadius,
-  setImageGutter,
-  setHighlightMargin,
-  setHighlightFillEnabled,
-  setHighlightFillOpacity,
-  setHighlightCornerRadius,
-  setAnchorStyle,
-  setLineHaloWidth,
-  setLineHaloColor,
-  setCalloutFontSize,
-  setCalloutFontWeight,
-  setCalloutFontItalic,
-  setCalloutBorderEnabled,
-  setCalloutFillEnabled,
-  setCalloutFillColor,
-  setPageBackgroundColor,
-  setCalloutFillOpacity,
-  setCalloutCornerRadius,
   toggleSectionVisibility,
   clearSelection,
   selectSection,
   selectAnnotation,
   selectAllAnnotations,
   updateSectionRect,
-  setSectionOutlineEnabled,
-  setSectionOutlineHaloEnabled,
   createAnnotationForSection,
   addAnnotationAtPoint,
-  updateAnnotation,
-  updateAnnotations,
-  updateAnnotationVariationText,
+  updateCalloutPosition,
+  updateAnchorOffset,
+  commitDescription,
   addVariation,
   setActiveVariation,
   nudgeCalloutPositions,
@@ -206,12 +180,6 @@ function onLeftPaneSplitterPointerDown(event: PointerEvent): void {
   handle.addEventListener('pointerup', onPointerUp)
   handle.addEventListener('pointercancel', onPointerUp)
 }
-
-const selectedAnnotations = computed(() =>
-  state.selectedAnnotationIds
-    .map((annotationId) => state.annotations.find((item) => item.id === annotationId))
-    .filter((item): item is Annotation => Boolean(item)),
-)
 
 const effectiveCalloutBorderWidth = computed(() =>
   resolveCalloutBorderWidth(state.calloutBorderEnabled, state.lineWidth),
@@ -660,76 +628,6 @@ async function onCopyClipboard(): Promise<void> {
   }
 }
 
-function onUpdateCalloutPosition(annotationId: string, point: Point): void {
-  updateAnnotation(annotationId, { calloutPosition: point })
-}
-
-function onNudgeCalloutPositions(
-  moves: Array<{ annotationId: string; position: Point }>,
-): void {
-  nudgeCalloutPositions(moves)
-}
-
-function onUpdateAnchorOffset(annotationId: string, offset: Point): void {
-  updateAnnotation(annotationId, { anchorOffset: offset })
-}
-
-const documentWidth = computed(
-  () => state.document.marginLeft + state.document.imageWidth + state.document.marginRight,
-)
-const documentHeight = computed(
-  () => state.document.marginTop + state.document.imageHeight + state.document.marginBottom,
-)
-const labelPositions = computed(() => {
-  const positions: Record<string, Point> = {}
-  for (const layout of state.calloutLayouts) {
-    positions[layout.annotationId] = { ...layout.labelPosition }
-  }
-  return positions
-})
-
-function onPatchSelectedAnnotations(
-  patch: Partial<{
-    calloutSide: 'auto' | 'left' | 'right' | 'top' | 'bottom'
-    anchorOffset: { x: number; y: number }
-    anchorOffsetX: number
-    anchorOffsetY: number
-    anchorOutsideGap: number
-    calloutPosition: Point | null
-    calloutPositionX: number
-    calloutPositionY: number
-  }>,
-): void {
-  const ids = state.selectedAnnotationIds
-  if (ids.length === 0) return
-  updateAnnotations([...ids], patch)
-}
-
-/** Sections behind the current selection: directly selected, or via a selected annotation. */
-function targetSectionIdsForOutlineToggle(): string[] {
-  const sectionIds = new Set<string>(state.selectedSectionIds)
-  for (const annotation of selectedAnnotations.value) {
-    if (annotation.sectionId) sectionIds.add(annotation.sectionId)
-  }
-  return [...sectionIds]
-}
-
-function onToggleSectionOutline(enabled: boolean): void {
-  setSectionOutlineEnabled(targetSectionIdsForOutlineToggle(), enabled)
-}
-
-function onToggleSectionOutlineHalo(enabled: boolean): void {
-  setSectionOutlineHaloEnabled(targetSectionIdsForOutlineToggle(), enabled)
-}
-
-function onCommitDescription(annotationId: string, description: string): void {
-  if (state.activeVariation) {
-    updateAnnotationVariationText(annotationId, state.activeVariation, description)
-  } else {
-    updateAnnotation(annotationId, { description })
-  }
-}
-
 function onKeydown(event: KeyboardEvent): void {
   const target = event.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return
@@ -911,22 +809,7 @@ function onKeydown(event: KeyboardEvent): void {
               class="panel-section panel-section-annotation"
               :style="{ flex: `0 0 ${annotationPanePercent}%` }"
             >
-              <AnnotationStyleSettings
-                :selected-annotations="selectedAnnotations"
-                :sections="[...state.sections]"
-                :selected-section-ids="[...state.selectedSectionIds]"
-                :active-variation="state.activeVariation"
-                :image-width="state.imageWidth"
-                :image-height="state.imageHeight"
-                :document-width="documentWidth"
-                :document-height="documentHeight"
-                :label-positions="labelPositions"
-                @patch="onPatchSelectedAnnotations"
-                @commit-description="onCommitDescription"
-                @toggle-section-outline="onToggleSectionOutline"
-                @toggle-section-outline-halo="onToggleSectionOutlineHalo"
-                @close="clearSelection"
-              />
+              <AnnotationStyleSettings />
             </div>
           </aside>
 
@@ -975,68 +858,18 @@ function onKeydown(event: KeyboardEvent): void {
             @annotate-section="onAnnotateSection"
             @add-annotation-at="onAddAnnotationAt"
             @update-section-rect="updateSectionRect"
-            @update-callout-position="onUpdateCalloutPosition"
-            @nudge-callout-positions="onNudgeCalloutPositions"
-            @update-anchor-offset="onUpdateAnchorOffset"
+            @update-callout-position="updateCalloutPosition"
+            @nudge-callout-positions="nudgeCalloutPositions"
+            @update-anchor-offset="updateAnchorOffset"
             @add-section="onAddSection"
-            @commit-description="onCommitDescription"
+            @commit-description="commitDescription"
             @crop-image="onCropImage"
             @update-crop-draft="onUpdateCropDraft"
           />
 
           <aside class="panel">
             <div class="panel-section">
-              <ProjectStyleSettings
-                :default-font-family="state.defaultFontFamily"
-                :line-style="state.lineStyle"
-                :line-width="state.lineWidth"
-                :line-dash-length="state.lineDashLength"
-                :line-dash-gap="state.lineDashGap"
-                :line-color="state.lineColor"
-                :dot-radius="state.dotRadius"
-                :image-gutter="state.imageGutter"
-                :highlight-margin="state.highlightMargin"
-                :highlight-fill-enabled="state.highlightFillEnabled"
-                :highlight-fill-opacity="state.highlightFillOpacity"
-                :highlight-corner-radius="state.highlightCornerRadius"
-                :anchor-style="state.anchorStyle"
-                :line-halo-width="state.lineHaloWidth"
-                :line-halo-color="state.lineHaloColor"
-                :callout-font-size="state.calloutFontSize"
-                :callout-font-weight="state.calloutFontWeight"
-                :callout-font-italic="state.calloutFontItalic"
-                :callout-border-enabled="state.calloutBorderEnabled"
-                :callout-fill-enabled="state.calloutFillEnabled"
-                :callout-fill-color="state.calloutFillColor"
-                :callout-fill-opacity="state.calloutFillOpacity"
-                :callout-corner-radius="state.calloutCornerRadius"
-                :page-background-color="state.pageBackgroundColor"
-                @update:default-font-family="setDefaultFontFamily"
-                @update:line-style="setLineStyle"
-                @update:line-width="setLineWidth"
-                @update:line-dash-length="setLineDashLength"
-                @update:line-dash-gap="setLineDashGap"
-                @update:line-color="setLineColor"
-                @update:dot-radius="setDotRadius"
-                @update:image-gutter="setImageGutter"
-                @update:highlight-margin="setHighlightMargin"
-                @update:highlight-fill-enabled="setHighlightFillEnabled"
-                @update:highlight-fill-opacity="setHighlightFillOpacity"
-                @update:highlight-corner-radius="setHighlightCornerRadius"
-                @update:anchor-style="setAnchorStyle"
-                @update:line-halo-width="setLineHaloWidth"
-                @update:line-halo-color="setLineHaloColor"
-                @update:callout-font-size="setCalloutFontSize"
-                @update:callout-font-weight="setCalloutFontWeight"
-                @update:callout-font-italic="setCalloutFontItalic"
-                @update:callout-border-enabled="setCalloutBorderEnabled"
-                @update:callout-fill-enabled="setCalloutFillEnabled"
-                @update:callout-fill-color="setCalloutFillColor"
-                @update:callout-fill-opacity="setCalloutFillOpacity"
-                @update:callout-corner-radius="setCalloutCornerRadius"
-                @update:page-background-color="setPageBackgroundColor"
-                @open-presets="onOpenCommonSettings"
-              />
+              <ProjectStyleSettings @open-presets="onOpenCommonSettings" />
             </div>
           </aside>
         </div>
