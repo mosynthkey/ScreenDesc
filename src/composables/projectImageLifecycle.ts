@@ -7,20 +7,7 @@ import { detectSectionsML } from '../utils/mlSectionDetection'
 import { fitImageToExactSize, loadImageFromBlob } from '../utils/fitImageToSize'
 import { defaultSectionVisibility } from '../utils/sectionVisibility'
 import { t } from '../i18n'
-import {
-  activeNamedProject,
-  clearEditUndoStack,
-  cropHistory,
-  imageElement,
-  isDetecting,
-  isRecognizingText,
-  loadImageElement,
-  ocrLines,
-  pushEditUndo,
-  refreshDocumentAndLayouts,
-  screenParser,
-  state,
-} from './annotationStoreCore'
+import type { StoreCore } from '../stores/annotationStore'
 import {
   clearAutosaveStorage,
   clearNamedSaveSchedule,
@@ -28,7 +15,8 @@ import {
   scheduleSave,
 } from './projectPersistence'
 
-export async function runSectionDetection(): Promise<void> {
+export async function runSectionDetection(core: StoreCore): Promise<void> {
+  const { state, imageElement, isDetecting, screenParser } = core
   if (!imageElement.value) return
   isDetecting.value = true
   try {
@@ -44,24 +32,27 @@ export async function runSectionDetection(): Promise<void> {
   }
 }
 
-export async function rediscoverSectionsAfterReplace(): Promise<void> {
+export async function rediscoverSectionsAfterReplace(core: StoreCore): Promise<void> {
+  const { state, imageElement } = core
   if (!imageElement.value) return
-  pushEditUndo()
+  core.pushEditUndo()
   state.annotations = []
   state.selectedAnnotationIds = []
-  await runSectionDetection()
-  refreshDocumentAndLayouts()
+  await runSectionDetection(core)
+  core.refreshDocumentAndLayouts()
 }
 
 async function applyImageSource(
+  core: StoreCore,
   source: Blob,
   options: { revokePrevious?: boolean } = {},
 ): Promise<void> {
+  const { state, imageElement, ocrLines, isRecognizingText } = core
   const revokePrevious = options.revokePrevious ?? true
   if (revokePrevious && state.imageUrl) URL.revokeObjectURL(state.imageUrl)
 
   const url = URL.createObjectURL(source)
-  const image = await loadImageElement(url)
+  const image = await core.loadImageElement(url)
   imageElement.value = image
   state.imageUrl = url
   state.imageWidth = image.naturalWidth
@@ -77,7 +68,7 @@ async function applyImageSource(
   // Sequential, not parallel: each analysis step loads its own model, runs,
   // and unloads before the next one starts, so at most one model is ever
   // resident in memory at a time.
-  await runSectionDetection()
+  await runSectionDetection(core)
 
   isRecognizingText.value = true
   try {
@@ -86,23 +77,25 @@ async function applyImageSource(
   } finally {
     isRecognizingText.value = false
   }
-  refreshDocumentAndLayouts()
+  core.refreshDocumentAndLayouts()
 }
 
-export async function loadImageFile(file: File): Promise<void> {
+export async function loadImageFile(core: StoreCore, file: File): Promise<void> {
+  const { state, cropHistory, activeNamedProject } = core
   if (cropHistory.value) {
     URL.revokeObjectURL(cropHistory.value.imageUrl)
     cropHistory.value = null
   }
   activeNamedProject.value = null
   clearNamedSaveSchedule()
-  clearEditUndoStack()
+  core.clearEditUndoStack()
   state.variations = []
   state.activeVariation = null
-  await applyImageSource(file)
+  await applyImageSource(core, file)
 }
 
-export async function replaceImageFile(file: File): Promise<void> {
+export async function replaceImageFile(core: StoreCore, file: File): Promise<void> {
+  const { state, cropHistory, imageElement } = core
   if (!state.imageUrl || state.imageWidth <= 0 || state.imageHeight <= 0) {
     throw new Error(t('error.imageReplaceNoProject'))
   }
@@ -121,20 +114,21 @@ export async function replaceImageFile(file: File): Promise<void> {
 
   if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
   const url = URL.createObjectURL(fitted.blob)
-  const image = await loadImageElement(url)
+  const image = await core.loadImageElement(url)
   imageElement.value = image
   state.imageUrl = url
   state.imageWidth = image.naturalWidth
   state.imageHeight = image.naturalHeight
-  refreshDocumentAndLayouts()
-  scheduleSave()
+  core.refreshDocumentAndLayouts()
+  scheduleSave(core)
 }
 
-export async function clearCurrentProject(): Promise<void> {
+export async function clearCurrentProject(core: StoreCore): Promise<void> {
+  const { state, cropHistory, imageElement, ocrLines, activeNamedProject } = core
   clearSessionSaveSchedule()
   clearNamedSaveSchedule()
   activeNamedProject.value = null
-  clearEditUndoStack()
+  core.clearEditUndoStack()
   if (cropHistory.value) {
     URL.revokeObjectURL(cropHistory.value.imageUrl)
     cropHistory.value = null
@@ -215,9 +209,11 @@ function retainedForCrop(
 }
 
 export async function cropImage(
+  core: StoreCore,
   rect: Rect,
   options: { asNewProject?: boolean } = {},
 ): Promise<void> {
+  const { state, imageElement, cropHistory, ocrLines, activeNamedProject } = core
   if (!imageElement.value || !state.imageUrl) return
   const normalized = normalizeRect(rect)
   const x = Math.max(0, Math.round(normalized.x))
@@ -254,17 +250,18 @@ export async function cropImage(
 
   const retained = retainedForCrop(state.sections, state.annotations, cropRect)
 
-  clearEditUndoStack()
-  await applyImageSource(blob, { revokePrevious: false })
+  core.clearEditUndoStack()
+  await applyImageSource(core, blob, { revokePrevious: false })
 
   if (retained.sections.length > 0 || retained.annotations.length > 0) {
     state.sections = [...state.sections, ...retained.sections]
     state.annotations = retained.annotations
-    refreshDocumentAndLayouts()
+    core.refreshDocumentAndLayouts()
   }
 }
 
-export async function undoCrop(): Promise<void> {
+export async function undoCrop(core: StoreCore): Promise<void> {
+  const { state, imageElement, cropHistory, ocrLines } = core
   const snapshot = cropHistory.value
   if (!snapshot) return
   if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
@@ -279,7 +276,7 @@ export async function undoCrop(): Promise<void> {
   state.selectedAnnotationIds = []
   ocrLines.value = snapshot.ocrLines
   cropHistory.value = null
-  clearEditUndoStack()
+  core.clearEditUndoStack()
 
-  refreshDocumentAndLayouts()
+  core.refreshDocumentAndLayouts()
 }

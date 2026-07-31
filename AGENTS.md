@@ -18,13 +18,11 @@
 
 Keep new logic near its existing home; prefer extending these modules over growing a catch-all file.
 
-### Project store (`src/composables/`)
+### Project store (`src/stores/` + `src/composables/`)
 
-- `useAnnotationStore.ts` — public API: annotation edits, style setters, export/clipboard. App imports this.
-- `annotationStoreCore.ts` — shared reactive state, layout refresh, edit undo, snapshot restore.
-- `projectPersistence.ts` — autosave / named-project overwrite scheduling.
-- `projectImageLifecycle.ts` — load, replace, crop, section detection kickoff.
-- `projectFileIO.ts` — `.screendesc.json` / bundle download and import, files page load/save.
+- `src/stores/annotationStore.ts` — the Pinia store (`useAnnotationStore`, setup-store syntax): reactive state, layout refresh, edit undo, snapshot restore, and every mutation action (selection, sections, annotations, style setters, export/clipboard). App imports this.
+- `projectPersistence.ts`, `projectImageLifecycle.ts`, `projectFileIO.ts`, `projectThumbnail.ts` (`src/composables/`) — satellite composables for autosave scheduling, image load/replace/crop, `.screendesc.json`/bundle IO, and thumbnail rendering. Each exported function takes a `core: StoreCore` parameter (see the store file) instead of calling `useAnnotationStore()` itself — some of this logic runs during the store's own setup(), where the store instance doesn't exist yet.
+- Consuming the store: destructure state/getters via Pinia's `storeToRefs()`; destructure actions directly (they're plain functions, unaffected by the reactivity-loss `storeToRefs` guards against). `state` itself is a stable reactive object reference, so `const { state } = store` (not routed through `storeToRefs`) is correct and keeps `state.foo` working without `.value`.
 
 ### Style panels (`src/components/`)
 

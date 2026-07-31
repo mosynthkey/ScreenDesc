@@ -1,14 +1,15 @@
 import { exportScene } from '../utils/export'
 import { ensureGoogleFontsLoaded } from '../utils/googleFonts'
 import { resolveCalloutBorderWidth } from '../utils/commonSettings'
-import { imageElement, refreshDocumentAndLayouts, state } from './annotationStoreCore'
+import type { StoreCore } from '../stores/annotationStore'
 
 const THUMBNAIL_TARGET_WIDTH = 400
 
 /** Renders a small annotated PNG of the currently open project, for gallery thumbnails. */
-export async function renderThumbnailBlob(): Promise<Blob | null> {
+export async function renderThumbnailBlob(core: StoreCore): Promise<Blob | null> {
+  const { state, imageElement } = core
   if (!imageElement.value) return null
-  refreshDocumentAndLayouts()
+  core.refreshDocumentAndLayouts()
   const documentWidth =
     state.document.marginLeft + state.document.imageWidth + state.document.marginRight
   if (documentWidth <= 0) return null

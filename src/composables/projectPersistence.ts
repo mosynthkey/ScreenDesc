@@ -10,13 +10,7 @@ import {
 import { contentHashFromSnapshot } from '../utils/projectFile'
 import { defaultProjectName } from '../utils/projectName'
 import { renderThumbnailBlob } from './projectThumbnail'
-import {
-  activeNamedProject,
-  applyRestoredSnapshot,
-  ocrLines,
-  sanitizeAnnotation,
-  state,
-} from './annotationStoreCore'
+import type { StoreCore } from '../stores/annotationStore'
 
 let restored = false
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -26,7 +20,8 @@ const SESSION_SAVE_DEBOUNCE_MS = 600
 const NAMED_SAVE_DEBOUNCE_MS = 2500
 const NAMED_SAVE_INTERVAL_MS = 30_000
 
-export async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
+export async function buildCurrentSnapshot(core: StoreCore): Promise<ProjectSnapshot | null> {
+  const { state } = core
   if (!state.imageUrl) return null
   const imageBlob = await fetch(state.imageUrl).then((res) => res.blob())
   return {
@@ -34,8 +29,8 @@ export async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     imageWidth: state.imageWidth,
     imageHeight: state.imageHeight,
     sections: state.sections,
-    annotations: state.annotations.map(sanitizeAnnotation),
-    ocrLines: ocrLines.value,
+    annotations: state.annotations.map(core.sanitizeAnnotation),
+    ocrLines: core.ocrLines.value,
     defaultFontFamily: state.defaultFontFamily,
     lineStyle: state.lineStyle,
     lineWidth: state.lineWidth,
@@ -61,14 +56,14 @@ export async function buildCurrentSnapshot(): Promise<ProjectSnapshot | null> {
     pageBackgroundColor: state.pageBackgroundColor,
     sectionVisibility: { ...state.sectionVisibility },
     variations: [...state.variations],
-    activeNamedProjectId: activeNamedProject.value?.id ?? null,
-    activeNamedProjectName: activeNamedProject.value?.name ?? null,
+    activeNamedProjectId: core.activeNamedProject.value?.id ?? null,
+    activeNamedProjectName: core.activeNamedProject.value?.name ?? null,
   }
 }
 
-export async function persistCurrentProject(): Promise<void> {
+export async function persistCurrentProject(core: StoreCore): Promise<void> {
   try {
-    const snapshot = await buildCurrentSnapshot()
+    const snapshot = await buildCurrentSnapshot(core)
     if (!snapshot) return
     await saveProject(snapshot)
   } catch (err) {
@@ -81,16 +76,17 @@ export async function persistCurrentProject(): Promise<void> {
  * loading + SVG rasterization), so callers only pass true at natural
  * settle points (leaving the project), not on the frequent edit-debounce path.
  */
-export async function persistActiveNamedProject(withThumbnail = false): Promise<void> {
+export async function persistActiveNamedProject(core: StoreCore, withThumbnail = false): Promise<void> {
+  const { activeNamedProject, state } = core
   if (!activeNamedProject.value || !state.imageUrl) return
   try {
-    const snapshot = await buildCurrentSnapshot()
+    const snapshot = await buildCurrentSnapshot(core)
     if (!snapshot) return
     // Re-read after awaits so a rename during snapshot build is not overwritten.
     const active = activeNamedProject.value
     if (!active) return
     const contentHash = await contentHashFromSnapshot(snapshot)
-    const thumbnail = withThumbnail ? await renderThumbnailBlob() : undefined
+    const thumbnail = withThumbnail ? await renderThumbnailBlob(core) : undefined
     const latest = activeNamedProject.value
     if (!latest || latest.id !== active.id) return
     await saveNamedProject(latest.name, snapshot, latest.id, contentHash, thumbnail ?? undefined)
@@ -103,15 +99,16 @@ export async function persistActiveNamedProject(withThumbnail = false): Promise<
 let ensuringNamedProject = false
 
 /** Give untitled work a date-based name so it appears with other saved files. */
-export async function ensureActiveNamedProject(): Promise<void> {
+export async function ensureActiveNamedProject(core: StoreCore): Promise<void> {
+  const { activeNamedProject, state } = core
   if (!state.imageUrl || activeNamedProject.value || ensuringNamedProject) return
   ensuringNamedProject = true
   try {
-    const snapshot = await buildCurrentSnapshot()
+    const snapshot = await buildCurrentSnapshot(core)
     if (!snapshot || activeNamedProject.value) return
     const name = defaultProjectName()
     const contentHash = await contentHashFromSnapshot(snapshot)
-    const thumbnail = await renderThumbnailBlob()
+    const thumbnail = await renderThumbnailBlob(core)
     const projectId = await saveNamedProject(
       name,
       snapshot,
@@ -129,7 +126,7 @@ export async function ensureActiveNamedProject(): Promise<void> {
     }
     activeNamedProject.value = { id: projectId, name }
     namedSaveDirty = false
-    await persistCurrentProject()
+    await persistCurrentProject(core)
   } catch (err) {
     console.warn('[ScreenDesc] failed to auto-name untitled project', err)
   } finally {
@@ -138,22 +135,22 @@ export async function ensureActiveNamedProject(): Promise<void> {
 }
 
 /** Flush pending debounced saves before leaving the current project. */
-export async function flushPersistCurrentProject(): Promise<void> {
+export async function flushPersistCurrentProject(core: StoreCore): Promise<void> {
   clearSessionSaveSchedule()
   clearNamedSaveSchedule()
-  if (!state.imageUrl) return
-  await ensureActiveNamedProject()
-  await persistActiveNamedProject(true)
-  await persistCurrentProject()
+  if (!core.state.imageUrl) return
+  await ensureActiveNamedProject(core)
+  await persistActiveNamedProject(core, true)
+  await persistCurrentProject(core)
 }
 
-export function scheduleSave(): void {
-  if (!restored || !state.imageUrl) return
+export function scheduleSave(core: StoreCore): void {
+  if (!restored || !core.state.imageUrl) return
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     void (async () => {
-      await ensureActiveNamedProject()
-      await persistCurrentProject()
+      await ensureActiveNamedProject(core)
+      await persistCurrentProject(core)
     })()
   }, SESSION_SAVE_DEBOUNCE_MS)
 
@@ -161,8 +158,8 @@ export function scheduleSave(): void {
   if (namedSaveTimer) clearTimeout(namedSaveTimer)
   namedSaveTimer = setTimeout(() => {
     void (async () => {
-      await ensureActiveNamedProject()
-      await persistActiveNamedProject()
+      await ensureActiveNamedProject(core)
+      await persistActiveNamedProject(core)
     })()
   }, NAMED_SAVE_DEBOUNCE_MS)
 }
@@ -202,13 +199,13 @@ export async function clearAutosaveStorage(): Promise<void> {
   }
 }
 
-async function restorePersistedProject(): Promise<void> {
+async function restorePersistedProject(core: StoreCore): Promise<void> {
   try {
     const snapshot = await loadProject()
     if (!snapshot) return
-    await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
+    await core.applyRestoredSnapshot(snapshot.imageBlob, snapshot)
     if (snapshot.activeNamedProjectId && snapshot.activeNamedProjectName) {
-      activeNamedProject.value = {
+      core.activeNamedProject.value = {
         id: snapshot.activeNamedProjectId,
         name: snapshot.activeNamedProjectName,
       }
@@ -217,53 +214,64 @@ async function restorePersistedProject(): Promise<void> {
     console.warn('[ScreenDesc] failed to restore persisted project', err)
   } finally {
     restored = true
-    if (state.imageUrl) scheduleSave()
+    if (core.state.imageUrl) scheduleSave(core)
   }
 }
 
-void restorePersistedProject()
+/**
+ * One-time setup called from the store's own setup(): restores the last
+ * autosaved project, then watches for edits to keep it (and the active
+ * named project) saved. Not itself a store action — the store calls this
+ * once after its state/actions exist, rather than every consumer having to
+ * remember to.
+ */
+export function initializePersistence(core: StoreCore): void {
+  const { state } = core
 
-watch(
-  () => [
-    state.imageUrl,
-    state.sections,
-    state.annotations,
-    state.defaultFontFamily,
-    state.lineStyle,
-    state.lineWidth,
-    state.lineColor,
-    state.dotColor,
-    state.dotRadius,
-    state.imageGutter,
-    state.highlightMargin,
-    state.highlightFillEnabled,
-    state.highlightFillOpacity,
-    state.highlightCornerRadius,
-    state.anchorStyle,
-    state.lineHaloWidth,
-    state.lineHaloColor,
-    state.calloutFontSize,
-    state.calloutFontWeight,
-    state.calloutFontItalic,
-    state.calloutBorderEnabled,
-    state.calloutFillEnabled,
-    state.calloutFillColor,
-    state.calloutFillOpacity,
-    state.calloutCornerRadius,
-    state.pageBackgroundColor,
-    state.sectionVisibility,
-    state.variations,
-  ],
-  () => scheduleSave(),
-  { deep: true },
-)
+  watch(
+    () => [
+      state.imageUrl,
+      state.sections,
+      state.annotations,
+      state.defaultFontFamily,
+      state.lineStyle,
+      state.lineWidth,
+      state.lineColor,
+      state.dotColor,
+      state.dotRadius,
+      state.imageGutter,
+      state.highlightMargin,
+      state.highlightFillEnabled,
+      state.highlightFillOpacity,
+      state.highlightCornerRadius,
+      state.anchorStyle,
+      state.lineHaloWidth,
+      state.lineHaloColor,
+      state.calloutFontSize,
+      state.calloutFontWeight,
+      state.calloutFontItalic,
+      state.calloutBorderEnabled,
+      state.calloutFillEnabled,
+      state.calloutFillColor,
+      state.calloutFillOpacity,
+      state.calloutCornerRadius,
+      state.pageBackgroundColor,
+      state.sectionVisibility,
+      state.variations,
+    ],
+    () => scheduleSave(core),
+    { deep: true },
+  )
 
-if (typeof window !== 'undefined') {
-  window.setInterval(() => {
-    if (!namedSaveDirty || !state.imageUrl) return
-    void (async () => {
-      await ensureActiveNamedProject()
-      await persistActiveNamedProject()
-    })()
-  }, NAMED_SAVE_INTERVAL_MS)
+  if (typeof window !== 'undefined') {
+    window.setInterval(() => {
+      if (!namedSaveDirty || !state.imageUrl) return
+      void (async () => {
+        await ensureActiveNamedProject(core)
+        await persistActiveNamedProject(core)
+      })()
+    }, NAMED_SAVE_INTERVAL_MS)
+  }
+
+  void restorePersistedProject(core)
 }

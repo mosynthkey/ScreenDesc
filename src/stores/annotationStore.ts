@@ -1,4 +1,6 @@
-import { computed, readonly } from 'vue'
+import { computed, reactive, readonly, ref, watch, type Ref } from 'vue'
+import { defineStore } from 'pinia'
+import { t } from '../i18n'
 import type {
   Annotation,
   AnchorStyleId,
@@ -6,6 +8,7 @@ import type {
   ExportOptions,
   LineStyleId,
   Point,
+  ProjectState,
   Rect,
   Section,
   SectionVisibilityCategory,
@@ -13,7 +16,18 @@ import type {
 } from '../types/annotation'
 import { createId } from '../utils/id'
 import { sortByOrder } from '../utils/circledNumbers'
+import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from '../utils/anchorStyle'
+import { containmentRatio, normalizeRect, rectCenter } from '../utils/geometry'
+import { type OcrLineHit } from '../utils/ocr'
+import { defaultSectionVisibility, normalizeSectionVisibility } from '../utils/sectionVisibility'
+import { useScreenParser } from '../composables/useScreenParser'
+import { createManualSection } from '../utils/mlSectionDetection'
+import { downloadBlob, exportScene } from '../utils/export'
+import { blobToPngBlob } from '../utils/export/imageDataUrl'
 import {
+  layoutCalloutsForImage,
+  createDefaultDocumentLayout,
+  normalizeCalloutSide,
   estimateAnnotationLabelSize,
   resolveAnnotationDescription,
   resolveAutoSides,
@@ -24,22 +38,29 @@ import {
   type NumberPrefixDirection,
   type NumberPrefixStyle,
 } from '../utils/numberPrefix'
-import { normalizeRect, rectCenter } from '../utils/geometry'
-import { createManualSection } from '../utils/mlSectionDetection'
-import { downloadBlob, exportScene } from '../utils/export'
-import { blobToPngBlob } from '../utils/export/imageDataUrl'
 import {
+  DEFAULT_CALLOUT_FONT_ITALIC,
+  DEFAULT_CALLOUT_FONT_WEIGHT,
+  DEFAULT_FONT_FAMILY,
   calloutFontWeightForBold,
   ensureGoogleFontsLoaded,
   isCalloutFontBold,
+  loadGoogleFont,
+  normalizeCalloutFontItalic,
   normalizeCalloutFontWeight,
 } from '../utils/googleFonts'
 import {
+  CALLOUT_FONT_SIZE,
   CALLOUT_FONT_SIZE_MAX,
   CALLOUT_FONT_SIZE_MIN,
   DEFAULT_ANCHOR_OUTSIDE_GAP,
+  DEFAULT_CALLOUT_CORNER_RADIUS,
+  DEFAULT_HIGHLIGHT_CORNER_RADIUS,
+  DEFAULT_HIGHLIGHT_MARGIN,
+  DEFAULT_IMAGE_GUTTER,
   DOT_RADIUS_MAX,
   DOT_RADIUS_MIN,
+  clampAnchorOffsetAxis,
   normalizeAnchorOutsideGap,
   normalizeCalloutCornerRadius,
   normalizeHighlightCornerRadius,
@@ -47,16 +68,28 @@ import {
   normalizeImageGutter,
 } from '../utils/markerSize'
 import {
+  DEFAULT_LINE_HALO_COLOR,
+  DEFAULT_LINE_HALO_WIDTH,
+  DEFAULT_LINE_WIDTH,
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
+  normalizeLineStyle,
 } from '../utils/lineStyle'
 import {
+  DEFAULT_CALLOUT_FILL_COLOR,
+  DEFAULT_CALLOUT_FILL_OPACITY,
+  DEFAULT_HIGHLIGHT_FILL_ENABLED,
+  DEFAULT_HIGHLIGHT_FILL_OPACITY,
+  DEFAULT_PAGE_BACKGROUND_COLOR,
   deleteCommonSettingsPreset,
   listCommonSettingsPresets,
   loadCommonSettingsPreset,
+  normalizeCalloutBorderEnabled,
   normalizeCalloutFillColor,
+  normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
   normalizeCommonSettings,
+  normalizeHighlightFillEnabled,
   normalizeHighlightFillOpacity,
   normalizePageBackgroundColor,
   resolveCalloutBorderWidth,
@@ -65,26 +98,6 @@ import {
   type CommonSettingsPresetMeta,
 } from '../utils/commonSettings'
 import {
-  activeNamedProject,
-  buildAutoDescription,
-  cropHistory,
-  editUndoStack,
-  imageElement,
-  isDetecting,
-  isRecognizingText,
-  isExporting,
-  ocrLines,
-  pushEditUndo,
-  reindexOrders,
-  refreshDocumentAndLayouts,
-  resetEditUndoCoalesce,
-  restoreEditSnapshot,
-  sanitizeAnchorOffset,
-  screenParser,
-  state,
-} from './annotationStoreCore'
-import { flushPersistCurrentProject } from './projectPersistence'
-import {
   clearCurrentProject,
   cropImage,
   loadImageFile,
@@ -92,7 +105,8 @@ import {
   replaceImageFile,
   runSectionDetection,
   undoCrop,
-} from './projectImageLifecycle'
+} from '../composables/projectImageLifecycle'
+import { flushPersistCurrentProject, initializePersistence } from '../composables/projectPersistence'
 import {
   downloadAllProjectsBundle,
   fetchSavedProjects,
@@ -102,9 +116,429 @@ import {
   saveProjectAs,
   saveProjectToFile,
   setProjectName,
-} from './projectFileIO'
+} from '../composables/projectFileIO'
 
-export function useAnnotationStore() {
+export interface ImageSnapshot {
+  imageUrl: string
+  imageElement: HTMLImageElement
+  imageWidth: number
+  imageHeight: number
+  sections: Section[]
+  annotations: Annotation[]
+  ocrLines: OcrLineHit[]
+}
+
+export interface EditSnapshot {
+  sections: Section[]
+  annotations: Annotation[]
+}
+
+export interface RestorableFields {
+  imageWidth: number
+  imageHeight: number
+  sections: Section[]
+  annotations: Annotation[]
+  ocrLines: OcrLineHit[]
+  defaultFontFamily: string
+  lineStyle: LineStyleId
+  lineWidth?: number
+  lineColor: string
+  dotColor: string
+  dotRadius: number
+  imageGutter?: number
+  highlightMargin?: number
+  highlightFillEnabled?: boolean
+  highlightFillOpacity?: number
+  highlightCornerRadius?: number
+  anchorStyle?: AnchorStyleId
+  lineHaloWidth?: number
+  lineHaloColor?: string
+  calloutFontSize: number
+  calloutFontWeight?: number
+  calloutFontItalic?: boolean
+  calloutBorderEnabled?: boolean
+  calloutFillEnabled?: boolean
+  calloutFillColor?: string
+  calloutFillOpacity?: number
+  calloutCornerRadius?: number
+  pageBackgroundColor?: string
+  /** @deprecated superseded by `sectionVisibility`, kept for old saves. */
+  showSections?: boolean
+  sectionVisibility?: unknown
+  variations?: string[]
+}
+
+/**
+ * The slice of store internals that satellite composables (project
+ * persistence, image lifecycle, file IO, thumbnails) need to read and
+ * mutate directly. Passed explicitly as a parameter rather than obtained via
+ * `useAnnotationStore()` from those files, since some of them run during the
+ * store's own setup() — calling the store hook re-entrantly there would
+ * recurse into an instance that doesn't exist yet.
+ */
+export interface StoreCore {
+  state: ProjectState
+  imageElement: Ref<HTMLImageElement | null>
+  ocrLines: Ref<OcrLineHit[]>
+  activeNamedProject: Ref<{ id: string; name: string } | null>
+  cropHistory: Ref<ImageSnapshot | null>
+  isDetecting: Ref<boolean>
+  isRecognizingText: Ref<boolean>
+  screenParser: ReturnType<typeof useScreenParser>
+  sanitizeAnnotation: (raw: Annotation) => Annotation
+  refreshDocumentAndLayouts: () => void
+  pushEditUndo: (coalesceKey?: string | null) => void
+  clearEditUndoStack: () => void
+  loadImageElement: (url: string) => Promise<HTMLImageElement>
+  applyRestoredSnapshot: (imageBlob: Blob, fields: RestorableFields) => Promise<void>
+}
+
+export const useAnnotationStore = defineStore('annotation', () => {
+  const state = reactive<ProjectState>({
+    imageUrl: null,
+    imageWidth: 0,
+    imageHeight: 0,
+    sections: [],
+    annotations: [],
+    selectedSectionIds: [],
+    selectedAnnotationIds: [],
+    toolMode: 'select',
+    cropDraft: null,
+    defaultFontFamily: DEFAULT_FONT_FAMILY,
+    lineStyle: 'solid',
+    lineWidth: DEFAULT_LINE_WIDTH,
+    lineColor: '#ffd60a',
+    dotColor: '#ffd60a',
+    dotRadius: 4.5,
+    imageGutter: DEFAULT_IMAGE_GUTTER,
+    highlightMargin: DEFAULT_HIGHLIGHT_MARGIN,
+    highlightFillEnabled: DEFAULT_HIGHLIGHT_FILL_ENABLED,
+    highlightFillOpacity: DEFAULT_HIGHLIGHT_FILL_OPACITY,
+    highlightCornerRadius: DEFAULT_HIGHLIGHT_CORNER_RADIUS,
+    anchorStyle: DEFAULT_ANCHOR_STYLE,
+    lineHaloWidth: DEFAULT_LINE_HALO_WIDTH,
+    lineHaloColor: DEFAULT_LINE_HALO_COLOR,
+    calloutFontSize: CALLOUT_FONT_SIZE,
+    calloutFontWeight: DEFAULT_CALLOUT_FONT_WEIGHT,
+    calloutFontItalic: DEFAULT_CALLOUT_FONT_ITALIC,
+    calloutBorderEnabled: false,
+    calloutFillEnabled: true,
+    calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
+    calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
+    calloutCornerRadius: DEFAULT_CALLOUT_CORNER_RADIUS,
+    pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
+    sectionVisibility: defaultSectionVisibility(),
+    calloutLayouts: [],
+    document: createDefaultDocumentLayout(0, 0, 0),
+    variations: [],
+    activeVariation: null,
+  })
+
+  loadGoogleFont(DEFAULT_FONT_FAMILY)
+
+  const isDetecting = ref(false)
+  const isRecognizingText = ref(false)
+  const isExporting = ref(false)
+  const imageElement = ref<HTMLImageElement | null>(null)
+  const ocrLines = ref<OcrLineHit[]>([])
+  /** Named saved-project that receives periodic overwrite while editing. */
+  const activeNamedProject = ref<{ id: string; name: string } | null>(null)
+  /** Single-level undo snapshot for crop. */
+  const cropHistory = ref<ImageSnapshot | null>(null)
+
+  const screenParser = useScreenParser()
+
+  function reindexOrders(): void {
+    const sorted = sortByOrder(state.annotations)
+    sorted.forEach((annotation, annotationIndex) => {
+      annotation.order = annotationIndex + 1
+    })
+  }
+
+  function sanitizeAnchorOffset(raw: unknown): Point {
+    if (!raw || typeof raw !== 'object') return { x: 0, y: 0 }
+    const point = raw as { x?: unknown; y?: unknown }
+    const toAxis = (value: unknown, imageSize: number) => {
+      if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+      return clampAnchorOffsetAxis(value, imageSize)
+    }
+    return {
+      x: toAxis(point.x, state.imageWidth),
+      y: toAxis(point.y, state.imageHeight),
+    }
+  }
+
+  function sanitizeVariationText(raw: unknown): Record<string, string> {
+    if (!raw || typeof raw !== 'object') return {}
+    const result: Record<string, string> = {}
+    for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof value === 'string') result[key] = value
+    }
+    return result
+  }
+
+  function sanitizeAnnotation(raw: Annotation): Annotation {
+    return {
+      id: raw.id,
+      sectionId: raw.sectionId,
+      order: raw.order,
+      description: raw.description,
+      variationText: sanitizeVariationText(
+        (raw as Annotation & { variationText?: unknown }).variationText,
+      ),
+      numberPrefix:
+        typeof (raw as Annotation & { numberPrefix?: unknown }).numberPrefix === 'string'
+          ? raw.numberPrefix
+          : '',
+      markerPosition: { ...raw.markerPosition },
+      calloutSide: normalizeCalloutSide(raw.calloutSide),
+      calloutPosition: raw.calloutPosition
+        ? { ...raw.calloutPosition }
+        : null,
+      anchorOffset: sanitizeAnchorOffset(
+        (raw as Annotation & { anchorOffset?: unknown }).anchorOffset,
+      ),
+      anchorOutsideGap: normalizeAnchorOutsideGap(
+        (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
+      ),
+    }
+  }
+
+  function refreshDocumentAndLayouts(): void {
+    if (state.annotations.length === 0) {
+      state.document = createDefaultDocumentLayout(state.imageWidth, state.imageHeight, 0)
+      state.calloutLayouts = []
+      return
+    }
+    const { document, layouts } = layoutCalloutsForImage(
+      state.annotations,
+      state.sections,
+      state.imageWidth,
+      state.imageHeight,
+      state.calloutFontSize,
+      state.defaultFontFamily,
+      state.calloutFontWeight,
+      state.calloutFontItalic,
+      state.anchorStyle,
+      state.dotRadius,
+      state.lineWidth,
+      state.imageGutter,
+      state.highlightMargin,
+      state.activeVariation,
+    )
+    state.document = document
+    state.calloutLayouts = layouts
+  }
+
+  const MAX_EDIT_UNDO = 40
+  const editUndoStack = ref<EditSnapshot[]>([])
+  let editUndoCoalesceKey: string | null = null
+  let editUndoCoalesceUntil = 0
+
+  function cloneEditSnapshot(): EditSnapshot {
+    return {
+      sections: JSON.parse(JSON.stringify(state.sections)) as Section[],
+      annotations: JSON.parse(JSON.stringify(state.annotations)) as Annotation[],
+    }
+  }
+
+  function clearEditUndoStack(): void {
+    editUndoStack.value = []
+    editUndoCoalesceKey = null
+    editUndoCoalesceUntil = 0
+  }
+
+  function resetEditUndoCoalesce(): void {
+    editUndoCoalesceKey = null
+    editUndoCoalesceUntil = 0
+  }
+
+  /** Snapshot current sections/annotations before a mutating edit. */
+  function pushEditUndo(coalesceKey: string | null = null): void {
+    const now = performance.now()
+    if (
+      coalesceKey !== null &&
+      coalesceKey === editUndoCoalesceKey &&
+      now < editUndoCoalesceUntil
+    ) {
+      editUndoCoalesceUntil = now + 700
+      return
+    }
+
+    editUndoStack.value.push(cloneEditSnapshot())
+    if (editUndoStack.value.length > MAX_EDIT_UNDO) {
+      editUndoStack.value.shift()
+    }
+    editUndoCoalesceKey = coalesceKey
+    editUndoCoalesceUntil = coalesceKey ? now + 700 : 0
+  }
+
+  function restoreEditSnapshot(snapshot: EditSnapshot): void {
+    state.sections = snapshot.sections
+    state.annotations = snapshot.annotations.map(sanitizeAnnotation)
+    state.selectedSectionIds = []
+    state.selectedAnnotationIds = []
+    refreshDocumentAndLayouts()
+  }
+
+  function loadImageElement(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image()
+      image.onload = () => resolve(image)
+      image.onerror = () => reject(new Error(t('error.imageReadFailed')))
+      image.src = url
+    })
+  }
+
+  function ocrTextForSection(section: Section): string {
+    return ocrLines.value
+      .filter((line) => containmentRatio(line.rect, section.rect) >= 0.5)
+      .map((line) => line.text)
+      .join(' ')
+      .trim()
+  }
+
+  function buildAutoDescription(section: Section): string {
+    const ocrText = ocrTextForSection(section)
+    if (section.label && ocrText) return `${section.label}: ${ocrText}`
+    if (section.label) return section.label
+    return ocrText
+  }
+
+  watch(
+    () =>
+      state.annotations.map((annotation) => ({
+        id: annotation.id,
+        order: annotation.order,
+        description: annotation.description,
+        variationText: { ...annotation.variationText },
+        numberPrefix: annotation.numberPrefix,
+        sectionId: annotation.sectionId,
+        markerPosition: { ...annotation.markerPosition },
+        calloutSide: annotation.calloutSide,
+        calloutPosition: annotation.calloutPosition
+          ? { ...annotation.calloutPosition }
+          : null,
+        anchorOffset: { ...annotation.anchorOffset },
+        anchorOutsideGap: annotation.anchorOutsideGap,
+      })),
+    () => {
+      refreshDocumentAndLayouts()
+    },
+    { deep: true },
+  )
+
+  watch(
+    () =>
+      state.sections.map((section) => ({
+        id: section.id,
+        rect: { ...section.rect },
+        outlineEnabled: section.outlineEnabled === true,
+      })),
+    () => {
+      refreshDocumentAndLayouts()
+    },
+    { deep: true },
+  )
+
+  watch(
+    () =>
+      [
+        state.imageWidth,
+        state.imageHeight,
+        state.calloutFontSize,
+        state.calloutFontWeight,
+        state.calloutFontItalic,
+        state.defaultFontFamily,
+        state.anchorStyle,
+        state.dotRadius,
+        state.lineWidth,
+        state.imageGutter,
+        state.highlightMargin,
+        state.activeVariation,
+      ] as const,
+    () => {
+      refreshDocumentAndLayouts()
+    },
+  )
+
+  /** Restore state from a saved image + fields without re-running detection/OCR. */
+  async function applyRestoredSnapshot(imageBlob: Blob, fields: RestorableFields): Promise<void> {
+    if (state.imageUrl) URL.revokeObjectURL(state.imageUrl)
+
+    const url = URL.createObjectURL(imageBlob)
+    const image = await loadImageElement(url)
+    imageElement.value = image
+    state.imageUrl = url
+    state.imageWidth = fields.imageWidth
+    state.imageHeight = fields.imageHeight
+    state.sections = fields.sections
+    state.annotations = fields.annotations.map(sanitizeAnnotation)
+    state.defaultFontFamily = fields.defaultFontFamily
+    {
+      const normalizedLine = normalizeLineStyle(fields.lineStyle, fields.lineWidth)
+      state.lineStyle = normalizedLine.lineStyle
+      state.lineWidth = normalizedLine.lineWidth
+    }
+    state.lineColor = fields.lineColor
+    state.dotColor = fields.lineColor
+    state.dotRadius = fields.dotRadius
+    state.imageGutter = normalizeImageGutter(fields.imageGutter)
+    state.highlightMargin = normalizeHighlightMargin(fields.highlightMargin)
+    state.highlightFillEnabled = normalizeHighlightFillEnabled(fields.highlightFillEnabled)
+    state.highlightFillOpacity = normalizeHighlightFillOpacity(fields.highlightFillOpacity)
+    state.highlightCornerRadius = normalizeHighlightCornerRadius(fields.highlightCornerRadius)
+    state.anchorStyle = normalizeAnchorStyle(fields.anchorStyle)
+    state.lineHaloWidth = normalizeLineHaloWidth(fields.lineHaloWidth)
+    state.lineHaloColor = normalizeLineHaloColor(fields.lineHaloColor)
+    state.calloutFontSize = fields.calloutFontSize
+    state.calloutFontWeight = normalizeCalloutFontWeight(
+      fields.calloutFontWeight,
+      fields.defaultFontFamily,
+    )
+    state.calloutFontItalic = normalizeCalloutFontItalic(fields.calloutFontItalic)
+    state.calloutBorderEnabled = normalizeCalloutBorderEnabled(fields.calloutBorderEnabled)
+    state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
+    state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
+    state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
+    state.calloutCornerRadius = normalizeCalloutCornerRadius(fields.calloutCornerRadius)
+    state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
+    state.sectionVisibility = normalizeSectionVisibility(
+      fields.sectionVisibility,
+      fields.showSections ?? true,
+    )
+    state.variations = Array.isArray(fields.variations)
+      ? fields.variations.filter((name): name is string => typeof name === 'string')
+      : []
+    state.activeVariation = null
+    state.selectedSectionIds = []
+    state.selectedAnnotationIds = []
+    ocrLines.value = fields.ocrLines
+    clearEditUndoStack()
+    await ensureGoogleFontsLoaded([state.defaultFontFamily], {
+      italic: state.calloutFontItalic,
+    })
+    refreshDocumentAndLayouts()
+  }
+
+  /** Bundled hand-off for the satellite composables — see `StoreCore`. */
+  const core: StoreCore = {
+    state,
+    imageElement,
+    ocrLines,
+    activeNamedProject,
+    cropHistory,
+    isDetecting,
+    isRecognizingText,
+    screenParser,
+    sanitizeAnnotation,
+    refreshDocumentAndLayouts,
+    pushEditUndo,
+    clearEditUndoStack,
+    loadImageElement,
+    applyRestoredSnapshot,
+  }
+
   const hasImage = computed(() => Boolean(state.imageUrl))
   const sortedAnnotations = computed(() => sortByOrder(state.annotations))
   const canUndoCrop = computed(() => cropHistory.value !== null)
@@ -797,7 +1231,6 @@ export function useAnnotationStore() {
     }
   }
 
-
   function deleteSelection(): void {
     if (state.selectedAnnotationIds.length > 0) {
       removeAnnotations([...state.selectedAnnotationIds])
@@ -808,9 +1241,13 @@ export function useAnnotationStore() {
     }
   }
 
+  // One-time boot: restore the last autosaved project and start watching for
+  // edits to persist. Runs once per store instance (this setup() function
+  // itself only runs once, Pinia caches the created store after that).
+  initializePersistence(core)
+
   return {
     state: readonly(state),
-    mutableState: state,
     isDetecting: readonly(isDetecting),
     isRecognizingText: readonly(isRecognizingText),
     isExporting: readonly(isExporting),
@@ -828,14 +1265,14 @@ export function useAnnotationStore() {
     undoEdit,
     canUndoEdit,
     imageElement: readonly(imageElement),
-    loadImageFile,
-    replaceImageFile,
-    flushPersistCurrentProject,
-    clearCurrentProject,
-    cropImage,
-    undoCrop,
-    runSectionDetection,
-    rediscoverSectionsAfterReplace,
+    loadImageFile: (file: File) => loadImageFile(core, file),
+    replaceImageFile: (file: File) => replaceImageFile(core, file),
+    flushPersistCurrentProject: () => flushPersistCurrentProject(core),
+    clearCurrentProject: () => clearCurrentProject(core),
+    cropImage: (rect: Rect, options?: { asNewProject?: boolean }) => cropImage(core, rect, options),
+    undoCrop: () => undoCrop(core),
+    runSectionDetection: () => runSectionDetection(core),
+    rediscoverSectionsAfterReplace: () => rediscoverSectionsAfterReplace(core),
     setToolMode,
     setCropDraft,
     setDefaultFontFamily,
@@ -890,15 +1327,15 @@ export function useAnnotationStore() {
     clearNumberPrefixes,
     exportProject,
     copyAnnotatedImageToClipboard,
-    saveProjectToFile,
-    downloadAllProjectsBundle,
-    openProjectFile,
-    saveProjectAs,
-    setProjectName,
+    saveProjectToFile: () => saveProjectToFile(core),
+    downloadAllProjectsBundle: () => downloadAllProjectsBundle(core),
+    openProjectFile: (file: File) => openProjectFile(core, file),
+    saveProjectAs: (name: string, overwriteId?: string) => saveProjectAs(core, name, overwriteId),
+    setProjectName: (rawName: string) => setProjectName(core, rawName),
     fetchSavedProjects,
-    loadSavedProject,
-    removeSavedProject,
+    loadSavedProject: (id: string) => loadSavedProject(core, id),
+    removeSavedProject: (id: string) => removeSavedProject(core, id),
     deleteSelection,
     refreshDocumentAndLayouts,
   }
-}
+})
