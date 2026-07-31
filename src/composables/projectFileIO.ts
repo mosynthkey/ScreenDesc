@@ -23,12 +23,7 @@ import {
 } from '../utils/projectStorage'
 import { isContentHash } from '../utils/contentHash'
 import { t } from '../i18n'
-import {
-  activeNamedProject,
-  applyRestoredSnapshot,
-  clearEditUndoStack,
-  cropHistory,
-} from './annotationStoreCore'
+import type { StoreCore } from '../stores/annotationStore'
 import {
   buildCurrentSnapshot,
   clearNamedSaveSchedule,
@@ -47,8 +42,8 @@ async function snapshotFromProjectFile(data: ProjectFileData): Promise<ProjectSn
   }
 }
 
-export async function saveProjectToFile(): Promise<void> {
-  const snapshot = await buildCurrentSnapshot()
+export async function saveProjectToFile(core: StoreCore): Promise<void> {
+  const snapshot = await buildCurrentSnapshot(core)
   if (!snapshot) return
   const fileBlob = await buildProjectFile(
     snapshot.imageBlob,
@@ -57,9 +52,9 @@ export async function saveProjectToFile(): Promise<void> {
   await downloadBlob(fileBlob, suggestProjectFileName())
 }
 
-export async function downloadAllProjectsBundle(): Promise<number> {
+export async function downloadAllProjectsBundle(core: StoreCore): Promise<number> {
   if (isNamedSaveDirty()) {
-    await persistActiveNamedProject()
+    await persistActiveNamedProject(core)
   }
   const loaded = await loadAllNamedProjects()
   if (loaded.length === 0) {
@@ -98,7 +93,8 @@ async function collectExistingContentHashes(): Promise<Set<string>> {
   return hashes
 }
 
-export async function openProjectFile(file: File): Promise<OpenProjectFileResult> {
+export async function openProjectFile(core: StoreCore, file: File): Promise<OpenProjectFileResult> {
+  const { cropHistory, activeNamedProject } = core
   const parsed = await parseScreenDescFile(file)
   if (parsed.kind === 'bundle') {
     if (parsed.bundle.projects.length === 0) {
@@ -130,16 +126,20 @@ export async function openProjectFile(file: File): Promise<OpenProjectFileResult
   }
   activeNamedProject.value = null
   clearNamedSaveSchedule()
-  clearEditUndoStack()
-  await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
+  core.clearEditUndoStack()
+  await core.applyRestoredSnapshot(snapshot.imageBlob, snapshot)
   return { kind: 'project' }
 }
 
-export async function saveProjectAs(name: string, overwriteId?: string): Promise<string | null> {
-  const snapshot = await buildCurrentSnapshot()
+export async function saveProjectAs(
+  core: StoreCore,
+  name: string,
+  overwriteId?: string,
+): Promise<string | null> {
+  const snapshot = await buildCurrentSnapshot(core)
   if (!snapshot) return null
   const contentHash = await contentHashFromSnapshot(snapshot)
-  const thumbnail = await renderThumbnailBlob()
+  const thumbnail = await renderThumbnailBlob(core)
   const projectId = await saveNamedProject(
     name,
     snapshot,
@@ -147,38 +147,39 @@ export async function saveProjectAs(name: string, overwriteId?: string): Promise
     contentHash,
     thumbnail ?? undefined,
   )
-  activeNamedProject.value = { id: projectId, name }
+  core.activeNamedProject.value = { id: projectId, name }
   markNamedSaveClean()
-  await persistCurrentProject()
+  await persistCurrentProject(core)
   return projectId
 }
 
-export async function setProjectName(rawName: string): Promise<void> {
+export async function setProjectName(core: StoreCore, rawName: string): Promise<void> {
   const name = rawName.trim()
   if (!name) return
 
-  const active = activeNamedProject.value
+  const active = core.activeNamedProject.value
   if (active) {
     if (active.name === name) return
     const renamed = await renameNamedProject(active.id, name)
     if (!renamed) {
       // Disk entry missing (e.g. ephemeral session); create under the new name.
-      await saveProjectAs(name)
+      await saveProjectAs(core, name)
       return
     }
-    activeNamedProject.value = { id: active.id, name }
-    await persistCurrentProject()
+    core.activeNamedProject.value = { id: active.id, name }
+    await persistCurrentProject(core)
     return
   }
 
-  await saveProjectAs(name)
+  await saveProjectAs(core, name)
 }
 
 export async function fetchSavedProjects(): Promise<SavedProjectMeta[]> {
   return listSavedProjects()
 }
 
-export async function loadSavedProject(id: string): Promise<void> {
+export async function loadSavedProject(core: StoreCore, id: string): Promise<void> {
+  const { cropHistory, activeNamedProject } = core
   const snapshot = await loadNamedProject(id)
   if (!snapshot) throw new Error(t('error.savedProjectNotFound'))
   const metas = await listSavedProjects()
@@ -188,17 +189,17 @@ export async function loadSavedProject(id: string): Promise<void> {
     cropHistory.value = null
   }
   clearNamedSaveSchedule()
-  await applyRestoredSnapshot(snapshot.imageBlob, snapshot)
+  await core.applyRestoredSnapshot(snapshot.imageBlob, snapshot)
   activeNamedProject.value = { id, name: meta?.name ?? 'Project' }
-  clearEditUndoStack()
-  await persistCurrentProject()
+  core.clearEditUndoStack()
+  await persistCurrentProject(core)
 }
 
-export async function removeSavedProject(id: string): Promise<void> {
+export async function removeSavedProject(core: StoreCore, id: string): Promise<void> {
   await deleteNamedProject(id)
-  if (activeNamedProject.value?.id === id) {
-    activeNamedProject.value = null
+  if (core.activeNamedProject.value?.id === id) {
+    core.activeNamedProject.value = null
     clearNamedSaveSchedule()
-    await persistCurrentProject()
+    await persistCurrentProject(core)
   }
 }

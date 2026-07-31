@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import './styles/main.css'
 import './i18n'
@@ -23,7 +24,9 @@ async function bootstrap(): Promise<void> {
     applyStoredThemePreference()
     applyStoredLocalePreference()
   }
-  createApp(App).mount('#app')
+  const app = createApp(App)
+  app.use(createPinia())
+  app.mount('#app')
 }
 
 void bootstrap()

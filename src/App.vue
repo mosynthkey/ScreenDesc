@@ -14,7 +14,8 @@ import DeleteSavedProjectDialog from './components/DeleteSavedProjectDialog.vue'
 import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
 import ImportStatusBanner from './components/ImportStatusBanner.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
-import { useAnnotationStore } from './composables/useAnnotationStore'
+import { storeToRefs } from 'pinia'
+import { useAnnotationStore } from './stores/annotationStore'
 import type { Annotation, ExportOptions, Point, Rect } from './types/annotation'
 import type { SavedProjectMeta } from './utils/projectStorage'
 import { revealNamedProject } from './utils/projectStorage'
@@ -26,8 +27,9 @@ import { useI18n } from './i18n'
 const { t, tr } = useI18n()
 
 const store = useAnnotationStore()
+// Reactive state/getters need storeToRefs to survive destructuring; actions
+// are plain functions and stay reactive whether destructured directly or not.
 const {
-  state,
   isDetecting,
   isRecognizingText,
   isExporting,
@@ -36,12 +38,17 @@ const {
   modelDownloadProgress,
   modelError,
   modelAwaitingUse,
-  loadModel,
-  runSectionDetection,
   hasImage,
   sortedAnnotations,
   canUndoCrop,
   activeNamedProject,
+} = storeToRefs(store)
+// `state` is a stable reactive object reference (not a ref), so a plain
+// property read keeps it live without going through storeToRefs.
+const { state } = store
+const {
+  loadModel,
+  runSectionDetection,
   loadImageFile,
   replaceImageFile,
   flushPersistCurrentProject,
