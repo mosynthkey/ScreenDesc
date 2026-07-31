@@ -25,7 +25,6 @@ export async function buildDesktopApp(outputPath: string) {
     );
     await copy(join(repoRoot, "dist"), join(sourceDir, "dist"));
     await Deno.copyFile(join(repoRoot, "deno.json"), join(sourceDir, "deno.json"));
-    await Deno.copyFile(join(repoRoot, "deno.lock"), join(sourceDir, "deno.lock"));
     await Deno.copyFile(join(repoRoot, "public", "icon.png"), join(sourceDir, "icon.png"));
 
     // Documents/ScreenDesc persistence needs home-dir read/write.
@@ -35,6 +34,13 @@ export async function buildDesktopApp(outputPath: string) {
     const allowRun = Deno.build.os === "windows" ? "explorer" : "open";
     const args = [
       "desktop",
+      // No deno.lock: repoRoot's lockfile carries an npm "workspace" section
+      // (deno.json + package.json coexist at the repo root), and copying it
+      // here without the matching package.json leaves a dangling workspace
+      // reference. That trips a known deno desktop bug where the compiled
+      // app's window opens and immediately closes with no error output.
+      // See https://github.com/denoland/deno/issues/35544
+      "--no-lock",
       "--include",
       "./dist",
       "--include",
