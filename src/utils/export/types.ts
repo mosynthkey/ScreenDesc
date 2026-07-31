@@ -17,6 +17,8 @@ export interface ExportScene {
   options: ExportOptions
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number

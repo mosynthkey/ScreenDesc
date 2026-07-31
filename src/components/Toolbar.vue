@@ -14,18 +14,19 @@ import {
   CopyIcon,
   CropIcon,
   DownloadIcon,
-  EyeIcon,
-  EyeOffIcon,
   FileDownIcon,
   FileUpIcon,
   FolderIcon,
+  HandIcon,
   ImageIcon,
   InfoIcon,
   ListChecksIcon,
   MessageSquareIcon,
   MousePointer2Icon,
   PlusIcon,
+  ScanIcon,
   SquarePlusIcon,
+  TypeIcon,
   XIcon,
 } from '@lucide/vue'
 
@@ -75,27 +76,24 @@ const emit = defineEmits<{
 const cropMenuOpen = ref(false)
 const projectMenuOpen = ref(false)
 const variationMenuOpen = ref(false)
-const sectionsMenuOpen = ref(false)
 const newVariationDraft = ref('')
 const titleDraft = ref('')
 const titleInputRef = ref<HTMLInputElement | null>(null)
+
+const SECTION_VISIBILITY_ICONS = {
+  'ai-region': ScanIcon,
+  'ai-text': TypeIcon,
+  manual: HandIcon,
+} as const
 
 const sectionVisibilityOptions = computed(() =>
   SECTION_VISIBILITY_CATEGORIES.map((category) => ({
     category,
     label: t(SECTION_VISIBILITY_LABEL_KEYS[category]),
+    icon: SECTION_VISIBILITY_ICONS[category],
     checked: props.sectionVisibility[category] !== false,
   })),
 )
-
-/** Dimmed when every category is hidden, so the icon reflects "nothing showing". */
-const anySectionVisible = computed(() =>
-  SECTION_VISIBILITY_CATEGORIES.some((category) => props.sectionVisibility[category] !== false),
-)
-
-function toggleSectionsMenu(): void {
-  sectionsMenuOpen.value = !sectionsMenuOpen.value
-}
 
 function syncTitleDraft(): void {
   titleDraft.value = props.projectTitle?.trim() || ''
@@ -216,9 +214,6 @@ function handleWindowClick(event: MouseEvent): void {
   }
   if (variationMenuOpen.value && !target?.closest('.variation-menu-wrap')) {
     variationMenuOpen.value = false
-  }
-  if (sectionsMenuOpen.value && !target?.closest('.sections-menu-anchor')) {
-    sectionsMenuOpen.value = false
   }
 }
 
@@ -491,33 +486,20 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 
       <div class="dock-sep" />
 
-      <div class="dock-group sections-menu-anchor">
+      <div class="dock-group" role="group" :aria-label="t('aria.toggleSections')">
         <button
+          v-for="option in sectionVisibilityOptions"
+          :key="option.category"
           class="tool-btn"
-          :class="{ active: anySectionVisible }"
+          :class="{ active: option.checked }"
           type="button"
-          :data-tooltip="t('tooltip.toggleSections')"
-          :aria-label="t('aria.toggleSections')"
-          :aria-expanded="sectionsMenuOpen"
-          @click="toggleSectionsMenu"
+          :data-tooltip="option.label"
+          :aria-label="option.label"
+          :aria-pressed="option.checked"
+          @click="emit('toggleSectionVisibility', option.category)"
         >
-          <EyeIcon v-if="anySectionVisible" :size="22" :stroke-width="1.8" aria-hidden="true" />
-          <EyeOffIcon v-else :size="22" :stroke-width="1.8" aria-hidden="true" />
+          <component :is="option.icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
         </button>
-        <div v-if="sectionsMenuOpen" class="sections-menu" role="menu" @click.stop>
-          <label
-            v-for="option in sectionVisibilityOptions"
-            :key="option.category"
-            class="sections-menu-item"
-          >
-            <input
-              type="checkbox"
-              :checked="option.checked"
-              @change="emit('toggleSectionVisibility', option.category)"
-            />
-            <span>{{ option.label }}</span>
-          </label>
-        </div>
       </div>
     </div>
   </div>
@@ -784,45 +766,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 .variation-menu-wrap {
   position: relative;
   flex: 0 0 auto;
-}
-
-.sections-menu-anchor {
-  position: relative;
-}
-
-.sections-menu {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  right: 0;
-  min-width: 220px;
-  padding: 4px;
-  background: rgba(30, 30, 32, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.28),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  pointer-events: auto;
-  z-index: 50;
-}
-
-.sections-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  color: #f5f5f7;
-  font-size: 0.82rem;
-  font-weight: 590;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.sections-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .variation-menu {

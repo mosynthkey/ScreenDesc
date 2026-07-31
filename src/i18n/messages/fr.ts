@@ -66,7 +66,6 @@ export const fr: Record<MessageKey, string> = {
   'tooltip.cropMenu': 'Menu de recadrage',
   'tooltip.cropApply': 'Appliquer le recadrage (Entrée)',
   'tooltip.cropCancel': 'Annuler le recadrage (Échap)',
-  'tooltip.toggleSections': 'Afficher / masquer les contours des sections',
   'tooltip.variationMenu': 'Sélectionner ou ajouter une variante d’annotation',
 
   'aria.editToolbar': 'Outils d’édition',
@@ -212,6 +211,8 @@ export const fr: Record<MessageKey, string> = {
   'style.axis.y': 'Y',
   'style.lineStyle': 'Style de ligne',
   'style.lineWidth': 'Épaisseur de ligne',
+  'style.lineDashLength': 'Longueur des tirets',
+  'style.lineDashGap': 'Espacement des tirets',
   'style.lineAndDotColor': 'Couleur de la ligne guide et de l’ancre',
   'style.dotRadius': 'Taille de l’ancre',
   'style.imageGutter': 'Distance entre l’image et l’étiquette',

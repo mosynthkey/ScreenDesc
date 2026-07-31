@@ -17,6 +17,8 @@ export interface ProjectSnapshot {
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number

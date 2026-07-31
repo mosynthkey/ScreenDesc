@@ -63,6 +63,8 @@ const {
   setDefaultFontFamily,
   setLineStyle,
   setLineWidth,
+  setLineDashLength,
+  setLineDashGap,
   setLineColor,
   setDotRadius,
   setImageGutter,
@@ -942,6 +944,8 @@ function onKeydown(event: KeyboardEvent): void {
             :ocr-lines="[...ocrLines]"
             :line-style="state.lineStyle"
             :line-width="state.lineWidth"
+            :line-dash-length="state.lineDashLength"
+            :line-dash-gap="state.lineDashGap"
             :line-color="state.lineColor"
             :dot-color="state.lineColor"
             :dot-radius="state.dotRadius"
@@ -986,6 +990,8 @@ function onKeydown(event: KeyboardEvent): void {
                 :default-font-family="state.defaultFontFamily"
                 :line-style="state.lineStyle"
                 :line-width="state.lineWidth"
+                :line-dash-length="state.lineDashLength"
+                :line-dash-gap="state.lineDashGap"
                 :line-color="state.lineColor"
                 :dot-radius="state.dotRadius"
                 :image-gutter="state.imageGutter"
@@ -1008,6 +1014,8 @@ function onKeydown(event: KeyboardEvent): void {
                 @update:default-font-family="setDefaultFontFamily"
                 @update:line-style="setLineStyle"
                 @update:line-width="setLineWidth"
+                @update:line-dash-length="setLineDashLength"
+                @update:line-dash-gap="setLineDashGap"
                 @update:line-color="setLineColor"
                 @update:dot-radius="setDotRadius"
                 @update:image-gutter="setImageGutter"

@@ -39,6 +39,8 @@ function renderCallout(
   layout: CalloutLayoutItem,
   lineStyle: LineStyleId,
   lineWidth: number,
+  lineDashLength: number,
+  lineDashGap: number,
   lineColor: string,
   dotColor: string,
   dotRadius: number,
@@ -89,7 +91,7 @@ function renderCallout(
     })
     .join('')
 
-  const spec = getLineStyleSpec(lineStyle, lineWidth)
+  const spec = getLineStyleSpec(lineStyle, lineWidth, lineDashLength, lineDashGap)
   const isInvert = lineStyle === 'invert'
   const effectiveLineColor = isInvert ? '#ffffff' : lineColor
   const effectiveDotColor = isInvert ? '#ffffff' : dotColor
@@ -170,6 +172,8 @@ function renderSectionOutline(
   document: DocumentLayout,
   lineStyle: LineStyleId,
   lineWidth: number,
+  lineDashLength: number,
+  lineDashGap: number,
   lineColor: string,
   lineHaloWidth: number,
   lineHaloColor: string,
@@ -178,7 +182,7 @@ function renderSectionOutline(
   highlightFillOpacity: number,
   highlightCornerRadius: number,
 ): string {
-  const spec = getLineStyleSpec(lineStyle, lineWidth)
+  const spec = getLineStyleSpec(lineStyle, lineWidth, lineDashLength, lineDashGap)
   const isInvert = lineStyle === 'invert'
   const effectiveLineColor = isInvert ? '#ffffff' : lineColor
   const dasharrayAttr = spec.dasharray ? ` stroke-dasharray="${spec.dasharray}"` : ''
@@ -208,6 +212,8 @@ export function buildSceneSvg(params: {
   includeSectionGuides: boolean
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number
@@ -240,6 +246,8 @@ export function buildSceneSvg(params: {
     includeSectionGuides,
     lineStyle,
     lineWidth,
+    lineDashLength,
+    lineDashGap,
     lineColor,
     dotColor,
     dotRadius,
@@ -273,6 +281,8 @@ export function buildSceneSvg(params: {
         document,
         lineStyle,
         lineWidth,
+        lineDashLength,
+        lineDashGap,
         lineColor,
         lineHaloWidth,
         lineHaloColor,
@@ -302,6 +312,8 @@ export function buildSceneSvg(params: {
         layout,
         lineStyle,
         lineWidth,
+        lineDashLength,
+        lineDashGap,
         lineColor,
         dotColor,
         dotRadius,

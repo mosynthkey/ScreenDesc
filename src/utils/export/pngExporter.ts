@@ -27,6 +27,8 @@ export const pngExporter: Exporter = {
       includeSectionGuides: scene.options.includeSectionGuides,
       lineStyle: scene.lineStyle,
       lineWidth: scene.lineWidth,
+      lineDashLength: scene.lineDashLength,
+      lineDashGap: scene.lineDashGap,
       lineColor: scene.lineColor,
       dotColor: scene.dotColor,
       dotRadius: scene.dotRadius,

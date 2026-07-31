@@ -64,7 +64,6 @@ export const zh: Record<MessageKey, string> = {
   'tooltip.cropMenu': '裁剪菜单',
   'tooltip.cropApply': '应用裁剪 (Enter)',
   'tooltip.cropCancel': '取消裁剪 (Esc)',
-  'tooltip.toggleSections': '显示 / 隐藏区块轮廓',
   'tooltip.variationMenu': '选择或添加注释变体',
 
   'aria.editToolbar': '编辑工具',
@@ -196,6 +195,8 @@ export const zh: Record<MessageKey, string> = {
   'style.axis.y': 'Y',
   'style.lineStyle': '线型',
   'style.lineWidth': '线宽',
+  'style.lineDashLength': '虚线长度',
+  'style.lineDashGap': '虚线间隔',
   'style.lineAndDotColor': '引线与锚点颜色',
   'style.dotRadius': '锚点大小',
   'style.imageGutter': '图片与标签的间距',

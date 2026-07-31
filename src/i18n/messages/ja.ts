@@ -65,7 +65,6 @@ export const ja: Record<MessageKey, string> = {
   'tooltip.cropMenu': '切り抜きメニュー',
   'tooltip.cropApply': '切り抜きを確定 (Enter)',
   'tooltip.cropCancel': '切り抜きをキャンセル (Esc)',
-  'tooltip.toggleSections': 'セクション枠の表示 / 非表示',
   'tooltip.variationMenu': '注釈のバリエーションを選択・追加',
 
   'aria.editToolbar': '編集ツール',
@@ -207,6 +206,8 @@ export const ja: Record<MessageKey, string> = {
   'style.axis.y': 'Y',
   'style.lineStyle': '線種',
   'style.lineWidth': '線の太さ',
+  'style.lineDashLength': '破線の長さ',
+  'style.lineDashGap': '破線の間隔',
   'style.lineAndDotColor': '引き出し線・アンカーの色',
   'style.dotRadius': 'アンカーの大きさ',
   'style.imageGutter': '画像とラベルの距離',

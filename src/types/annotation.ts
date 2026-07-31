@@ -106,6 +106,10 @@ export interface ProjectState {
   lineStyle: LineStyleId
   /** Leader stroke width in px (also used for dashed / invert). */
   lineWidth: number
+  /** Dash segment length in px. Only used when `lineStyle` is `dashed`. */
+  lineDashLength: number
+  /** Gap length in px between dashes. Only used when `lineStyle` is `dashed`. */
+  lineDashGap: number
   /** Ignored when `lineStyle` is `invert`. */
   lineColor: string
   dotColor: string

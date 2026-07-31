@@ -63,7 +63,6 @@ export const en = {
   'tooltip.cropMenu': 'Crop menu',
   'tooltip.cropApply': 'Apply crop (Enter)',
   'tooltip.cropCancel': 'Cancel crop (Esc)',
-  'tooltip.toggleSections': 'Show / hide section outlines',
   'tooltip.variationMenu': 'Select or add an annotation variation',
 
   'aria.editToolbar': 'Editing tools',
@@ -203,6 +202,8 @@ export const en = {
   'style.axis.y': 'Y',
   'style.lineStyle': 'Line pattern',
   'style.lineWidth': 'Line weight',
+  'style.lineDashLength': 'Dash length',
+  'style.lineDashGap': 'Dash gap',
   'style.lineAndDotColor': 'Leader & anchor color',
   'style.dotRadius': 'Anchor size',
   'style.imageGutter': 'Image-to-label distance',

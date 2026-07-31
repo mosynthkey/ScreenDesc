@@ -15,6 +15,10 @@ import {
 import { getAnchorStyleOptions } from '../utils/anchorStyle'
 import {
   getLineStyleOptions,
+  LINE_DASH_GAP_MAX,
+  LINE_DASH_GAP_MIN,
+  LINE_DASH_LENGTH_MAX,
+  LINE_DASH_LENGTH_MIN,
   LINE_HALO_WIDTH_MAX,
   LINE_HALO_WIDTH_MIN,
   LINE_WIDTH_MAX,
@@ -48,6 +52,8 @@ const props = defineProps<{
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotRadius: number
   imageGutter: number
@@ -73,6 +79,8 @@ const emit = defineEmits<{
   'update:defaultFontFamily': [fontFamily: string]
   'update:lineStyle': [style: LineStyleId]
   'update:lineWidth': [width: number]
+  'update:lineDashLength': [length: number]
+  'update:lineDashGap': [gap: number]
   'update:lineColor': [color: string]
   'update:dotRadius': [radius: number]
   'update:imageGutter': [gutter: number]
@@ -153,6 +161,18 @@ function onLineWidthChange(event: Event): void {
   onProjectPxChange(event, LINE_WIDTH_MIN, LINE_WIDTH_MAX, 0.5, (value) => {
     emit('update:lineWidth', value)
   }, props.lineWidth)
+}
+
+function onLineDashLengthChange(event: Event): void {
+  onProjectPxChange(event, LINE_DASH_LENGTH_MIN, LINE_DASH_LENGTH_MAX, 0.5, (value) => {
+    emit('update:lineDashLength', value)
+  }, props.lineDashLength)
+}
+
+function onLineDashGapChange(event: Event): void {
+  onProjectPxChange(event, LINE_DASH_GAP_MIN, LINE_DASH_GAP_MAX, 0.5, (value) => {
+    emit('update:lineDashGap', value)
+  }, props.lineDashGap)
 }
 
 function onLineHaloWidthChange(event: Event): void {
@@ -384,6 +404,54 @@ watch(
           :step="0.5"
           :value="lineWidth"
           @input="emit('update:lineWidth', Number(($event.target as HTMLInputElement).value))"
+        />
+      </div>
+      <div v-if="lineStyle === 'dashed'" class="field">
+        <label class="slider-label">
+          <span>{{ t('style.lineDashLength') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="decimal"
+              :value="lineDashLength"
+              @change="onLineDashLengthChange"
+              @keydown.enter.prevent="onLineDashLengthChange"
+            />
+            <span class="px-unit">px</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="LINE_DASH_LENGTH_MIN"
+          :max="LINE_DASH_LENGTH_MAX"
+          :step="0.5"
+          :value="lineDashLength"
+          @input="emit('update:lineDashLength', Number(($event.target as HTMLInputElement).value))"
+        />
+      </div>
+      <div v-if="lineStyle === 'dashed'" class="field">
+        <label class="slider-label">
+          <span>{{ t('style.lineDashGap') }}</span>
+          <div class="px-field px-field-compact">
+            <input
+              type="text"
+              inputmode="decimal"
+              :value="lineDashGap"
+              @change="onLineDashGapChange"
+              @keydown.enter.prevent="onLineDashGapChange"
+            />
+            <span class="px-unit">px</span>
+          </div>
+        </label>
+        <input
+          class="size-slider"
+          type="range"
+          :min="LINE_DASH_GAP_MIN"
+          :max="LINE_DASH_GAP_MAX"
+          :step="0.5"
+          :value="lineDashGap"
+          @input="emit('update:lineDashGap', Number(($event.target as HTMLInputElement).value))"
         />
       </div>
       <div v-if="lineStyle !== 'invert'" class="field">

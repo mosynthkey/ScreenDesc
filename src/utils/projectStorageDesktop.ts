@@ -15,6 +15,8 @@ interface StoredSnapshot {
   defaultFontFamily: string
   lineStyle: ProjectSnapshot['lineStyle']
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number

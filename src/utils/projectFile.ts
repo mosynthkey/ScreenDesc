@@ -11,6 +11,8 @@ import { normalizeAnchorStyle } from './anchorStyle'
 import { normalizeCalloutSide } from './calloutLayout'
 import { normalizeSectionVisibility } from './sectionVisibility'
 import {
+  normalizeLineDashGap,
+  normalizeLineDashLength,
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
   normalizeLineStyle,
@@ -51,6 +53,8 @@ export interface ProjectFileData {
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number
@@ -198,6 +202,8 @@ export async function contentHashFromSnapshot(snapshot: {
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number
@@ -269,6 +275,8 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   const normalizedLine = normalizeLineStyle(project.lineStyle, project.lineWidth)
   project.lineStyle = normalizedLine.lineStyle
   project.lineWidth = normalizedLine.lineWidth
+  project.lineDashLength = normalizeLineDashLength(project.lineDashLength, project.lineWidth)
+  project.lineDashGap = normalizeLineDashGap(project.lineDashGap, project.lineWidth)
   project.lineHaloWidth = normalizeLineHaloWidth(project.lineHaloWidth)
   project.lineHaloColor = normalizeLineHaloColor(project.lineHaloColor)
   project.calloutBorderEnabled = normalizeCalloutBorderEnabled(project.calloutBorderEnabled)
@@ -408,6 +416,8 @@ export function projectFileFieldsFromSnapshot(
     defaultFontFamily: string
     lineStyle: LineStyleId
     lineWidth: number
+    lineDashLength: number
+    lineDashGap: number
     lineColor: string
     dotColor: string
     dotRadius: number
@@ -441,6 +451,8 @@ export function projectFileFieldsFromSnapshot(
     defaultFontFamily: snapshot.defaultFontFamily,
     lineStyle: snapshot.lineStyle,
     lineWidth: snapshot.lineWidth,
+    lineDashLength: snapshot.lineDashLength,
+    lineDashGap: snapshot.lineDashGap,
     lineColor: snapshot.lineColor,
     dotColor: snapshot.dotColor,
     dotRadius: snapshot.dotRadius,

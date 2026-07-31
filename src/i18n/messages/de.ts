@@ -66,7 +66,6 @@ export const de: Record<MessageKey, string> = {
   'tooltip.cropMenu': 'Zuschneiden-Menü',
   'tooltip.cropApply': 'Zuschnitt anwenden (Enter)',
   'tooltip.cropCancel': 'Zuschnitt abbrechen (Esc)',
-  'tooltip.toggleSections': 'Abschnittsumrisse ein-/ausblenden',
   'tooltip.variationMenu': 'Eine Anmerkungsvariante auswählen oder hinzufügen',
 
   'aria.editToolbar': 'Bearbeitungswerkzeuge',
@@ -215,6 +214,8 @@ export const de: Record<MessageKey, string> = {
   'style.axis.y': 'Y',
   'style.lineStyle': 'Linienart',
   'style.lineWidth': 'Linienstärke',
+  'style.lineDashLength': 'Strichlänge',
+  'style.lineDashGap': 'Strichabstand',
   'style.lineAndDotColor': 'Farbe von Führungslinie & Anker',
   'style.dotRadius': 'Ankergröße',
   'style.imageGutter': 'Abstand zwischen Bild und Beschriftung',

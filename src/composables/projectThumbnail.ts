@@ -32,6 +32,8 @@ export async function renderThumbnailBlob(core: StoreCore): Promise<Blob | null>
     },
     lineStyle: state.lineStyle,
     lineWidth: state.lineWidth,
+    lineDashLength: state.lineDashLength,
+    lineDashGap: state.lineDashGap,
     lineColor: state.lineColor,
     dotColor: state.lineColor,
     dotRadius: state.dotRadius,

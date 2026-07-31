@@ -56,6 +56,8 @@ const props = defineProps<{
   ocrLines?: OcrLineHit[]
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotColor: string
   dotRadius: number
@@ -855,7 +857,9 @@ function calloutLineY(layout: CalloutLayoutItem, lineIndex: number): number {
   )
 }
 
-const activeLineStyle = computed(() => getLineStyleSpec(props.lineStyle, props.lineWidth))
+const activeLineStyle = computed(() =>
+  getLineStyleSpec(props.lineStyle, props.lineWidth, props.lineDashLength, props.lineDashGap),
+)
 const effectiveLineColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.lineColor))
 const effectiveDotColor = computed(() => (props.lineStyle === 'invert' ? '#ffffff' : props.dotColor))
 const calloutFill = computed(() =>

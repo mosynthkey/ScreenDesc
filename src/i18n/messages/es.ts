@@ -66,7 +66,6 @@ export const es: Record<MessageKey, string> = {
   'tooltip.cropMenu': 'Menú de recorte',
   'tooltip.cropApply': 'Aplicar recorte (Enter)',
   'tooltip.cropCancel': 'Cancelar recorte (Esc)',
-  'tooltip.toggleSections': 'Mostrar / ocultar los contornos de sección',
   'tooltip.variationMenu': 'Seleccionar o añadir una variación de anotación',
 
   'aria.editToolbar': 'Herramientas de edición',
@@ -210,6 +209,8 @@ export const es: Record<MessageKey, string> = {
   'style.axis.y': 'Y',
   'style.lineStyle': 'Estilo de línea',
   'style.lineWidth': 'Grosor de línea',
+  'style.lineDashLength': 'Longitud del guion',
+  'style.lineDashGap': 'Espacio entre guiones',
   'style.lineAndDotColor': 'Color de la línea guía y el ancla',
   'style.dotRadius': 'Tamaño del ancla',
   'style.imageGutter': 'Distancia de la imagen a la etiqueta',

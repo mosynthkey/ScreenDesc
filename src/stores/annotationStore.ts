@@ -71,6 +71,14 @@ import {
   DEFAULT_LINE_HALO_COLOR,
   DEFAULT_LINE_HALO_WIDTH,
   DEFAULT_LINE_WIDTH,
+  LINE_DASH_GAP_MAX,
+  LINE_DASH_GAP_MIN,
+  LINE_DASH_LENGTH_MAX,
+  LINE_DASH_LENGTH_MIN,
+  defaultLineDashGap,
+  defaultLineDashLength,
+  normalizeLineDashGap,
+  normalizeLineDashLength,
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
   normalizeLineStyle,
@@ -142,6 +150,8 @@ export interface RestorableFields {
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth?: number
+  lineDashLength?: number
+  lineDashGap?: number
   lineColor: string
   dotColor: string
   dotRadius: number
@@ -207,6 +217,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     defaultFontFamily: DEFAULT_FONT_FAMILY,
     lineStyle: 'solid',
     lineWidth: DEFAULT_LINE_WIDTH,
+    lineDashLength: defaultLineDashLength(DEFAULT_LINE_WIDTH),
+    lineDashGap: defaultLineDashGap(DEFAULT_LINE_WIDTH),
     lineColor: '#ffd60a',
     dotColor: '#ffd60a',
     dotRadius: 4.5,
@@ -480,6 +492,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
       state.lineStyle = normalizedLine.lineStyle
       state.lineWidth = normalizedLine.lineWidth
     }
+    state.lineDashLength = normalizeLineDashLength(fields.lineDashLength, state.lineWidth)
+    state.lineDashGap = normalizeLineDashGap(fields.lineDashGap, state.lineWidth)
     state.lineColor = fields.lineColor
     state.dotColor = fields.lineColor
     state.dotRadius = fields.dotRadius
@@ -561,6 +575,14 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function setLineWidth(width: number): void {
     state.lineWidth = width
+  }
+
+  function setLineDashLength(length: number): void {
+    state.lineDashLength = Math.min(LINE_DASH_LENGTH_MAX, Math.max(LINE_DASH_LENGTH_MIN, length))
+  }
+
+  function setLineDashGap(gap: number): void {
+    state.lineDashGap = Math.min(LINE_DASH_GAP_MAX, Math.max(LINE_DASH_GAP_MIN, gap))
   }
 
   function setLineColor(color: string): void {
@@ -846,6 +868,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
       defaultFontFamily: state.defaultFontFamily,
       lineStyle: state.lineStyle,
       lineWidth: state.lineWidth,
+      lineDashLength: state.lineDashLength,
+      lineDashGap: state.lineDashGap,
       lineColor: state.lineColor,
       dotRadius: state.dotRadius,
       imageGutter: state.imageGutter,
@@ -882,6 +906,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     state.defaultFontFamily = settings.defaultFontFamily
     state.lineStyle = settings.lineStyle
     state.lineWidth = settings.lineWidth
+    state.lineDashLength = settings.lineDashLength
+    state.lineDashGap = settings.lineDashGap
     state.lineColor = settings.lineColor
     state.dotColor = settings.lineColor
     state.dotRadius = settings.dotRadius
@@ -1160,6 +1186,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
       options,
       lineStyle: state.lineStyle,
       lineWidth: state.lineWidth,
+      lineDashLength: state.lineDashLength,
+      lineDashGap: state.lineDashGap,
       lineColor: state.lineColor,
       dotColor: state.lineColor,
       dotRadius: state.dotRadius,
@@ -1284,6 +1312,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     removeCommonSettingsPreset,
     setLineStyle,
     setLineWidth,
+    setLineDashLength,
+    setLineDashGap,
     setLineColor,
     setDotRadius,
     setImageGutter,

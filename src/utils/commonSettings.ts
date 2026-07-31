@@ -6,6 +6,10 @@ import {
   DEFAULT_LINE_HALO_COLOR,
   DEFAULT_LINE_HALO_WIDTH,
   DEFAULT_LINE_WIDTH,
+  defaultLineDashGap,
+  defaultLineDashLength,
+  normalizeLineDashGap,
+  normalizeLineDashLength,
   normalizeLineHaloColor,
   normalizeLineHaloWidth,
   normalizeLineStyle,
@@ -41,6 +45,8 @@ export interface CommonSettings {
   defaultFontFamily: string
   lineStyle: LineStyleId
   lineWidth: number
+  lineDashLength: number
+  lineDashGap: number
   lineColor: string
   dotRadius: number
   imageGutter: number
@@ -79,6 +85,8 @@ export function createDefaultCommonSettings(): CommonSettings {
     defaultFontFamily: DEFAULT_FONT_FAMILY,
     lineStyle: 'solid',
     lineWidth: DEFAULT_LINE_WIDTH,
+    lineDashLength: defaultLineDashLength(DEFAULT_LINE_WIDTH),
+    lineDashGap: defaultLineDashGap(DEFAULT_LINE_WIDTH),
     lineColor: '#ffd60a',
     dotRadius: 4.5,
     imageGutter: DEFAULT_IMAGE_GUTTER,
@@ -217,6 +225,8 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     defaultFontFamily: fontFamily,
     lineStyle: normalizedLine.lineStyle,
     lineWidth: normalizedLine.lineWidth,
+    lineDashLength: normalizeLineDashLength(raw.lineDashLength, normalizedLine.lineWidth),
+    lineDashGap: normalizeLineDashGap(raw.lineDashGap, normalizedLine.lineWidth),
     lineColor,
     dotRadius,
     imageGutter,
