@@ -50,6 +50,7 @@ function renderCallout(
   calloutFontSize: number,
   calloutFontWeight: number,
   calloutFontItalic: boolean,
+  calloutTextColor: string,
   calloutBorderWidth: number,
   calloutFillEnabled: boolean,
   calloutFillColor: string,
@@ -162,7 +163,7 @@ function renderCallout(
         ${body}
       </g>
       <rect x="${labelPosition.x}" y="${labelPosition.y}" width="${labelWidth}" height="${labelHeight}" rx="${calloutCornerRadius}" ${fillAttr} stroke="${effectiveDotColor}" stroke-width="${calloutBorderWidth}" />
-      <text font-family="${escapeXml(fontCss)}" font-size="${calloutFontSize}" font-weight="${calloutFontWeight}" font-style="${calloutFontItalic ? 'italic' : 'normal'}" fill="#111111">${tspans}</text>
+      <text font-family="${escapeXml(fontCss)}" font-size="${calloutFontSize}" font-weight="${calloutFontWeight}" font-style="${calloutFontItalic ? 'italic' : 'normal'}" fill="${calloutTextColor}">${tspans}</text>
     </g>
   `
 }
@@ -227,6 +228,7 @@ export function buildSceneSvg(params: {
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderWidth: number
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -261,6 +263,7 @@ export function buildSceneSvg(params: {
     calloutFontSize,
     calloutFontWeight,
     calloutFontItalic,
+    calloutTextColor,
     calloutBorderWidth,
     calloutFillEnabled,
     calloutFillColor,
@@ -323,6 +326,7 @@ export function buildSceneSvg(params: {
         calloutFontSize,
         calloutFontWeight,
         calloutFontItalic,
+        calloutTextColor,
         calloutBorderWidth,
         calloutFillEnabled,
         calloutFillColor,

@@ -232,6 +232,7 @@ export const fr: Record<MessageKey, string> = {
   'style.calloutFontSize': 'Taille de police de l’étiquette',
   'style.fontBold': 'Gras',
   'style.fontItalic': 'Italique',
+  'style.calloutTextColor': 'Couleur du texte',
   'style.calloutFill': 'Fond de l’étiquette',
   'style.pageBackground': 'Fond de sortie',
   'style.calloutFillColor': 'Couleur de fond',

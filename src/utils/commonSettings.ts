@@ -32,6 +32,7 @@ import {
 
 const STORAGE_KEY = 'screendesc.commonSettingsPresets'
 
+export const DEFAULT_CALLOUT_TEXT_COLOR = '#111111'
 export const DEFAULT_CALLOUT_FILL_COLOR = '#ffffff'
 export const DEFAULT_CALLOUT_FILL_OPACITY = 1
 export const CALLOUT_FILL_OPACITY_MIN = 0
@@ -61,6 +62,7 @@ export interface CommonSettings {
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -100,6 +102,7 @@ export function createDefaultCommonSettings(): CommonSettings {
     calloutFontSize: CALLOUT_FONT_SIZE,
     calloutFontWeight: DEFAULT_CALLOUT_FONT_WEIGHT,
     calloutFontItalic: DEFAULT_CALLOUT_FONT_ITALIC,
+    calloutTextColor: DEFAULT_CALLOUT_TEXT_COLOR,
     calloutBorderEnabled: false,
     calloutFillEnabled: true,
     calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
@@ -130,6 +133,14 @@ export function normalizeCalloutFillColor(value: unknown): string {
     if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
   }
   return DEFAULT_CALLOUT_FILL_COLOR
+}
+
+export function normalizeCalloutTextColor(value: unknown): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
+  }
+  return DEFAULT_CALLOUT_TEXT_COLOR
 }
 
 export function normalizePageBackgroundColor(value: unknown): string {
@@ -240,6 +251,7 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     calloutFontSize,
     calloutFontWeight,
     calloutFontItalic,
+    calloutTextColor: normalizeCalloutTextColor(raw.calloutTextColor),
     calloutBorderEnabled: normalizeCalloutBorderEnabled(raw.calloutBorderEnabled),
     calloutFillEnabled: normalizeCalloutFillEnabled(raw.calloutFillEnabled),
     calloutFillColor: normalizeCalloutFillColor(raw.calloutFillColor),

@@ -214,6 +214,7 @@ export const zh: Record<MessageKey, string> = {
   'style.calloutFontSize': '说明文字大小',
   'style.fontBold': '粗体',
   'style.fontItalic': '斜体',
+  'style.calloutTextColor': '文字颜色',
   'style.calloutFill': '说明背景',
   'style.pageBackground': '导出背景色',
   'style.calloutFillColor': '背景颜色',

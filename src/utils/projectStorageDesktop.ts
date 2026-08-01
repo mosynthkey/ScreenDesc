@@ -31,6 +31,7 @@ interface StoredSnapshot {
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string

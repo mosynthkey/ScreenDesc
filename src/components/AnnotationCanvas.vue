@@ -71,6 +71,7 @@ const props = defineProps<{
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderWidth: number
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -1199,7 +1200,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
               :font-size="calloutFontSize"
               :font-weight="calloutFontWeight"
               :font-style="calloutFontItalic ? 'italic' : 'normal'"
-              :style="{ fontFamily: activeFontFamily }"
+              :style="{ fontFamily: activeFontFamily, fill: calloutTextColor }"
             >
               <tspan
                 v-for="(line, lineIndex) in layoutFor(annotation.id)!.lines"
@@ -1279,6 +1280,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           fontWeight: calloutFontWeight,
           fontStyle: calloutFontItalic ? 'italic' : 'normal',
           padding: `0 ${calloutTextPadding().horizontal * screenScale}px`,
+          color: calloutTextColor,
         }"
         @pointerdown.stop
       >
@@ -1355,7 +1357,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   overflow: hidden;
   background: transparent;
   font: inherit;
-  color: #111;
+  color: inherit;
   line-height: 1.375;
 }
 
@@ -1456,7 +1458,6 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 }
 
 .callout-text {
-  fill: #111;
   pointer-events: none;
   user-select: none;
 }

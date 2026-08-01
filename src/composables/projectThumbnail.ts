@@ -47,6 +47,7 @@ export async function renderThumbnailBlob(core: StoreCore): Promise<Blob | null>
     calloutFontSize: state.calloutFontSize,
     calloutFontWeight: state.calloutFontWeight,
     calloutFontItalic: state.calloutFontItalic,
+    calloutTextColor: state.calloutTextColor,
     calloutBorderWidth: resolveCalloutBorderWidth(state.calloutBorderEnabled, state.lineWidth),
     calloutFillEnabled: state.calloutFillEnabled,
     calloutFillColor: state.calloutFillColor,

@@ -32,6 +32,7 @@ export interface ExportScene {
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderWidth: number
   calloutFillEnabled: boolean
   calloutFillColor: string

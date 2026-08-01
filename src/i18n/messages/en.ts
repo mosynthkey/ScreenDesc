@@ -221,6 +221,7 @@ export const en = {
   'style.calloutFontSize': 'Label font size',
   'style.fontBold': 'Bold',
   'style.fontItalic': 'Italic',
+  'style.calloutTextColor': 'Text color',
   'style.calloutFill': 'Label background',
   'style.pageBackground': 'Output background',
   'style.calloutFillColor': 'Background color',

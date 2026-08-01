@@ -69,6 +69,7 @@ const {
   calloutFontSize,
   calloutFontWeight,
   calloutFontItalic,
+  calloutTextColor,
   calloutBorderEnabled,
   calloutFillEnabled,
   calloutFillColor,
@@ -95,6 +96,7 @@ const {
   setCalloutFontSize,
   setCalloutFontWeight,
   setCalloutFontItalic,
+  setCalloutTextColor,
   setCalloutBorderEnabled,
   setCalloutFillEnabled,
   setCalloutFillColor,
@@ -756,6 +758,16 @@ watch(
           :value="calloutFontSize"
           @input="setCalloutFontSize(Number(($event.target as HTMLInputElement).value))"
         />
+      </div>
+      <div class="field">
+        <label class="color-swatch color-swatch-inline">
+          {{ t('style.calloutTextColor') }}
+          <input
+            type="color"
+            :value="calloutTextColor"
+            @input="setCalloutTextColor(($event.target as HTMLInputElement).value)"
+          />
+        </label>
       </div>
       <div class="field">
         <label class="check">

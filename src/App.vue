@@ -842,6 +842,7 @@ function onKeydown(event: KeyboardEvent): void {
             :callout-font-size="state.calloutFontSize"
             :callout-font-weight="state.calloutFontWeight"
             :callout-font-italic="state.calloutFontItalic"
+            :callout-text-color="state.calloutTextColor"
             :callout-border-width="effectiveCalloutBorderWidth"
             :callout-fill-enabled="state.calloutFillEnabled"
             :callout-fill-color="state.calloutFillColor"

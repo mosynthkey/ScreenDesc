@@ -42,6 +42,7 @@ export const pngExporter: Exporter = {
       calloutFontSize: scene.calloutFontSize,
       calloutFontWeight: scene.calloutFontWeight,
       calloutFontItalic: scene.calloutFontItalic,
+      calloutTextColor: scene.calloutTextColor,
       calloutBorderWidth: scene.calloutBorderWidth,
       calloutFillEnabled: scene.calloutFillEnabled,
       calloutFillColor: scene.calloutFillColor,

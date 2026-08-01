@@ -225,6 +225,7 @@ export const ja: Record<MessageKey, string> = {
   'style.calloutFontSize': '説明の文字サイズ',
   'style.fontBold': 'ボールド',
   'style.fontItalic': 'イタリック',
+  'style.calloutTextColor': '文字色',
   'style.calloutFill': '説明の背景',
   'style.pageBackground': '制作画像の背景色',
   'style.calloutFillColor': '背景色',

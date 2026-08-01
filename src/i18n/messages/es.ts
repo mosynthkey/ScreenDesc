@@ -229,6 +229,7 @@ export const es: Record<MessageKey, string> = {
   'style.calloutFontSize': 'Tamaño de fuente de la etiqueta',
   'style.fontBold': 'Negrita',
   'style.fontItalic': 'Cursiva',
+  'style.calloutTextColor': 'Color de texto',
   'style.calloutFill': 'Fondo de la etiqueta',
   'style.pageBackground': 'Fondo de salida',
   'style.calloutFillColor': 'Color de fondo',

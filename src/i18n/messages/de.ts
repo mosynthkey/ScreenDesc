@@ -234,6 +234,7 @@ export const de: Record<MessageKey, string> = {
   'style.calloutFontSize': 'Schriftgröße der Beschriftung',
   'style.fontBold': 'Fett',
   'style.fontItalic': 'Kursiv',
+  'style.calloutTextColor': 'Textfarbe',
   'style.calloutFill': 'Hintergrund der Beschriftung',
   'style.pageBackground': 'Hintergrund der Ausgabe',
   'style.calloutFillColor': 'Hintergrundfarbe',

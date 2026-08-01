@@ -22,6 +22,7 @@ import {
   normalizeCalloutFillColor,
   normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
+  normalizeCalloutTextColor,
   normalizeHighlightFillEnabled,
   normalizeHighlightFillOpacity,
   normalizePageBackgroundColor,
@@ -69,6 +70,7 @@ export interface ProjectFileData {
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -218,6 +220,7 @@ export async function contentHashFromSnapshot(snapshot: {
   calloutFontSize: number
   calloutFontWeight: number
   calloutFontItalic: boolean
+  calloutTextColor: string
   calloutBorderEnabled: boolean
   calloutFillEnabled: boolean
   calloutFillColor: string
@@ -285,6 +288,9 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   )
   project.calloutFillColor = normalizeCalloutFillColor(
     (project as { calloutFillColor?: unknown }).calloutFillColor,
+  )
+  project.calloutTextColor = normalizeCalloutTextColor(
+    (project as { calloutTextColor?: unknown }).calloutTextColor,
   )
   project.calloutFillOpacity = normalizeCalloutFillOpacity(
     (project as { calloutFillOpacity?: unknown }).calloutFillOpacity,
@@ -432,6 +438,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFontSize: number
     calloutFontWeight: number
     calloutFontItalic: boolean
+    calloutTextColor: string
     calloutBorderEnabled: boolean
     calloutFillEnabled: boolean
     calloutFillColor: string
@@ -467,6 +474,7 @@ export function projectFileFieldsFromSnapshot(
     calloutFontSize: snapshot.calloutFontSize,
     calloutFontWeight: snapshot.calloutFontWeight,
     calloutFontItalic: snapshot.calloutFontItalic,
+    calloutTextColor: snapshot.calloutTextColor,
     calloutBorderEnabled: snapshot.calloutBorderEnabled,
     calloutFillEnabled: snapshot.calloutFillEnabled,
     calloutFillColor: snapshot.calloutFillColor,

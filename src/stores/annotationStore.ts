@@ -86,6 +86,7 @@ import {
 import {
   DEFAULT_CALLOUT_FILL_COLOR,
   DEFAULT_CALLOUT_FILL_OPACITY,
+  DEFAULT_CALLOUT_TEXT_COLOR,
   DEFAULT_HIGHLIGHT_FILL_ENABLED,
   DEFAULT_HIGHLIGHT_FILL_OPACITY,
   DEFAULT_PAGE_BACKGROUND_COLOR,
@@ -96,6 +97,7 @@ import {
   normalizeCalloutFillColor,
   normalizeCalloutFillEnabled,
   normalizeCalloutFillOpacity,
+  normalizeCalloutTextColor,
   normalizeCommonSettings,
   normalizeHighlightFillEnabled,
   normalizeHighlightFillOpacity,
@@ -166,6 +168,7 @@ export interface RestorableFields {
   calloutFontSize: number
   calloutFontWeight?: number
   calloutFontItalic?: boolean
+  calloutTextColor?: string
   calloutBorderEnabled?: boolean
   calloutFillEnabled?: boolean
   calloutFillColor?: string
@@ -233,6 +236,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     calloutFontSize: CALLOUT_FONT_SIZE,
     calloutFontWeight: DEFAULT_CALLOUT_FONT_WEIGHT,
     calloutFontItalic: DEFAULT_CALLOUT_FONT_ITALIC,
+    calloutTextColor: DEFAULT_CALLOUT_TEXT_COLOR,
     calloutBorderEnabled: false,
     calloutFillEnabled: true,
     calloutFillColor: DEFAULT_CALLOUT_FILL_COLOR,
@@ -511,6 +515,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       fields.defaultFontFamily,
     )
     state.calloutFontItalic = normalizeCalloutFontItalic(fields.calloutFontItalic)
+    state.calloutTextColor = normalizeCalloutTextColor(fields.calloutTextColor)
     state.calloutBorderEnabled = normalizeCalloutBorderEnabled(fields.calloutBorderEnabled)
     state.calloutFillEnabled = normalizeCalloutFillEnabled(fields.calloutFillEnabled)
     state.calloutFillColor = normalizeCalloutFillColor(fields.calloutFillColor)
@@ -667,6 +672,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
     for (const annotation of state.annotations) {
       annotation.calloutPosition = null
     }
+  }
+
+  function setCalloutTextColor(color: string): void {
+    state.calloutTextColor = normalizeCalloutTextColor(color)
   }
 
   function setCalloutBorderEnabled(enabled: boolean): void {
@@ -918,6 +927,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       calloutFontSize: state.calloutFontSize,
       calloutFontWeight: state.calloutFontWeight,
       calloutFontItalic: state.calloutFontItalic,
+      calloutTextColor: state.calloutTextColor,
       calloutBorderEnabled: state.calloutBorderEnabled,
       calloutFillEnabled: state.calloutFillEnabled,
       calloutFillColor: state.calloutFillColor,
@@ -957,6 +967,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     state.calloutFontSize = settings.calloutFontSize
     state.calloutFontWeight = settings.calloutFontWeight
     state.calloutFontItalic = settings.calloutFontItalic
+    state.calloutTextColor = settings.calloutTextColor
     state.calloutBorderEnabled = settings.calloutBorderEnabled
     state.calloutFillEnabled = settings.calloutFillEnabled
     state.calloutFillColor = settings.calloutFillColor
@@ -1270,6 +1281,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       calloutFontSize: state.calloutFontSize,
       calloutFontWeight: state.calloutFontWeight,
       calloutFontItalic: state.calloutFontItalic,
+      calloutTextColor: state.calloutTextColor,
       calloutBorderWidth: resolveCalloutBorderWidth(
         state.calloutBorderEnabled,
         state.lineWidth,
@@ -1400,6 +1412,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setCalloutFontSize,
     setCalloutFontWeight,
     setCalloutFontItalic,
+    setCalloutTextColor,
     setCalloutBorderEnabled,
     setCalloutFillEnabled,
     setCalloutFillColor,
