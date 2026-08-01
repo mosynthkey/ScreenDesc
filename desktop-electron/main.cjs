@@ -3,7 +3,8 @@
 const http = require('node:http')
 const fs = require('node:fs/promises')
 const path = require('node:path')
-const { app, BrowserWindow, Menu } = require('electron')
+const { app, BrowserWindow, Menu, dialog } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const { handleStorageRequest } = require('./storageApi.cjs')
 
 const distRoot = path.join(__dirname, '..', 'dist')
@@ -93,9 +94,48 @@ function setupMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
+/**
+ * Silent-download, ask-before-restart update flow via electron-updater.
+ * `dev-app-update.yml` doesn't exist outside a packaged build, and
+ * electron-updater throws on unpackaged apps, so this is a no-op in `electron .`.
+ */
+function setupAutoUpdate(getWindow) {
+  if (!app.isPackaged) return
+
+  const isJa = app.getLocale().startsWith('ja')
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('update-downloaded', (info) => {
+    void dialog
+      .showMessageBox(getWindow() ?? undefined, {
+        type: 'info',
+        buttons: isJa ? ['再起動してインストール', '後で'] : ['Restart and Install', 'Later'],
+        defaultId: 0,
+        cancelId: 1,
+        title: isJa ? 'アップデートの準備ができました' : 'Update Ready',
+        message: isJa
+          ? `新しいバージョン (${info.version}) がダウンロードされました。再起動してインストールしますか？`
+          : `Version ${info.version} has been downloaded. Restart now to install it?`,
+      })
+      .then((result) => {
+        if (result.response === 0) autoUpdater.quitAndInstall()
+      })
+  })
+
+  autoUpdater.on('error', (error) => {
+    console.error('[auto-update] error', error)
+  })
+
+  autoUpdater.checkForUpdates().catch((error) => {
+    console.error('[auto-update] checkForUpdates failed', error)
+  })
+}
+
 app.whenReady().then(() => {
   setupMenu()
   void createWindow()
+  setupAutoUpdate(() => BrowserWindow.getAllWindows()[0] ?? null)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) void createWindow()

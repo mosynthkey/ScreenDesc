@@ -66,13 +66,15 @@ jobs:
           path: dist-desktop/ScreenDesc-macos.zip
 
       - name: Attach to GitHub Release
+        # latest-mac.yml is the electron-updater manifest the app polls to
+        # detect updates — it must ship alongside the zip it points at.
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
-          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-macos.zip --repo "${{ github.repository }}" --clobber
+          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-macos.zip dist-desktop/latest-mac.yml --repo "${{ github.repository }}" --clobber
 
   build-windows:
     runs-on: windows-latest
@@ -106,9 +108,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ScreenDesc-windows-unsigned
-          path: dist-desktop/ScreenDesc-windows.zip
+          path: |
+            dist-desktop/ScreenDesc-windows.zip
+            dist-desktop/ScreenDesc-Setup.exe
 
       - name: Attach to GitHub Release
+        # latest.yml is the electron-updater manifest the app polls to detect
+        # updates — it must ship alongside the NSIS installer it points at.
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
@@ -116,4 +122,4 @@ jobs:
         run: |
           gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
-          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-windows.zip --repo "${{ github.repository }}" --clobber
+          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-windows.zip dist-desktop/ScreenDesc-Setup.exe dist-desktop/latest.yml --repo "${{ github.repository }}" --clobber

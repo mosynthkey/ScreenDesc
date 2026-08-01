@@ -52,6 +52,13 @@ Keep new logic near its existing home; prefer extending these modules over growi
 - Publish/update the Release asset: `./scripts/publish-model-release.sh`
 - Optional secrets/vars: `VITE_GA_MEASUREMENT_ID` (secret), `BASE_PATH` (var, default `/<repo>/`).
 
+### Desktop auto-update
+
+- `desktop-electron/main.cjs` calls `electron-updater`'s `autoUpdater` on app start (packaged builds only — no-op under `electron .`), silently downloads, then prompts via a native dialog to restart and install.
+- Requires `build.publish` (github/mosynthkey/ScreenDesc) in `package.json` so electron-builder writes `latest-mac.yml` / `latest.yml` — the manifests the app polls to detect updates. `npm run desktop:package` passes `--publish never` so electron-builder never uploads/creates the release itself; `release-desktop.yml` does that with `gh release upload`, and must upload each platform's yml alongside its installer (the app 404s on update checks otherwise).
+- Windows install target is `nsis` (`ScreenDesc-Setup.exe`, wizard-style, per-user, no admin required) — electron-updater doesn't support update-over-zip on Windows. `zip` stays for manual/portable downloads but isn't what the updater fetches.
+- macOS updates over the existing signed+notarized `zip` (Squirrel.Mac requires a valid signature); `dmg` remains the drag-to-Applications installer for first-time downloads and isn't itself update-aware.
+
 ## Style notes
 
 - Match existing patterns in nearby files.

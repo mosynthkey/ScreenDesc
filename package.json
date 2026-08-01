@@ -15,12 +15,13 @@
     "build:pages": "npm run fetch-model && npm run fetch-ocr-model && npm run build",
     "preview": "vite preview",
     "desktop:run": "npm run build:desktop && electron .",
-    "desktop:package": "npm run build:desktop && electron-builder",
+    "desktop:package": "npm run build:desktop && electron-builder --publish never",
     "desktop:release:macos": "npm run desktop:package -- --mac dmg"
   },
   "dependencies": {
     "@lucide/vue": "^1.27.0",
     "@paddleocr/paddleocr-js": "^0.4.2",
+    "electron-updater": "^6.8.9",
     "onnxruntime-web": "^1.27.0",
     "pinia": "^4.0.2",
     "vue": "^3.5.39"
@@ -40,7 +41,11 @@
     "appId": "com.melissa-audio.screen-desc",
     "productName": "ScreenDesc",
     "copyright": "Copyright © Masaki Ono",
-    "publish": null,
+    "publish": {
+      "provider": "github",
+      "owner": "mosynthkey",
+      "repo": "ScreenDesc"
+    },
     "directories": {
       "output": "dist-desktop",
       "buildResources": "build"
@@ -72,9 +77,15 @@
     },
     "win": {
       "target": [
+        "nsis",
         "zip"
       ],
       "artifactName": "${productName}-windows.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-Setup.${ext}"
     }
   }
 }
