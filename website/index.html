@@ -45,7 +45,7 @@
   .page {
     display: flex;
     flex-direction: column;
-    padding: clamp(16px, 2.4vw, 32px) clamp(20px, 4.5vw, 72px) clamp(32px, 5vh, 56px);
+    padding: clamp(14px, 2vw, 26px) clamp(20px, 4.5vw, 72px) clamp(20px, 3vh, 32px);
   }
 
   /* ---------- header ---------- */
@@ -73,6 +73,7 @@
     height: 28px;
     border-radius: 7px;
     display: block;
+    overflow: hidden;
   }
 
   .nav-actions {
@@ -120,12 +121,12 @@
     justify-content: center;
     text-align: center;
     position: relative;
-    margin-top: clamp(16px, 3vh, 40px);
+    margin-top: clamp(10px, 2vh, 24px);
   }
 
   .eyebrow {
     display: block;
-    margin: 0 0 clamp(10px, 1.6vh, 16px);
+    margin: 0 0 clamp(6px, 1vh, 10px);
     color: var(--ink-muted);
     font-size: clamp(0.9rem, 1.1vw, 1.02rem);
     font-weight: 500;
@@ -157,18 +158,18 @@
     gap: clamp(20px, 3vw, 40px);
   }
 
-  /* ---- full-bleed CTA band ---- */
-  .cta-band {
-    flex: 0 0 auto;
+  /* ---- full-bleed highlights band ---- */
+  .highlights-band {
     width: 100%;
     background: var(--card-bg);
     border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
 
-  .cta-band-inner {
+  .download-section {
     max-width: 1200px;
     margin: 0 auto;
-    padding: clamp(28px, 4.6vh, 48px) clamp(20px, 4.5vw, 72px);
+    padding: clamp(18px, 2.8vh, 28px) clamp(20px, 4.5vw, 72px);
   }
 
   .action-group {
@@ -237,7 +238,7 @@
     align-items: flex-start;
     justify-content: center;
     gap: clamp(10px, 1.6vw, 20px);
-    margin-top: clamp(14px, 2.4vh, 26px);
+    margin-top: clamp(10px, 1.8vh, 18px);
   }
 
   .process-card {
@@ -339,14 +340,13 @@
 
   /* ---- highlight bullets ---- */
   .highlights {
-    flex: 0 0 auto;
     list-style: none;
     width: 100%;
-    max-width: 720px;
-    margin: clamp(32px, 5vh, 52px) auto clamp(24px, 3.6vh, 40px);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(20px, 3vh, 30px) clamp(20px, 4.5vw, 72px);
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 14px;
   }
 
@@ -354,7 +354,7 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    font-size: 1.2rem;
+    font-size: calc(1.2rem - 2pt);
     line-height: 1.5;
     color: var(--ink-muted);
     text-align: left;
@@ -365,13 +365,33 @@
     margin-top: 4px;
     color: var(--accent);
   }
+
+  @media (min-width: 761px) and (max-height: 850px) {
+    .page {
+      padding-top: 12px;
+      padding-bottom: 14px;
+    }
+
+    .hero { margin-top: 6px; }
+    .eyebrow { margin-bottom: 3px; }
+    .wordmark { font-size: clamp(2.6rem, 7vw, 5.4rem); }
+    .process-row { margin-top: 8px; }
+    .process-card { width: min(24vw, 350px); gap: 9px; }
+    .process-arrow { margin-top: calc(min(24vw, 350px) * 0.414 - 14px); }
+    .process-caption { font-size: 1.05rem; line-height: 1.4; }
+    .highlights li { font-size: calc(1.05rem - 2pt); line-height: 1.4; }
+    .highlights { padding-top: 14px; padding-bottom: 14px; }
+    .download-section { padding-top: 10px; padding-bottom: 12px; }
+    .action-group { gap: 6px; }
+    .action-btn { padding-top: 9px; padding-bottom: 9px; }
+  }
 </style>
 </head>
 <body>
   <div class="page">
     <header class="nav">
       <a class="logo" href="./">
-        <img class="logo-mark" src="../icon.png" alt="" width="28" height="28" decoding="async" />
+        <img class="logo-mark" src="../icon.png" alt="" width="28" height="28" decoding="async" onerror="if (location.protocol === 'file:') this.src='../public/icon.png'" />
         ScreenDesc
       </a>
       <div class="nav-actions">
@@ -428,6 +448,9 @@
       </div>
     </main>
 
+  </div>
+
+  <section class="highlights-band">
     <ul class="highlights">
       <li>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
@@ -442,10 +465,9 @@
         <span data-i18n-html="highlight2">Annotation variations <span class="marker">make it easy to create multilingual annotated images</span>.</span>
       </li>
     </ul>
-  </div>
+  </section>
 
-  <div class="cta-band">
-    <div class="cta-band-inner hero-actions">
+  <div class="download-section hero-actions">
       <div class="action-group">
         <span class="action-group-label" data-i18n="actionGroupWeb">Web</span>
         <div class="action-group-buttons">
@@ -458,17 +480,16 @@
       <div class="action-group">
         <span class="action-group-label" data-i18n="actionGroupStandalone">macOS / Windows standalone</span>
         <div class="action-group-buttons">
-          <a class="action-btn" href="https://github.com/mosynthkey/ScreenDesc/releases/latest" target="_blank" rel="noopener">
+          <a class="action-btn" href="https://github.com/mosynthkey/ScreenDesc/releases/latest/download/ScreenDesc-macOS.dmg">
             <svg width="13" height="15" viewBox="0 0 456.008 560.035" fill="currentColor" aria-hidden="true"><path d="M380.844 297.529c.787 84.752 74.349 112.955 75.164 113.314-.622 1.988-11.754 40.191-38.756 79.652-23.343 34.117-47.568 68.107-85.731 68.811-37.499.691-49.557-22.236-92.429-22.236-42.859 0-56.256 21.533-91.753 22.928-36.837 1.395-64.889-36.891-88.424-70.883-48.093-69.53-84.846-196.475-35.496-282.165 24.516-42.554 68.328-69.501 115.882-70.192 36.173-.69 70.315 24.336 92.429 24.336 22.1 0 63.59-30.096 107.208-25.676 18.26.76 69.517 7.376 102.429 55.552-2.652 1.644-61.159 35.704-60.523 106.559M310.369 89.418C329.926 65.745 343.089 32.79 339.498 0 311.308 1.133 277.22 18.785 257 42.445c-18.121 20.952-33.991 54.487-29.709 86.628 31.421 2.431 63.52-15.967 83.078-39.655"/></svg>
             <span data-i18n="downloadMac">macOS版</span>
           </a>
-          <a class="action-btn" href="https://github.com/mosynthkey/ScreenDesc/releases/latest" target="_blank" rel="noopener">
+          <a class="action-btn" href="https://github.com/mosynthkey/ScreenDesc/releases/latest/download/ScreenDesc-Setup.exe">
             <svg width="15" height="15" viewBox="0 0 256 257" fill="currentColor" aria-hidden="true"><path d="M0 36.357L104.62 22.11l.045 100.914-104.57.595L0 36.358zm104.57 98.293l.08 101.002L.081 221.275l-.006-87.302 104.494.677zm12.682-114.405L255.968 0v121.74l-138.716 1.1V20.246zM256 135.6l-.033 121.191-138.716-19.578-.194-101.84L256 135.6z"/></svg>
             <span data-i18n="downloadWin">Windows版</span>
           </a>
         </div>
       </div>
-    </div>
   </div>
 
   <script>
@@ -496,7 +517,7 @@
       ja: {
         title: 'ScreenDesc — AIによるスクリーンショット注釈ツール',
         description: 'アプリやソフトの説明に最適。AIがボタンやラベル、入力欄を自動検出し、OCRがブラウザ内でテキストを読み取ります。無料・オープンソース・アップロード不要。',
-        eyebrow: 'アプリやソフトの説明に！スクリーンショット注釈ツール',
+        eyebrow: 'アプリ/ソフトの説明画像作成に - スクリーンショット注釈ツール',
         processStep1: 'AIがUI要素/テキストを<span class="marker">自動認識</span>',
         processStep2: '認識されたテキスト/UI要素をクリックで<span class="marker">簡単にラベル追加</span>',
         processStep3: 'フォント/色/アンカーを<span class="marker">自由にデザイン</span>',

@@ -72,7 +72,7 @@
       "artifactName": "${productName}-macos.${ext}"
     },
     "dmg": {
-      "artifactName": "${productName}_v${version}.${ext}"
+      "artifactName": "${productName}-macOS.${ext}"
     },
     "win": {
       "target": [
