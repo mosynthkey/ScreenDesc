@@ -82,7 +82,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-Setup.${ext}"
+      "artifactName": "${productName}-Windows.${ext}"
     }
   }
 }
