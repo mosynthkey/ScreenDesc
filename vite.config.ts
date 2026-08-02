@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { cpSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -47,11 +48,26 @@ function servePublicOrtModules(): Plugin {
   }
 }
 
+function copyWebsite(): Plugin {
+  return {
+    name: 'copy-website',
+    apply: 'build',
+    writeBundle(options) {
+      const source = fileURLToPath(new URL('./website', import.meta.url))
+      cpSync(source, resolve(options.dir ?? 'dist', 'landing'), { recursive: true })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   // GitHub Pages project sites need "/<repo>/"; set BASE_PATH in CI (see deploy-pages.yml).
   base: process.env.BASE_PATH || '/',
-  plugins: [vue(), servePublicOrtModules()],
+  plugins: [
+    vue(),
+    servePublicOrtModules(),
+    ...(mode === 'desktop' ? [] : [copyWebsite()]),
+  ],
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
     // Belt-and-suspenders: desktop builds must not fall back to ephemeral IndexedDB
