@@ -114,13 +114,14 @@ jobs:
           path: dist-desktop/ScreenDesc-Windows.exe
 
       - name: Attach to GitHub Release
-        # latest.yml is the electron-updater manifest the app polls to detect
-        # updates — it must ship alongside the NSIS installer it points at.
+        # Windows uses the latest-win channel so the manifest naming is
+        # symmetrical with latest-mac.yml.
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          mv dist-desktop/latest.yml dist-desktop/latest-win.yml
           gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1 \
             || gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
-          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-Windows.exe dist-desktop/latest.yml --repo "${{ github.repository }}" --clobber
+          gh release upload "${{ github.ref_name }}" dist-desktop/ScreenDesc-Windows.exe dist-desktop/latest-win.yml --repo "${{ github.repository }}" --clobber

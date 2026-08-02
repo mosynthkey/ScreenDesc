@@ -103,6 +103,7 @@ function setupAutoUpdate(getWindow) {
   if (!app.isPackaged) return
 
   const isJa = app.getLocale().startsWith('ja')
+  if (process.platform === 'win32') autoUpdater.channel = 'latest-win'
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
 
