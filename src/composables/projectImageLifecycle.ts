@@ -45,7 +45,10 @@ export async function rediscoverSectionsAfterReplace(core: StoreCore): Promise<v
 async function applyImageSource(
   core: StoreCore,
   source: Blob,
-  options: { revokePrevious?: boolean } = {},
+  options: {
+    revokePrevious?: boolean
+    retainedAfterCrop?: { sections: Section[]; annotations: Annotation[] }
+  } = {},
 ): Promise<void> {
   const { state, imageElement, ocrLines, isRecognizingText } = core
   const revokePrevious = options.revokePrevious ?? true
@@ -57,18 +60,23 @@ async function applyImageSource(
   state.imageUrl = url
   state.imageWidth = image.naturalWidth
   state.imageHeight = image.naturalHeight
-  state.sections = []
-  state.annotations = []
+  state.sections = options.retainedAfterCrop?.sections ?? []
+  state.annotations = options.retainedAfterCrop?.annotations ?? []
   state.selectedSectionIds = []
   state.selectedAnnotationIds = []
   state.toolMode = 'select'
   state.sectionVisibility = defaultSectionVisibility()
   ocrLines.value = []
+  core.refreshDocumentAndLayouts()
 
   // Sequential, not parallel: each analysis step loads its own model, runs,
   // and unloads before the next one starts, so at most one model is ever
   // resident in memory at a time.
   await runSectionDetection(core)
+  if (options.retainedAfterCrop) {
+    state.sections = [...state.sections, ...options.retainedAfterCrop.sections]
+    core.refreshDocumentAndLayouts()
+  }
 
   isRecognizingText.value = true
   try {
@@ -251,13 +259,10 @@ export async function cropImage(
   const retained = retainedForCrop(state.sections, state.annotations, cropRect)
 
   core.clearEditUndoStack()
-  await applyImageSource(core, blob, { revokePrevious: false })
-
-  if (retained.sections.length > 0 || retained.annotations.length > 0) {
-    state.sections = [...state.sections, ...retained.sections]
-    state.annotations = retained.annotations
-    core.refreshDocumentAndLayouts()
-  }
+  await applyImageSource(core, blob, {
+    revokePrevious: false,
+    retainedAfterCrop: retained,
+  })
 }
 
 export async function undoCrop(core: StoreCore): Promise<void> {
