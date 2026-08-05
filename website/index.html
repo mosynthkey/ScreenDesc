@@ -1,10 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-page-locale="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ScreenDesc — AI-Powered Screenshot Annotation</title>
 <meta name="description" content="Annotate screenshots in seconds. AI detects every button, label and field; on-device OCR reads the text. Free, open source, no upload." />
+<link rel="canonical" href="https://mosynthkey.github.io/ScreenDesc/landing/" />
+<link rel="alternate" hreflang="en" href="https://mosynthkey.github.io/ScreenDesc/landing/" />
+<link rel="alternate" hreflang="ja" href="https://mosynthkey.github.io/ScreenDesc/landing/ja/" />
+<link rel="alternate" hreflang="zh" href="https://mosynthkey.github.io/ScreenDesc/landing/zh/" />
+<link rel="alternate" hreflang="es" href="https://mosynthkey.github.io/ScreenDesc/landing/es/" />
+<link rel="alternate" hreflang="fr" href="https://mosynthkey.github.io/ScreenDesc/landing/fr/" />
+<link rel="alternate" hreflang="de" href="https://mosynthkey.github.io/ScreenDesc/landing/de/" />
+<link rel="alternate" hreflang="x-default" href="https://mosynthkey.github.io/ScreenDesc/landing/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="ScreenDesc" />
+<meta property="og:title" content="ScreenDesc — AI-Powered Screenshot Annotation" />
+<meta property="og:description" content="Annotate screenshots in seconds. AI detects every button, label and field; on-device OCR reads the text. Free, open source, no upload." />
+<meta property="og:url" content="https://mosynthkey.github.io/ScreenDesc/landing/" />
+<meta property="og:image" content="https://mosynthkey.github.io/ScreenDesc/landing/ScreenDesc.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="ScreenDesc screenshot annotation tool" />
+<meta name="twitter:card" content="summary_large_image" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "ScreenDesc",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "Web, macOS, Windows",
+  "description": "AI-powered screenshot annotation tool with on-device UI detection and OCR.",
+  "url": "https://mosynthkey.github.io/ScreenDesc/landing/",
+  "downloadUrl": "https://github.com/mosynthkey/ScreenDesc/releases/latest",
+  "softwareHelp": "https://github.com/mosynthkey/ScreenDesc",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
 <link rel="icon" href="../icon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -403,13 +439,13 @@
     </header>
 
     <main class="hero">
-      <p class="eyebrow" data-i18n="eyebrow">Great for app tutorials &amp; docs — a screenshot annotation tool</p>
-      <h1 class="wordmark">Screen<span class="accent">Desc</span></h1>
+      <h1 class="eyebrow" data-i18n="eyebrow">Great for app tutorials &amp; docs — a screenshot annotation tool</h1>
+      <div class="wordmark">Screen<span class="accent">Desc</span></div>
 
       <div class="process-row">
         <div class="process-card">
           <div class="process-visual">
-            <video class="mock-video process-video" muted loop playsinline preload="auto" poster="./media/steps/recog-poster.jpg">
+            <video class="mock-video process-video" muted loop playsinline preload="metadata" poster="./media/steps/recog-poster.jpg">
               <source src="./media/steps/recog.webm" type="video/webm" />
               <source src="./media/steps/recog.mp4" type="video/mp4" />
             </video>
@@ -422,7 +458,7 @@
         <span class="process-arrow" aria-hidden="true">→</span>
         <div class="process-card">
           <div class="process-visual">
-            <video class="mock-video process-video" muted loop playsinline preload="auto" poster="./media/steps/label-poster.jpg">
+            <video class="mock-video process-video" muted loop playsinline preload="metadata" poster="./media/steps/label-poster.jpg">
               <source src="./media/steps/label.webm" type="video/webm" />
               <source src="./media/steps/label.mp4" type="video/mp4" />
             </video>
@@ -435,7 +471,7 @@
         <span class="process-arrow" aria-hidden="true">→</span>
         <div class="process-card">
           <div class="process-visual">
-            <video class="mock-video process-video" muted loop playsinline preload="auto" poster="./media/steps/design-poster.jpg">
+            <video class="mock-video process-video" muted loop playsinline preload="metadata" poster="./media/steps/design-poster.jpg">
               <source src="./media/steps/design.webm" type="video/webm" />
               <source src="./media/steps/design.mp4" type="video/mp4" />
             </video>
@@ -597,6 +633,8 @@
     };
 
     function detectLocale() {
+      var pageLocale = document.documentElement.getAttribute('data-page-locale');
+      if (pageLocale && SUPPORTED_LOCALES.indexOf(pageLocale) !== -1) return pageLocale;
       try {
         var stored = localStorage.getItem(LOCALE_STORAGE_KEY);
         if (stored && SUPPORTED_LOCALES.indexOf(stored) !== -1) return stored;
@@ -645,7 +683,12 @@
         try {
           localStorage.setItem(LOCALE_STORAGE_KEY, next);
         } catch (e) {}
-        applyLocale(next);
+        if (next === locale) return;
+        if (locale === 'en') {
+          window.location.href = './' + next + '/';
+        } else {
+          window.location.href = next === 'en' ? '../' : '../' + next + '/';
+        }
       });
     }
 

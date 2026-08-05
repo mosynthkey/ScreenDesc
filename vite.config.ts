@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { renderLandingLocales } from './scripts/render-landing-locales.js'
 
 const packageJson = JSON.parse(
   readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
@@ -54,7 +55,9 @@ function copyWebsite(): Plugin {
     apply: 'build',
     writeBundle(options) {
       const source = fileURLToPath(new URL('./website', import.meta.url))
-      cpSync(source, resolve(options.dir ?? 'dist', 'landing'), { recursive: true })
+      const destination = resolve(options.dir ?? 'dist', 'landing')
+      cpSync(source, destination, { recursive: true })
+      renderLandingLocales(destination)
     },
   }
 }

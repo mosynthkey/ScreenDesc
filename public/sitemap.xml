@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://mosynthkey.github.io/ScreenDesc/landing/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mosynthkey.github.io/ScreenDesc/landing/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://mosynthkey.github.io/ScreenDesc/landing/ja/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://mosynthkey.github.io/ScreenDesc/landing/zh/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://mosynthkey.github.io/ScreenDesc/landing/es/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://mosynthkey.github.io/ScreenDesc/landing/fr/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://mosynthkey.github.io/ScreenDesc/landing/de/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mosynthkey.github.io/ScreenDesc/landing/" />
+  </url>
+  <url><loc>https://mosynthkey.github.io/ScreenDesc/landing/ja/</loc></url>
+  <url><loc>https://mosynthkey.github.io/ScreenDesc/landing/zh/</loc></url>
+  <url><loc>https://mosynthkey.github.io/ScreenDesc/landing/es/</loc></url>
+  <url><loc>https://mosynthkey.github.io/ScreenDesc/landing/fr/</loc></url>
+  <url><loc>https://mosynthkey.github.io/ScreenDesc/landing/de/</loc></url>
+</urlset>
