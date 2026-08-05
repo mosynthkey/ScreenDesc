@@ -156,8 +156,6 @@ const editingId = ref<string | null>(null)
 const editDraft = ref('')
 const editInputRef = ref<HTMLTextAreaElement | null>(null)
 const pointerMoved = ref(false)
-/** Ignore blur-to-commit while the editor is still mounting / focusing. */
-let suppressEditBlurUntil = 0
 
 // Chrome keeps PointerEvent.detail at 0; Safari may report the click count.
 // Detect label double-clicks with a short window instead of relying on detail.
@@ -399,6 +397,14 @@ function cropHandleCursor(handle: CropHandle): string {
 function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return
   const target = event.target as Element
+
+  if (editingId.value) {
+    event.preventDefault()
+    lastCalloutPointerDown = null
+    commitEdit()
+    return
+  }
+
   const docPoint = clientToDocument(event.clientX, event.clientY)
   const imagePoint = clampToImage(toImagePoint(docPoint))
 
@@ -442,10 +448,6 @@ function onPointerDown(event: PointerEvent): void {
     }
   } else {
     lastCalloutPointerDown = null
-  }
-
-  if (editingId.value && !target.closest('.callout-inplace-edit')) {
-    commitEdit()
   }
 
   pointerMoved.value = false
@@ -733,7 +735,6 @@ async function beginEdit(annotationId: string): Promise<void> {
   if (!annotation) return
   drag.value = null
   pointerMoved.value = false
-  suppressEditBlurUntil = performance.now() + 400
   editingId.value = annotationId
   editDraft.value = resolveAnnotationDescription(annotation, props.activeVariation)
   emit('selectAnnotation', annotationId, false)
@@ -758,17 +759,6 @@ function commitEdit(): void {
   editingId.value = null
 }
 
-/**
- * Ignore the Enter used to confirm an IME conversion candidate. Shift+Enter
- * inserts a line break (left to the textarea's own default behavior);
- * plain Enter commits.
- */
-function onEditEnterKeydown(event: KeyboardEvent): void {
-  if (event.isComposing || event.shiftKey) return
-  event.preventDefault()
-  commitEdit()
-}
-
 function onEditEscapeKeydown(event: KeyboardEvent): void {
   if (event.isComposing) return
   event.preventDefault()
@@ -780,12 +770,6 @@ function cancelEdit(): void {
 }
 
 function onEditBlur(): void {
-  if (performance.now() < suppressEditBlurUntil) {
-    requestAnimationFrame(() => {
-      editInputRef.value?.focus({ preventScroll: true })
-    })
-    return
-  }
   commitEdit()
 }
 
@@ -1288,7 +1272,6 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           ref="editInputRef"
           v-model="editDraft"
           :rows="editDraftRows"
-          @keydown.enter="onEditEnterKeydown"
           @keydown.escape="onEditEscapeKeydown"
           @blur="onEditBlur"
         />
