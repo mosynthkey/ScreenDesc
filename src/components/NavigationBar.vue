@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { APP_LICENSE, APP_LICENSE_URL, APP_NAME, APP_VERSION } from '../appMeta'
 import { RUNTIME_LIBRARIES } from '../credits'
 import { LOCALE_OPTIONS, useI18n } from '../i18n'
 import { useTheme, type ThemePreference } from '../composables/useTheme'
+import { isDesktopApp } from '../runtime'
 import { FileTextIcon, GlobeIcon, MonitorIcon, MoonIcon, PenLineIcon, SettingsIcon, SunIcon } from '@lucide/vue'
 
 export type AppPageId = 'files' | 'edit'
@@ -21,6 +22,10 @@ const { t, locale, setLocale } = useI18n()
 const aboutOpen = ref(false)
 const settingsOpen = ref(false)
 const baseUrl = import.meta.env.BASE_URL
+const desktopLandingUrl = computed(() => {
+  const localePath = locale.value === 'en' ? '' : `${locale.value}/`
+  return `https://mosynthkey.github.io/ScreenDesc/landing/${localePath}`
+})
 const { themePreference, setThemePreference } = useTheme()
 
 const themeOptions: Array<{ value: ThemePreference; labelKey: 'about.theme.system' | 'about.theme.light' | 'about.theme.dark' }> = [
@@ -103,6 +108,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
         <SettingsIcon class="nav-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
         <span class="nav-label">{{ t('settings.title') }}</span>
       </button>
+      <a
+        v-if="!isDesktopApp"
+        class="nav-btn"
+        :href="desktopLandingUrl"
+        :aria-label="t('nav.desktopApp')"
+        :title="t('nav.desktopApp')"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <MonitorIcon class="nav-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
+        <span class="nav-label">{{ t('nav.desktopApp') }}</span>
+      </a>
       <button
         class="nav-brand"
         type="button"
@@ -281,6 +298,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
   border-radius: 12px;
   background: transparent;
   color: var(--ink-secondary);
+  text-decoration: none;
   cursor: pointer;
   transition:
     background var(--press),

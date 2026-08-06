@@ -1,31 +1,77 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { SavedProjectMeta } from '../utils/projectStorage'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { ProjectFolder, SavedProjectMeta } from '../utils/projectStorage'
 import { loadNamedProjectImageBlob, loadNamedProjectThumbnail } from '../utils/projectStorage'
 import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
-import { InfoIcon } from '@lucide/vue'
+import { FolderIcon, FolderPlusIcon, InfoIcon } from '@lucide/vue'
 
 const props = defineProps<{
   projects: SavedProjectMeta[]
+  folders: ProjectFolder[]
+  currentFolderId: string | null
   activeProjectId?: string | null
   isBusy: boolean
 }>()
 
 const emit = defineEmits<{
   file: [file: File]
+  importProject: [file: File]
   open: [id: string]
   remove: [id: string]
   downloadBundle: []
   reveal: [id: string]
+  navigateFolder: [id: string | null]
+  createFolder: [name: string, color: string, parentId: string | null]
+  renameFolder: [id: string, name: string]
+  recolorFolder: [id: string, color: string]
+  removeFolder: [id: string, deleteContents: boolean]
+  moveProject: [id: string, folderId: string | null]
+  moveFolder: [id: string, parentId: string | null]
 }>()
 
 const { t, tr } = useI18n()
 const isDragging = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 const thumbUrls = ref<Record<string, string>>({})
-const contextMenu = ref<{ projectId: string; x: number; y: number } | null>(null)
+const contextMenu = ref<
+  | { kind: 'project'; id: string; x: number; y: number }
+  | { kind: 'folder'; id: string; x: number; y: number }
+  | null
+>(null)
 const DEV_NOTICE_ISSUES_URL = 'https://github.com/mosynthkey/ScreenDesc/issues'
+const PROJECT_DRAG_TYPE = 'application/x-screendesc-project'
+const FOLDER_DRAG_TYPE = 'application/x-screendesc-folder'
+const FOLDER_COLORS = ['#7aa7ff', '#8bd3c7', '#a8d672', '#ffd166', '#f5a3b7', '#c3a6ff', '#ffab76', '#9ab6c9']
+const folderEditor = ref<{
+  mode: 'create' | 'rename'
+  id: string | null
+  name: string
+  color: string
+  parentId: string | null
+} | null>(null)
+const folderPendingDelete = ref<string | null>(null)
+
+const currentFolders = computed(() =>
+  props.folders
+    .filter((folder) => folder.parentId === props.currentFolderId)
+    .sort((left, right) => left.name.localeCompare(right.name)),
+)
+const currentProjects = computed(() =>
+  props.projects.filter((project) => (project.folderId ?? null) === props.currentFolderId),
+)
+const breadcrumbs = computed(() => {
+  const byId = new Map(props.folders.map((folder) => [folder.id, folder]))
+  const path: ProjectFolder[] = []
+  let folderId = props.currentFolderId
+  while (folderId) {
+    const folder = byId.get(folderId)
+    if (!folder) break
+    path.unshift(folder)
+    folderId = folder.parentId
+  }
+  return path
+})
 
 function closeContextMenu(): void {
   contextMenu.value = null
@@ -34,13 +80,102 @@ function closeContextMenu(): void {
 function onProjectContextMenu(projectId: string, event: MouseEvent): void {
   event.preventDefault()
   event.stopPropagation()
-  contextMenu.value = { projectId, x: event.clientX, y: event.clientY }
+  contextMenu.value = { kind: 'project', id: projectId, x: event.clientX, y: event.clientY }
+}
+
+function onFolderContextMenu(folderId: string, event: MouseEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+  contextMenu.value = { kind: 'folder', id: folderId, x: event.clientX, y: event.clientY }
 }
 
 function onRevealFromMenu(): void {
-  const projectId = contextMenu.value?.projectId
+  const projectId = contextMenu.value?.kind === 'project' ? contextMenu.value.id : null
   closeContextMenu()
   if (projectId) emit('reveal', projectId)
+}
+
+function createFolder(): void {
+  folderEditor.value = {
+    mode: 'create',
+    id: null,
+    name: t('folder.defaultName'),
+    color: FOLDER_COLORS[0],
+    parentId: props.currentFolderId,
+  }
+}
+
+function renameFolderFromMenu(): void {
+  if (contextMenu.value?.kind !== 'folder') return
+  const folder = props.folders.find((item) => item.id === contextMenu.value?.id)
+  if (!folder) return
+  closeContextMenu()
+  folderEditor.value = {
+    mode: 'rename',
+    id: folder.id,
+    name: folder.name,
+    color: folder.color,
+    parentId: folder.parentId,
+  }
+}
+
+function submitFolderEditor(): void {
+  const editor = folderEditor.value
+  const name = editor?.name.trim()
+  if (!editor || !name) return
+  if (editor.mode === 'create') emit('createFolder', name, editor.color, editor.parentId)
+  else if (editor.id) {
+    emit('renameFolder', editor.id, name)
+    emit('recolorFolder', editor.id, editor.color)
+  }
+  folderEditor.value = null
+}
+
+function recolorFolderFromMenu(color: string): void {
+  if (contextMenu.value?.kind !== 'folder') return
+  const id = contextMenu.value.id
+  closeContextMenu()
+  emit('recolorFolder', id, color)
+}
+
+function removeFolderFromMenu(): void {
+  if (contextMenu.value?.kind !== 'folder') return
+  folderPendingDelete.value = contextMenu.value.id
+  closeContextMenu()
+}
+
+function confirmFolderDelete(deleteContents: boolean): void {
+  const id = folderPendingDelete.value
+  folderPendingDelete.value = null
+  if (id) emit('removeFolder', id, deleteContents)
+}
+
+function startProjectDrag(projectId: string, event: DragEvent): void {
+  event.dataTransfer?.setData(PROJECT_DRAG_TYPE, projectId)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+function startFolderDrag(folderId: string, event: DragEvent): void {
+  event.dataTransfer?.setData(FOLDER_DRAG_TYPE, folderId)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+function hasInternalDrag(event: DragEvent): boolean {
+  const types = Array.from(event.dataTransfer?.types ?? [])
+  return types.includes(PROJECT_DRAG_TYPE) || types.includes(FOLDER_DRAG_TYPE)
+}
+
+function dropIntoFolder(folderId: string | null, event: DragEvent): void {
+  if (!hasInternalDrag(event)) return
+  event.preventDefault()
+  event.stopPropagation()
+  const projectId = event.dataTransfer?.getData(PROJECT_DRAG_TYPE)
+  if (projectId) {
+    emit('moveProject', projectId, folderId)
+    return
+  }
+  const movedFolderId = event.dataTransfer?.getData(FOLDER_DRAG_TYPE)
+  if (movedFolderId && movedFolderId !== folderId) emit('moveFolder', movedFolderId, folderId)
 }
 
 function onWindowPointerDown(event: PointerEvent): void {
@@ -69,15 +204,27 @@ function formatDate(ts: number): string {
 }
 
 function acceptFile(file: File | undefined): void {
-  if (!file || !file.type.startsWith('image/')) return
-  emit('file', file)
+  if (!file) return
+  if (file.type.startsWith('image/')) {
+    emit('file', file)
+    return
+  }
+  const name = file.name.toLowerCase()
+  if (
+    name.endsWith('.screendesc') ||
+    name.endsWith('.screendesc.json') ||
+    name.endsWith('.screendesc-bundle.json') ||
+    name.endsWith('.json')
+  ) {
+    emit('importProject', file)
+  }
 }
 
 function onDrop(event: DragEvent): void {
   event.preventDefault()
   dragDepth = 0
   isDragging.value = false
-  acceptFile(event.dataTransfer?.files?.[0])
+  if (!hasInternalDrag(event)) acceptFile(event.dataTransfer?.files?.[0])
 }
 
 // Whole-page drop target: dragenter/dragleave fire on every child boundary
@@ -87,6 +234,7 @@ let dragDepth = 0
 
 function onDragEnter(event: DragEvent): void {
   event.preventDefault()
+  if (hasInternalDrag(event)) return
   dragDepth += 1
   isDragging.value = true
 }
@@ -97,6 +245,7 @@ function onDragOver(event: DragEvent): void {
 
 function onDragLeave(event: DragEvent): void {
   event.preventDefault()
+  if (hasInternalDrag(event)) return
   dragDepth = Math.max(0, dragDepth - 1)
   if (dragDepth === 0) isDragging.value = false
 }
@@ -161,34 +310,20 @@ defineExpose({ openFilePicker })
 <template>
   <div
     class="home"
+    :class="{ 'is-dragging': isDragging }"
     @dragenter="onDragEnter"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
 
-    <section
-      class="new-card"
-      :class="{ 'is-active': isDragging }"
-    >
-      <div class="new-card-copy">
-        <h2>{{ t('home.newTitle') }}</h2>
-        <p class="hint">
-          {{ t('home.newHint.formats') }}<br />
-          {{ t('home.newHint.dnd') }}
-        </p>
-      </div>
-      <button class="btn btn-primary" type="button" :disabled="isBusy" @click="openFilePicker">
-        {{ t('home.newButton') }}
-      </button>
-      <input
-        ref="inputRef"
-        type="file"
-        accept="image/*"
-        hidden
-        @change="onInputChange"
-      />
-    </section>
+    <input
+      ref="inputRef"
+      type="file"
+      accept="image/*"
+      hidden
+      @change="onInputChange"
+    />
 
     <section class="files">
       <div class="files-header">
@@ -196,23 +331,92 @@ defineExpose({ openFilePicker })
           <h2>{{ t('home.filesTitle') }}</h2>
           <span class="hint">{{ t('home.filesCount', { count: projects.length }) }}</span>
         </div>
-        <button
-          class="btn btn-ghost"
-          type="button"
-          :disabled="projects.length === 0 || isBusy"
-          :title="tr('home.downloadBundleTitle')"
-          @click="emit('downloadBundle')"
-        >
-          {{ tr('home.downloadBundle') }}
-        </button>
+        <div class="files-header-actions">
+          <button class="btn btn-ghost" type="button" :disabled="isBusy" @click="createFolder">
+            <FolderPlusIcon :size="16" :stroke-width="1.8" aria-hidden="true" />
+            {{ t('folder.new') }}
+          </button>
+          <button
+            class="btn btn-ghost"
+            type="button"
+            :disabled="projects.length === 0 || isBusy"
+            :title="tr('home.downloadBundleTitle')"
+            @click="emit('downloadBundle')"
+          >
+            {{ tr('home.downloadBundle') }}
+          </button>
+        </div>
       </div>
-      <p v-if="projects.length === 0" class="hint files-empty">{{ t('home.filesEmpty') }}</p>
+      <nav class="folder-breadcrumbs" :aria-label="t('folder.breadcrumbAria')">
+        <button
+          type="button"
+          :class="{ active: currentFolderId === null }"
+          @click="emit('navigateFolder', null)"
+          @dragover.prevent
+          @drop="dropIntoFolder(null, $event)"
+        >
+          {{ t('folder.root') }}
+        </button>
+        <template v-for="folder in breadcrumbs" :key="folder.id">
+          <span aria-hidden="true">/</span>
+          <button
+            type="button"
+            :class="{ active: folder.id === currentFolderId }"
+            @click="emit('navigateFolder', folder.id)"
+            @dragover.prevent
+            @drop="dropIntoFolder(folder.id, $event)"
+          >
+            {{ folder.name }}
+          </button>
+        </template>
+      </nav>
+      <p
+        v-if="currentFolders.length === 0 && currentProjects.length === 0"
+        class="hint files-empty"
+        @dragover.prevent
+        @drop="dropIntoFolder(currentFolderId, $event)"
+      >
+        {{ projects.length === 0 && folders.length === 0 ? t('home.filesEmpty') : t('folder.empty') }}
+      </p>
       <ul v-else class="files-grid">
         <li
-          v-for="project in projects"
+          v-for="folder in currentFolders"
+          :key="folder.id"
+          class="files-item folder-item"
+          draggable="true"
+          @dragstart="startFolderDrag(folder.id, $event)"
+          @dragover.prevent
+          @drop="dropIntoFolder(folder.id, $event)"
+          @contextmenu="onFolderContextMenu(folder.id, $event)"
+        >
+          <button
+            class="files-card folder-card"
+            type="button"
+            :disabled="isBusy"
+            @click="emit('navigateFolder', folder.id)"
+          >
+            <div class="files-thumb folder-thumb">
+              <FolderIcon
+                class="folder-card-icon"
+                :style="{ color: folder.color }"
+                :size="54"
+                :stroke-width="1.5"
+                aria-hidden="true"
+              />
+            </div>
+            <div class="files-meta">
+              <strong>{{ folder.name }}</strong>
+              <span>{{ formatDate(folder.updatedAt) }}</span>
+            </div>
+          </button>
+        </li>
+        <li
+          v-for="project in currentProjects"
           :key="project.id"
           class="files-item"
           :data-project-id="project.id"
+          draggable="true"
+          @dragstart="startProjectDrag(project.id, $event)"
           @contextmenu="onProjectContextMenu(project.id, $event)"
         >
           <button
@@ -260,6 +464,7 @@ defineExpose({ openFilePicker })
       :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
     >
       <button
+        v-if="contextMenu.kind === 'project'"
         class="files-context-item"
         type="button"
         role="menuitem"
@@ -269,6 +474,25 @@ defineExpose({ openFilePicker })
       >
         {{ t('home.openLocation') }}
       </button>
+      <template v-else>
+        <button class="files-context-item" type="button" @click="renameFolderFromMenu">
+          {{ t('folder.rename') }}
+        </button>
+        <div class="folder-color-options" :aria-label="t('folder.color')">
+          <button
+            v-for="color in FOLDER_COLORS"
+            :key="color"
+            class="folder-color-option"
+            type="button"
+            :style="{ backgroundColor: color }"
+            :aria-label="t('folder.color')"
+            @click="recolorFolderFromMenu(color)"
+          />
+        </div>
+        <button class="files-context-item danger" type="button" @click="removeFolderFromMenu">
+          {{ t('folder.delete') }}
+        </button>
+      </template>
     </div>
 
     <div
@@ -301,10 +525,63 @@ defineExpose({ openFilePicker })
       </div>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div v-if="folderEditor" class="modal-backdrop">
+      <form class="modal folder-editor-modal" @submit.prevent="submitFolderEditor">
+        <h2>{{ folderEditor.mode === 'create' ? t('folder.new') : t('folder.rename') }}</h2>
+        <label class="folder-editor-label">
+          <span>{{ t('folder.namePrompt') }}</span>
+          <input v-model="folderEditor.name" type="text" maxlength="80" autofocus />
+        </label>
+        <fieldset class="folder-editor-colors">
+          <legend>{{ t('folder.color') }}</legend>
+          <button
+            v-for="color in FOLDER_COLORS"
+            :key="color"
+            class="folder-editor-color"
+            :class="{ selected: folderEditor.color === color }"
+            type="button"
+            :style="{ backgroundColor: color }"
+            :aria-label="t('folder.color')"
+            :aria-pressed="folderEditor.color === color"
+            @click="folderEditor.color = color"
+          />
+        </fieldset>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" @click="folderEditor = null">
+            {{ t('confirm.cancel') }}
+          </button>
+          <button class="btn btn-primary" type="submit" :disabled="!folderEditor.name.trim()">
+            {{ folderEditor.mode === 'create' ? t('folder.create') : t('folder.save') }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div v-if="folderPendingDelete" class="modal-backdrop">
+      <div class="modal folder-delete-modal" role="dialog" aria-modal="true">
+        <h2>{{ t('folder.delete') }}</h2>
+        <p>{{ t('folder.deleteChoice') }}</p>
+        <div class="folder-delete-actions">
+          <button class="btn btn-danger" type="button" @click="confirmFolderDelete(true)">
+            {{ t('folder.deleteWithContents') }}
+          </button>
+          <button class="btn btn-ghost" type="button" @click="confirmFolderDelete(false)">
+            {{ t('folder.moveContentsToRoot') }}
+          </button>
+          <button class="btn btn-ghost" type="button" @click="folderPendingDelete = null">
+            {{ t('confirm.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .home {
+  position: relative;
   height: 100%;
   overflow: auto;
   padding: 28px 40px 28px;
@@ -315,43 +592,19 @@ defineExpose({ openFilePicker })
     var(--bg);
 }
 
+.home.is-dragging::after {
+  content: '';
+  position: fixed;
+  inset: 14px 14px 14px 86px;
+  z-index: 60;
+  pointer-events: none;
+  border: 3px dashed var(--accent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
 .home:has(> .dev-notice) {
   padding-bottom: 96px;
-}
-
-.new-card {
-  max-width: 920px;
-  margin: 0 auto 36px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 22px 24px;
-  border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow: var(--shadow);
-  transition:
-    border-color var(--spring),
-    background var(--spring),
-    transform var(--spring);
-}
-
-.new-card.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  transform: scale(1.01);
-}
-
-.new-card-copy {
-  text-align: left;
-  min-width: 0;
-}
-
-.new-card h2 {
-  margin: 0 0 4px;
-  font-size: 1.05rem;
-  font-weight: 700;
 }
 
 .files {
@@ -367,6 +620,18 @@ defineExpose({ openFilePicker })
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.files-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.files-header-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .files-heading {
@@ -465,6 +730,32 @@ defineExpose({ openFilePicker })
   background: var(--bg-panel);
 }
 
+.folder-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  margin: -4px 0 14px;
+  overflow-x: auto;
+  color: var(--ink-muted);
+}
+
+.folder-breadcrumbs button {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+}
+
+.folder-breadcrumbs button:hover,
+.folder-breadcrumbs button.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .files-grid {
   list-style: none;
   margin: 0;
@@ -476,6 +767,22 @@ defineExpose({ openFilePicker })
 
 .files-item {
   position: relative;
+}
+
+.folder-card {
+  height: 100%;
+}
+
+.folder-thumb {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, currentColor 8%, transparent), transparent 65%),
+    var(--bg-panel);
+}
+
+.folder-card-icon {
+  fill: color-mix(in srgb, currentColor 24%, transparent);
 }
 
 .files-card {
@@ -636,19 +943,97 @@ defineExpose({ openFilePicker })
   cursor: default;
 }
 
+.files-context-item.danger {
+  color: var(--danger);
+}
+
+.folder-color-options {
+  display: grid;
+  grid-template-columns: repeat(4, 24px);
+  gap: 7px;
+  padding: 8px 10px;
+}
+
+.folder-color-option {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+.folder-editor-modal,
+.folder-delete-modal {
+  width: min(400px, calc(100vw - 32px));
+}
+
+.folder-editor-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.folder-editor-label input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font: inherit;
+}
+
+.folder-editor-colors {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  border: none;
+}
+
+.folder-editor-colors legend {
+  margin-bottom: 9px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.folder-editor-color {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+.folder-editor-color.selected {
+  border-color: var(--bg-elevated);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.folder-delete-modal p {
+  margin: 0;
+  color: var(--ink-secondary);
+  line-height: 1.55;
+}
+
+.folder-delete-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
 @media (max-width: 720px) {
   .home {
     padding: 24px 16px 24px;
   }
 
-  .new-card {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-
-  .new-card-copy {
-    text-align: center;
-  }
 }
 </style>

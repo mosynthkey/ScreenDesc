@@ -39,9 +39,9 @@ import {
 import { computeProjectContentHash, isContentHash } from './contentHash'
 
 const FILE_VERSION = 1
-const FILE_EXTENSION = '.screendesc.json'
+const FILE_EXTENSION = '.screendesc'
 const BUNDLE_KIND = 'bundle'
-const BUNDLE_EXTENSION = '.screendesc-bundle.json'
+const BUNDLE_EXTENSION = '.screendesc'
 
 export interface ProjectFileData {
   version: 1
@@ -87,13 +87,22 @@ export interface ProjectFileData {
 export interface ProjectBundleEntry {
   name: string
   updatedAt: number
+  folderId?: string | null
   project: ProjectFileData
+}
+
+export interface ProjectBundleFolder {
+  id: string
+  name: string
+  color: string
+  parentId: string | null
 }
 
 export interface ProjectBundleFileData {
   version: 1
   kind: typeof BUNDLE_KIND
   projects: ProjectBundleEntry[]
+  folders?: ProjectBundleFolder[]
 }
 
 export type ProjectFileFields = Omit<ProjectFileData, 'version' | 'imageDataUrl' | 'contentHash'>
@@ -193,7 +202,7 @@ export async function buildProjectFile(
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
 
-/** Content hash for a browser snapshot (same algorithm as exported .screendesc.json). */
+/** Content hash for a browser snapshot (same algorithm as exported .screendesc). */
 export async function contentHashFromSnapshot(snapshot: {
   imageBlob: Blob
   imageWidth: number
@@ -241,15 +250,18 @@ export async function buildProjectBundleFile(
   entries: Array<{
     name: string
     updatedAt: number
+    folderId?: string | null
     imageBlob: Blob
     fields: ProjectFileFields
   }>,
+  folders: ProjectBundleFolder[] = [],
 ): Promise<Blob> {
   const projects: ProjectBundleEntry[] = []
   for (const entry of entries) {
     projects.push({
       name: entry.name,
       updatedAt: entry.updatedAt,
+      folderId: entry.folderId ?? null,
       project: await buildProjectFileData(entry.imageBlob, entry.fields),
     })
   }
@@ -257,6 +269,7 @@ export async function buildProjectBundleFile(
     version: FILE_VERSION,
     kind: BUNDLE_KIND,
     projects,
+    folders,
   }
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
@@ -390,6 +403,7 @@ function normalizeBundleFileData(raw: ProjectBundleFileData): ProjectBundleFileD
         typeof entry.updatedAt === 'number' && Number.isFinite(entry.updatedAt)
           ? entry.updatedAt
           : Date.now(),
+      folderId: typeof entry.folderId === 'string' ? entry.folderId : null,
       project: normalizeProjectFileData(entry.project),
     })
   }
@@ -397,6 +411,22 @@ function normalizeBundleFileData(raw: ProjectBundleFileData): ProjectBundleFileD
     version: FILE_VERSION,
     kind: BUNDLE_KIND,
     projects,
+    folders: Array.isArray(raw.folders)
+      ? raw.folders
+          .filter(
+            (folder) =>
+              folder &&
+              typeof folder.id === 'string' &&
+              typeof folder.name === 'string' &&
+              typeof folder.color === 'string',
+          )
+          .map((folder) => ({
+            id: folder.id,
+            name: folder.name.trim() || t('folder.defaultName'),
+            color: folder.color,
+            parentId: typeof folder.parentId === 'string' ? folder.parentId : null,
+          }))
+      : [],
   }
 }
 

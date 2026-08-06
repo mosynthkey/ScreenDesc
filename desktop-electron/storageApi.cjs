@@ -27,6 +27,10 @@ function projectsDir(root) {
   return path.join(root, 'projects')
 }
 
+function foldersPath(root) {
+  return path.join(root, 'folders.json')
+}
+
 function projectDir(root, id) {
   return path.join(projectsDir(root), id)
 }
@@ -95,6 +99,15 @@ async function listMetas(root) {
   return metas.sort((left, right) => right.updatedAt - left.updatedAt)
 }
 
+async function listFolders(root) {
+  const folders = await readJson(foldersPath(root))
+  return Array.isArray(folders) ? folders : []
+}
+
+async function writeFolders(root, folders) {
+  await writeJson(foldersPath(root), folders)
+}
+
 /** Reveal a named project folder in the OS file manager. */
 async function revealProjectById(projectId) {
   const root = documentsRoot()
@@ -135,7 +148,7 @@ async function readBodyJson(req) {
 const EXPORT_FILTERS = {
   png: [{ name: 'PNG Image', extensions: ['png'] }],
   svg: [{ name: 'SVG Image', extensions: ['svg'] }],
-  json: [{ name: 'ScreenDesc Project', extensions: ['screendesc.json', 'json'] }],
+  json: [{ name: 'ScreenDesc Project', extensions: ['screendesc', 'screendesc.json', 'json'] }],
 }
 
 function filtersForFilename(filename) {
@@ -219,17 +232,126 @@ async function handleStorageRequest(req, res, url, browserWindow) {
       const body = await readBodyJson(req)
       const projectId = body.id || crypto.randomUUID()
       const dir = projectDir(root, projectId)
+      const existing = await readJson(path.join(dir, 'meta.json'))
       const meta = {
         id: projectId,
         name: body.name,
         updatedAt: Date.now(),
         contentHash: body.contentHash,
+        folderId: existing?.folderId ?? null,
       }
       await writeSnapshotFiles(dir, body.snapshot)
       await writeThumbnailFile(dir, body.thumbnailBase64)
       await writeJson(path.join(dir, 'meta.json'), meta)
       jsonResponse(res, { id: projectId })
       return true
+    }
+
+    if (subPath === '/folders' && method === 'GET') {
+      jsonResponse(res, await listFolders(root))
+      return true
+    }
+
+    if (subPath === '/folders' && method === 'POST') {
+      const body = await readBodyJson(req)
+      const now = Date.now()
+      const folder = {
+        id: crypto.randomUUID(),
+        name: String(body.name || '').trim(),
+        color: String(body.color || '#7aa7ff'),
+        parentId: body.parentId || null,
+        createdAt: now,
+        updatedAt: now,
+      }
+      const folders = await listFolders(root)
+      folders.push(folder)
+      await writeFolders(root, folders)
+      jsonResponse(res, folder)
+      return true
+    }
+
+    const folderMatch = subPath.match(/^\/folders\/([^/]+)(\/move)?$/)
+    if (folderMatch) {
+      const folderId = decodeURIComponent(folderMatch[1])
+      const isMove = Boolean(folderMatch[2])
+      const folders = await listFolders(root)
+      const folderIndex = folders.findIndex((folder) => folder.id === folderId)
+      if (folderIndex < 0) {
+        emptyResponse(res, 404)
+        return true
+      }
+
+      if (!isMove && method === 'PATCH') {
+        const patch = await readBodyJson(req)
+        const existing = folders[folderIndex]
+        folders[folderIndex] = {
+          ...existing,
+          name: typeof patch.name === 'string' && patch.name.trim() ? patch.name.trim() : existing.name,
+          color: typeof patch.color === 'string' ? patch.color : existing.color,
+          updatedAt: Date.now(),
+        }
+        await writeFolders(root, folders)
+        jsonResponse(res, folders[folderIndex])
+        return true
+      }
+
+      if (isMove && method === 'POST') {
+        const body = await readBodyJson(req)
+        const parentId = body.parentId || null
+        let ancestorId = parentId
+        while (ancestorId) {
+          if (ancestorId === folderId) {
+            emptyResponse(res, 409)
+            return true
+          }
+          ancestorId = folders.find((folder) => folder.id === ancestorId)?.parentId || null
+        }
+        folders[folderIndex] = { ...folders[folderIndex], parentId, updatedAt: Date.now() }
+        await writeFolders(root, folders)
+        jsonResponse(res, folders[folderIndex])
+        return true
+      }
+
+      if (!isMove && method === 'DELETE') {
+        const body = await readBodyJson(req)
+        const deleteContents = body.deleteContents === true
+        const target = folders[folderIndex]
+        const deletedFolderIds = new Set([folderId])
+        if (deleteContents) {
+          let foundChild = true
+          while (foundChild) {
+            foundChild = false
+            for (const folder of folders) {
+              if (folder.parentId && deletedFolderIds.has(folder.parentId) && !deletedFolderIds.has(folder.id)) {
+                deletedFolderIds.add(folder.id)
+                foundChild = true
+              }
+            }
+          }
+        }
+        const nextFolders = folders
+          .filter((folder) => !deletedFolderIds.has(folder.id))
+          .map((folder) =>
+            !deleteContents && folder.parentId === folderId
+              ? { ...folder, parentId: null, updatedAt: Date.now() }
+              : folder,
+          )
+        await writeFolders(root, nextFolders)
+        const metas = await listMetas(root)
+        for (const meta of metas) {
+          if (!meta.folderId || !deletedFolderIds.has(meta.folderId)) continue
+          if (deleteContents) {
+            await fs.rm(projectDir(root, meta.id), { recursive: true, force: true })
+          } else {
+            await writeJson(path.join(projectDir(root, meta.id), 'meta.json'), {
+              ...meta,
+              folderId: null,
+            })
+          }
+        }
+        emptyResponse(res, 204)
+        return true
+      }
     }
 
     const projectMatch = subPath.match(/^\/projects\/([^/]+)(\/(image|thumbnail|reveal))?$/)

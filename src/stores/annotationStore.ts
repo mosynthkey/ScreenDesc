@@ -121,6 +121,7 @@ import {
   downloadAllProjectsBundle,
   fetchSavedProjects,
   loadSavedProject,
+  inspectProjectFile,
   openProjectFile,
   removeSavedProject,
   saveProjectAs,
@@ -1469,7 +1470,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
     copyAnnotatedImageToClipboard,
     saveProjectToFile: () => saveProjectToFile(core),
     downloadAllProjectsBundle: () => downloadAllProjectsBundle(core),
-    openProjectFile: (file: File) => openProjectFile(core, file),
+    inspectProjectFile,
+    openProjectFile: (file: File, selectedBundleIndexes?: number[]) =>
+      openProjectFile(core, file, selectedBundleIndexes),
     saveProjectAs: (name: string, overwriteId?: string) => saveProjectAs(core, name, overwriteId),
     setProjectName: (rawName: string) => setProjectName(core, rawName),
     fetchSavedProjects,

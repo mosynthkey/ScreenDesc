@@ -1,9 +1,9 @@
 import { isDesktopApp } from '../runtime'
 import * as desktop from './projectStorageDesktop'
 import * as idb from './projectStorageIdb'
-import type { ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
+import type { ProjectFolder, ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
 
-export type { ProjectSnapshot, SavedProjectMeta }
+export type { ProjectFolder, ProjectSnapshot, SavedProjectMeta }
 
 const backend = isDesktopApp ? desktop : idb
 
@@ -20,3 +20,9 @@ export const loadNamedProjectThumbnail = backend.loadNamedProjectThumbnail
 export const renameNamedProject = backend.renameNamedProject
 export const deleteNamedProject = backend.deleteNamedProject
 export const revealNamedProject = backend.revealNamedProject
+export const listProjectFolders = backend.listProjectFolders
+export const createProjectFolder = backend.createProjectFolder
+export const updateProjectFolder = backend.updateProjectFolder
+export const deleteProjectFolder = backend.deleteProjectFolder
+export const moveNamedProject = backend.moveNamedProject
+export const moveProjectFolder = backend.moveProjectFolder

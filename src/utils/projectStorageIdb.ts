@@ -1,14 +1,15 @@
-import type { ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
+import type { ProjectFolder, ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
 
 const DB_NAME = 'screendesc'
-const DB_VERSION = 3
+const DB_VERSION = 4
 const AUTOSAVE_STORE = 'project'
 const AUTOSAVE_KEY = 'current'
 const SAVED_META_STORE = 'savedProjectsMeta'
 const SAVED_DATA_STORE = 'savedProjectsData'
 const SAVED_THUMB_STORE = 'savedProjectsThumbs'
+const FOLDER_STORE = 'projectFolders'
 
-export type { ProjectSnapshot, SavedProjectMeta }
+export type { ProjectFolder, ProjectSnapshot, SavedProjectMeta }
 
 /** Strip Vue proxies so structured clone (IndexedDB) accepts the snapshot. */
 function toCloneableSnapshot(snapshot: ProjectSnapshot): ProjectSnapshot {
@@ -35,6 +36,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(SAVED_THUMB_STORE)) {
         db.createObjectStore(SAVED_THUMB_STORE)
+      }
+      if (!db.objectStoreNames.contains(FOLDER_STORE)) {
+        db.createObjectStore(FOLDER_STORE, { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -86,13 +90,22 @@ export async function saveNamedProject(
 ): Promise<string> {
   const projectId = id ?? crypto.randomUUID()
   const payload = toCloneableSnapshot(snapshot)
+  const db = await openDb()
+  const existing = id
+    ? await new Promise<SavedProjectMeta | undefined>((resolve, reject) => {
+        const tx = db.transaction(SAVED_META_STORE, 'readonly')
+        const request = tx.objectStore(SAVED_META_STORE).get(id)
+        request.onsuccess = () => resolve(request.result as SavedProjectMeta | undefined)
+        request.onerror = () => reject(request.error)
+      })
+    : undefined
   const meta: SavedProjectMeta = {
     id: projectId,
     name,
     updatedAt: Date.now(),
     contentHash,
+    folderId: existing?.folderId ?? null,
   }
-  const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const stores = thumbnail
       ? [SAVED_META_STORE, SAVED_DATA_STORE, SAVED_THUMB_STORE]
@@ -111,7 +124,7 @@ export async function saveNamedProject(
 
 export async function patchSavedProjectMeta(
   id: string,
-  patch: Partial<Pick<SavedProjectMeta, 'contentHash' | 'name'>>,
+  patch: Partial<Pick<SavedProjectMeta, 'contentHash' | 'name' | 'folderId'>>,
 ): Promise<boolean> {
   const db = await openDb()
   const updated = await new Promise<boolean>((resolve, reject) => {
@@ -233,4 +246,146 @@ export async function deleteNamedProject(id: string): Promise<void> {
 
 export async function revealNamedProject(_id: string): Promise<void> {
   throw new Error('Reveal in file manager is only available in the desktop app')
+}
+
+export async function listProjectFolders(): Promise<ProjectFolder[]> {
+  const db = await openDb()
+  const folders = await new Promise<ProjectFolder[]>((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE, 'readonly')
+    const request = tx.objectStore(FOLDER_STORE).getAll()
+    request.onsuccess = () => resolve((request.result as ProjectFolder[]) ?? [])
+    request.onerror = () => reject(request.error)
+  })
+  db.close()
+  return folders
+}
+
+export async function createProjectFolder(
+  name: string,
+  color: string,
+  parentId: string | null,
+): Promise<ProjectFolder> {
+  const now = Date.now()
+  const folder: ProjectFolder = {
+    id: crypto.randomUUID(),
+    name: name.trim(),
+    color,
+    parentId,
+    createdAt: now,
+    updatedAt: now,
+  }
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE, 'readwrite')
+    tx.objectStore(FOLDER_STORE).put(folder)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+  return folder
+}
+
+export async function updateProjectFolder(
+  id: string,
+  patch: Partial<Pick<ProjectFolder, 'name' | 'color'>>,
+): Promise<boolean> {
+  const db = await openDb()
+  const updated = await new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE, 'readwrite')
+    const store = tx.objectStore(FOLDER_STORE)
+    const request = store.get(id)
+    let found = false
+    request.onsuccess = () => {
+      const existing = request.result as ProjectFolder | undefined
+      if (!existing) return
+      found = true
+      store.put({ ...existing, ...patch, updatedAt: Date.now() })
+    }
+    tx.oncomplete = () => resolve(found)
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+  return updated
+}
+
+export async function moveNamedProject(id: string, folderId: string | null): Promise<boolean> {
+  return patchSavedProjectMeta(id, { folderId })
+}
+
+export async function moveProjectFolder(id: string, parentId: string | null): Promise<boolean> {
+  const folders = await listProjectFolders()
+  const byId = new Map(folders.map((folder) => [folder.id, folder]))
+  let ancestorId = parentId
+  while (ancestorId) {
+    if (ancestorId === id) return false
+    ancestorId = byId.get(ancestorId)?.parentId ?? null
+  }
+  const db = await openDb()
+  const moved = await new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE, 'readwrite')
+    const store = tx.objectStore(FOLDER_STORE)
+    const request = store.get(id)
+    let found = false
+    request.onsuccess = () => {
+      const existing = request.result as ProjectFolder | undefined
+      if (!existing) return
+      found = true
+      store.put({ ...existing, parentId, updatedAt: Date.now() })
+    }
+    tx.oncomplete = () => resolve(found)
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+  return moved
+}
+
+export async function deleteProjectFolder(id: string, deleteContents = false): Promise<boolean> {
+  const folders = await listProjectFolders()
+  const target = folders.find((folder) => folder.id === id)
+  if (!target) return false
+  const deletedFolderIds = new Set([id])
+  if (deleteContents) {
+    let foundChild = true
+    while (foundChild) {
+      foundChild = false
+      for (const folder of folders) {
+        if (folder.parentId && deletedFolderIds.has(folder.parentId) && !deletedFolderIds.has(folder.id)) {
+          deletedFolderIds.add(folder.id)
+          foundChild = true
+        }
+      }
+    }
+  }
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(
+      [FOLDER_STORE, SAVED_META_STORE, SAVED_DATA_STORE, SAVED_THUMB_STORE],
+      'readwrite',
+    )
+    const folderStore = tx.objectStore(FOLDER_STORE)
+    const projectStore = tx.objectStore(SAVED_META_STORE)
+    for (const folderId of deletedFolderIds) folderStore.delete(folderId)
+    for (const child of folders) {
+      if (!deleteContents && child.parentId === id) {
+        folderStore.put({ ...child, parentId: null, updatedAt: Date.now() })
+      }
+    }
+    const request = projectStore.getAll()
+    request.onsuccess = () => {
+      for (const project of request.result as SavedProjectMeta[]) {
+        if (!project.folderId || !deletedFolderIds.has(project.folderId)) continue
+        if (deleteContents) {
+          projectStore.delete(project.id)
+          tx.objectStore(SAVED_DATA_STORE).delete(project.id)
+          tx.objectStore(SAVED_THUMB_STORE).delete(project.id)
+        } else {
+          projectStore.put({ ...project, folderId: null })
+        }
+      }
+    }
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+  db.close()
+  return true
 }

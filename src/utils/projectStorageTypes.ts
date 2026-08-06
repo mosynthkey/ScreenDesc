@@ -54,4 +54,14 @@ export interface SavedProjectMeta {
   updatedAt: number
   /** SHA-256 hex matching portable project contentHash. */
   contentHash?: string
+  folderId?: string | null
+}
+
+export interface ProjectFolder {
+  id: string
+  name: string
+  color: string
+  parentId: string | null
+  createdAt: number
+  updatedAt: number
 }

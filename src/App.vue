@@ -13,16 +13,26 @@ import CropConfirmDialog from './components/CropConfirmDialog.vue'
 import DeleteSavedProjectDialog from './components/DeleteSavedProjectDialog.vue'
 import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
 import ImportStatusBanner from './components/ImportStatusBanner.vue'
+import BundleImportDialog from './components/BundleImportDialog.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
 import { storeToRefs } from 'pinia'
 import { useAnnotationStore } from './stores/annotationStore'
 import type { ExportOptions, Point, Rect } from './types/annotation'
-import type { SavedProjectMeta } from './utils/projectStorage'
-import { revealNamedProject } from './utils/projectStorage'
+import type { ProjectFolder, SavedProjectMeta } from './utils/projectStorage'
+import {
+  createProjectFolder,
+  deleteProjectFolder,
+  listProjectFolders,
+  moveNamedProject,
+  moveProjectFolder,
+  revealNamedProject,
+  updateProjectFolder,
+} from './utils/projectStorage'
 import type { CommonSettingsPresetMeta } from './utils/commonSettings'
 import { resolveCalloutBorderWidth } from './utils/commonSettings'
 import { persistentStorage } from './utils/persistentStorage'
 import { useI18n } from './i18n'
+import type { BundleImportCandidate, OpenProjectFileResult } from './composables/projectFileIO'
 
 const { t, tr } = useI18n()
 
@@ -84,6 +94,7 @@ const {
   saveProjectToFile,
   downloadAllProjectsBundle,
   openProjectFile,
+  inspectProjectFile,
   saveProjectAs,
   setProjectName,
   fetchSavedProjects,
@@ -106,6 +117,8 @@ const appNotice = ref<{ message: string; tone: 'error' | 'info' } | null>(null)
 let appNoticeTimer: ReturnType<typeof setTimeout> | undefined
 const projectStorageOpen = ref(false)
 const savedProjects = ref<SavedProjectMeta[]>([])
+const projectFolders = ref<ProjectFolder[]>([])
+const currentFolderId = ref<string | null>(null)
 const projectStorageBusy = ref(false)
 const commonSettingsOpen = ref(false)
 const commonSettingsPresets = ref<CommonSettingsPresetMeta[]>([])
@@ -119,6 +132,9 @@ const pendingDeleteProjectIsActive = ref(false)
 const appPage = ref<AppPageId>('files')
 const isImportingFile = ref(false)
 const isInitialImageAnalysisRunning = ref(false)
+const bundleImportFile = ref<File | null>(null)
+const bundleImportCandidates = ref<BundleImportCandidate[]>([])
+const bundleImportOpen = ref(false)
 
 const ANNOTATION_PANE_STORAGE_KEY = 'screendesc.annotationPanePercent'
 const ANNOTATION_PANE_MIN = 18
@@ -228,7 +244,7 @@ function goToPage(page: AppPageId): void {
   }
   clearProjectLoadError()
   appPage.value = page
-  if (page === 'files') void refreshSavedProjects()
+  if (page === 'files') void refreshProjectBrowser()
 }
 
 async function onFile(file: File): Promise<void> {
@@ -266,6 +282,11 @@ async function onFile(file: File): Promise<void> {
       totalMs: Math.round(performance.now() - importStartedAt),
     })
     await analysis
+    if (currentFolderId.value) {
+      await flushPersistCurrentProject()
+      const projectId = activeNamedProject.value?.id
+      if (projectId) await moveNamedProject(projectId, currentFolderId.value)
+    }
     console.log('[image-import] background analysis completed', {
       totalMs: Math.round(performance.now() - importStartedAt),
     })
@@ -297,7 +318,7 @@ async function onWindowPaste(event: ClipboardEvent): Promise<void> {
 
 onMounted(() => {
   window.addEventListener('paste', onWindowPaste)
-  void refreshSavedProjects()
+  void refreshProjectBrowser()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('paste', onWindowPaste)
@@ -443,32 +464,62 @@ async function onProjectFileChange(event: Event): Promise<void> {
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
+  await importProjectFile(file)
+}
+
+async function importProjectFile(file: File): Promise<void> {
   clearProjectLoadError()
   projectStorageBusy.value = true
   try {
-    const result = await openProjectFile(file)
-    if (result.kind === 'bundle') {
-      await refreshSavedProjects()
-      appPage.value = 'files'
-      if (result.skipped > 0 && result.imported > 0) {
-        showAppNotice(
-          t('status.bundleImportResult', {
-            imported: result.imported,
-            skipped: result.skipped,
-          }),
-          'info',
-        )
-      } else if (result.skipped > 0) {
-        showAppNotice(
-          t('status.bundleImportSkippedAll', { skipped: result.skipped }),
-          'info',
-        )
-      } else if (result.imported > 0) {
-        showAppNotice(t('status.bundleImportOk', { imported: result.imported }), 'info')
-      }
+    const inspection = await inspectProjectFile(file)
+    if (inspection.kind === 'bundle') {
+      bundleImportFile.value = file
+      bundleImportCandidates.value = inspection.candidates
+      bundleImportOpen.value = true
       return
     }
+    await openProjectFile(file)
     appPage.value = 'edit'
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.projectLoadFailed'))
+  } finally {
+    projectStorageBusy.value = false
+  }
+}
+
+function closeBundleImport(): void {
+  if (projectStorageBusy.value) return
+  bundleImportOpen.value = false
+  bundleImportFile.value = null
+  bundleImportCandidates.value = []
+}
+
+function showBundleImportResult(result: Extract<OpenProjectFileResult, { kind: 'bundle' }>): void {
+  if (result.skipped > 0 && result.imported > 0) {
+    showAppNotice(
+      t('status.bundleImportResult', { imported: result.imported, skipped: result.skipped }),
+      'info',
+    )
+  } else if (result.skipped > 0) {
+    showAppNotice(t('status.bundleImportSkippedAll', { skipped: result.skipped }), 'info')
+  } else if (result.imported > 0) {
+    showAppNotice(t('status.bundleImportOk', { imported: result.imported }), 'info')
+  }
+}
+
+async function importSelectedBundle(indexes: number[]): Promise<void> {
+  const file = bundleImportFile.value
+  if (!file || indexes.length === 0) return
+  projectStorageBusy.value = true
+  try {
+    const result = await openProjectFile(file, indexes)
+    if (result.kind !== 'bundle') return
+    bundleImportOpen.value = false
+    bundleImportFile.value = null
+    bundleImportCandidates.value = []
+    await refreshProjectBrowser()
+    appPage.value = 'files'
+    showBundleImportResult(result)
   } catch (err) {
     showProjectLoadError(err instanceof Error ? err.message : t('error.projectLoadFailed'))
   } finally {
@@ -494,6 +545,84 @@ async function refreshSavedProjects(): Promise<void> {
   savedProjects.value = await fetchSavedProjects()
 }
 
+async function refreshProjectBrowser(): Promise<void> {
+  const [projects, folders] = await Promise.all([fetchSavedProjects(), listProjectFolders()])
+  savedProjects.value = projects
+  projectFolders.value = folders
+  if (currentFolderId.value && !folders.some((folder) => folder.id === currentFolderId.value)) {
+    currentFolderId.value = null
+  }
+}
+
+async function onCreateFolder(name: string, color: string, parentId: string | null): Promise<void> {
+  projectStorageBusy.value = true
+  try {
+    await createProjectFolder(name, color, parentId)
+    await refreshProjectBrowser()
+  } finally {
+    projectStorageBusy.value = false
+  }
+}
+
+async function onRenameFolder(id: string, name: string): Promise<void> {
+  await updateProjectFolder(id, { name })
+  await refreshProjectBrowser()
+}
+
+async function onRecolorFolder(id: string, color: string): Promise<void> {
+  await updateProjectFolder(id, { color })
+  await refreshProjectBrowser()
+}
+
+async function onRemoveFolder(id: string, deleteContents: boolean): Promise<void> {
+  projectStorageBusy.value = true
+  try {
+    const deletedFolderIds = new Set([id])
+    if (deleteContents) {
+      let foundChild = true
+      while (foundChild) {
+        foundChild = false
+        for (const folder of projectFolders.value) {
+          if (
+            folder.parentId &&
+            deletedFolderIds.has(folder.parentId) &&
+            !deletedFolderIds.has(folder.id)
+          ) {
+            deletedFolderIds.add(folder.id)
+            foundChild = true
+          }
+        }
+      }
+    }
+    const activeWillBeDeleted =
+      deleteContents &&
+      savedProjects.value.some(
+        (project) =>
+          project.id === activeNamedProject.value?.id &&
+          Boolean(project.folderId && deletedFolderIds.has(project.folderId)),
+      )
+    await deleteProjectFolder(id, deleteContents)
+    if (activeWillBeDeleted) {
+      await clearCurrentProject()
+      appPage.value = 'files'
+    }
+    await refreshProjectBrowser()
+  } finally {
+    projectStorageBusy.value = false
+  }
+}
+
+async function onMoveProject(id: string, folderId: string | null): Promise<void> {
+  await moveNamedProject(id, folderId)
+  await refreshProjectBrowser()
+}
+
+async function onMoveFolder(id: string, parentId: string | null): Promise<void> {
+  const moved = await moveProjectFolder(id, parentId)
+  if (!moved) showAppNotice(t('folder.invalidMove'), 'error')
+  await refreshProjectBrowser()
+}
+
 async function onOpenProjectStorage(): Promise<void> {
   projectStorageOpen.value = true
   await refreshSavedProjects()
@@ -503,6 +632,10 @@ async function onSaveNamedProject(name: string): Promise<void> {
   projectStorageBusy.value = true
   try {
     await saveProjectAs(name)
+    const projectId = activeNamedProject.value?.id
+    if (projectId && currentFolderId.value) {
+      await moveNamedProject(projectId, currentFolderId.value)
+    }
     await refreshSavedProjects()
   } finally {
     projectStorageBusy.value = false
@@ -783,7 +916,7 @@ function onKeydown(event: KeyboardEvent): void {
       <input
         ref="projectFileInputRef"
         type="file"
-        accept=".json,application/json"
+        accept=".screendesc,.screendesc.json,.screendesc-bundle.json,.json,application/json"
         hidden
         @change="onProjectFileChange"
       />
@@ -816,13 +949,23 @@ function onKeydown(event: KeyboardEvent): void {
           v-if="appPage === 'files'"
           ref="homeRef"
           :projects="savedProjects"
+          :folders="projectFolders"
+          :current-folder-id="currentFolderId"
           :active-project-id="activeNamedProject?.id ?? null"
           :is-busy="projectStorageBusy"
           @file="onFile"
+          @import-project="importProjectFile"
           @open="onLoadSavedProject"
           @remove="onRemoveSavedProject"
           @download-bundle="onDownloadAllProjectsBundle"
           @reveal="onRevealSavedProject"
+          @navigate-folder="currentFolderId = $event"
+          @create-folder="onCreateFolder"
+          @rename-folder="onRenameFolder"
+          @recolor-folder="onRecolorFolder"
+          @remove-folder="onRemoveFolder"
+          @move-project="onMoveProject"
+          @move-folder="onMoveFolder"
         />
 
         <div v-else class="workspace">
@@ -927,6 +1070,13 @@ function onKeydown(event: KeyboardEvent): void {
       </main>
 
       <ExportDialog :open="exportOpen" @close="exportOpen = false" @export="onExport" />
+      <BundleImportDialog
+        :open="bundleImportOpen"
+        :candidates="bundleImportCandidates"
+        :is-busy="projectStorageBusy"
+        @close="closeBundleImport"
+        @import="importSelectedBundle"
+      />
       <ProjectStorageDialog
         :open="projectStorageOpen"
         :has-image="hasImage"

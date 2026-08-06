@@ -1,6 +1,6 @@
-import type { ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
+import type { ProjectFolder, ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
 
-export type { ProjectSnapshot, SavedProjectMeta }
+export type { ProjectFolder, ProjectSnapshot, SavedProjectMeta }
 
 const API_PREFIX = '/__screendesc/storage'
 
@@ -155,7 +155,7 @@ export async function saveNamedProject(
 
 export async function patchSavedProjectMeta(
   id: string,
-  patch: Partial<Pick<SavedProjectMeta, 'contentHash' | 'name'>>,
+  patch: Partial<Pick<SavedProjectMeta, 'contentHash' | 'name' | 'folderId'>>,
 ): Promise<boolean> {
   const response = await fetch(`${API_PREFIX}/projects/${encodeURIComponent(id)}`, {
     method: 'PATCH',
@@ -229,6 +229,62 @@ export async function deleteNamedProject(id: string): Promise<void> {
 
 export async function revealNamedProject(id: string): Promise<void> {
   await requestJson(`/projects/${encodeURIComponent(id)}/reveal`, { method: 'POST' })
+}
+
+export async function listProjectFolders(): Promise<ProjectFolder[]> {
+  return requestJson<ProjectFolder[]>('/folders')
+}
+
+export async function createProjectFolder(
+  name: string,
+  color: string,
+  parentId: string | null,
+): Promise<ProjectFolder> {
+  return requestJson<ProjectFolder>('/folders', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, color, parentId }),
+  })
+}
+
+export async function updateProjectFolder(
+  id: string,
+  patch: Partial<Pick<ProjectFolder, 'name' | 'color'>>,
+): Promise<boolean> {
+  const response = await fetch(`${API_PREFIX}/folders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(patch),
+  })
+  if (response.status === 404) return false
+  if (!response.ok) throw new Error(`Desktop folder update failed (${response.status})`)
+  return true
+}
+
+export async function deleteProjectFolder(id: string, deleteContents = false): Promise<boolean> {
+  const response = await fetch(`${API_PREFIX}/folders/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ deleteContents }),
+  })
+  if (response.status === 404) return false
+  if (!response.ok) throw new Error(`Desktop folder delete failed (${response.status})`)
+  return true
+}
+
+export async function moveNamedProject(id: string, folderId: string | null): Promise<boolean> {
+  return patchSavedProjectMeta(id, { folderId })
+}
+
+export async function moveProjectFolder(id: string, parentId: string | null): Promise<boolean> {
+  const response = await fetch(`${API_PREFIX}/folders/${encodeURIComponent(id)}/move`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ parentId }),
+  })
+  if (response.status === 404 || response.status === 409) return false
+  if (!response.ok) throw new Error(`Desktop folder move failed (${response.status})`)
+  return true
 }
 
 /**
