@@ -114,7 +114,6 @@ export const ja: Record<MessageKey, string> = {
   'menu.replaceImage': '画像を差し替え…',
   'menu.undoCrop': '切り抜きを元に戻す',
 
-  'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
   'confirm.deleteSavedProjectTitle': 'プロジェクトを削除しますか？',
   'confirm.deleteSavedProject': '「{name}」を削除しますか？この操作は取り消せません。',
   'confirm.deleteActiveSavedProject':
@@ -322,6 +321,7 @@ export const ja: Record<MessageKey, string> = {
 
   'error.dismiss': '閉じる',
   'error.projectLoadFailed': 'プロジェクトの読み込みに失敗しました',
+  'error.projectSaveFailed': '現在のプロジェクトの保存に失敗しました',
   'error.imageReadFailed': '画像の読み込みに失敗しました',
   'error.imageFitFailed': 'プロジェクトと同じサイズへの変換に失敗しました',
   'error.imageReplaceNoProject': '画像を差し替える前にプロジェクトを開いてください',

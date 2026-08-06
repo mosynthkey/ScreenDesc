@@ -113,7 +113,6 @@ export const zh: Record<MessageKey, string> = {
   'menu.replaceImage': '替换图片…',
   'menu.undoCrop': '撤销裁剪',
 
-  'confirm.newProject': '放弃当前项目并新建一个吗？',
   'confirm.deleteSavedProjectTitle': '删除项目？',
   'confirm.deleteSavedProject': '删除“{name}”？此操作无法撤销。',
   'confirm.deleteActiveSavedProject': '此项目当前正在编辑。要删除吗？此操作无法撤销。',
@@ -307,6 +306,7 @@ export const zh: Record<MessageKey, string> = {
 
   'error.dismiss': '关闭',
   'error.projectLoadFailed': '项目加载失败',
+  'error.projectSaveFailed': '当前项目保存失败',
   'error.imageReadFailed': '图片读取失败',
   'error.imageFitFailed': '调整图片尺寸以匹配项目失败',
   'error.imageReplaceNoProject': '请先打开一个项目，再替换图片',

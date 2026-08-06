@@ -115,7 +115,6 @@ export const fr: Record<MessageKey, string> = {
   'menu.replaceImage': 'Remplacer l’image…',
   'menu.undoCrop': 'Annuler le recadrage',
 
-  'confirm.newProject': 'Abandonner le projet actuel et en commencer un nouveau ?',
   'confirm.deleteSavedProjectTitle': 'Supprimer le projet ?',
   'confirm.deleteSavedProject': 'Supprimer « {name} » ? Cette action est irréversible.',
   'confirm.deleteActiveSavedProject':
@@ -328,6 +327,7 @@ export const fr: Record<MessageKey, string> = {
 
   'error.dismiss': 'Ignorer',
   'error.projectLoadFailed': 'Échec du chargement du projet',
+  'error.projectSaveFailed': 'Échec de l’enregistrement du projet actuel',
   'error.imageReadFailed': 'Échec de la lecture de l’image',
   'error.imageFitFailed': 'Échec du redimensionnement de l’image pour correspondre au projet',
   'error.imageReplaceNoProject': 'Ouvrez un projet avant de remplacer l’image',

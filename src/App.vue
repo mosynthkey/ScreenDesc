@@ -353,11 +353,20 @@ async function onNewProject(): Promise<void> {
     homeRef.value?.openFilePicker()
     return
   }
-  if (!window.confirm(t('confirm.newProject'))) return
   clearProjectLoadError()
-  await clearCurrentProject()
-  appPage.value = 'files'
-  await refreshSavedProjects()
+  projectStorageBusy.value = true
+  try {
+    await flushPersistCurrentProject()
+    await clearCurrentProject()
+    appPage.value = 'files'
+    await refreshProjectBrowser()
+    await nextTick()
+    homeRef.value?.openFilePicker()
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.projectSaveFailed'))
+  } finally {
+    projectStorageBusy.value = false
+  }
 }
 
 function onAnnotateSection(sectionId: string): void {

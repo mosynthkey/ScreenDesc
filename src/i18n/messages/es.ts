@@ -115,7 +115,6 @@ export const es: Record<MessageKey, string> = {
   'menu.replaceImage': 'Reemplazar imagen…',
   'menu.undoCrop': 'Deshacer recorte',
 
-  'confirm.newProject': '¿Descartar el proyecto actual y empezar uno nuevo?',
   'confirm.deleteSavedProjectTitle': '¿Eliminar proyecto?',
   'confirm.deleteSavedProject': '¿Eliminar “{name}”? Esta acción no se puede deshacer.',
   'confirm.deleteActiveSavedProject':
@@ -325,6 +324,7 @@ export const es: Record<MessageKey, string> = {
 
   'error.dismiss': 'Descartar',
   'error.projectLoadFailed': 'No se pudo cargar el proyecto',
+  'error.projectSaveFailed': 'No se pudo guardar el proyecto actual',
   'error.imageReadFailed': 'No se pudo leer la imagen',
   'error.imageFitFailed': 'No se pudo redimensionar la imagen para que coincida con el proyecto',
   'error.imageReplaceNoProject': 'Abre un proyecto antes de reemplazar la imagen',

@@ -115,7 +115,6 @@ export const de: Record<MessageKey, string> = {
   'menu.replaceImage': 'Bild ersetzen…',
   'menu.undoCrop': 'Zuschnitt rückgängig machen',
 
-  'confirm.newProject': 'Aktuelles Projekt verwerfen und ein neues beginnen?',
   'confirm.deleteSavedProjectTitle': 'Projekt löschen?',
   'confirm.deleteSavedProject': '„{name}“ löschen? Dies kann nicht rückgängig gemacht werden.',
   'confirm.deleteActiveSavedProject':
@@ -330,6 +329,7 @@ export const de: Record<MessageKey, string> = {
 
   'error.dismiss': 'Verwerfen',
   'error.projectLoadFailed': 'Projekt konnte nicht geladen werden',
+  'error.projectSaveFailed': 'Das aktuelle Projekt konnte nicht gespeichert werden',
   'error.imageReadFailed': 'Bild konnte nicht gelesen werden',
   'error.imageFitFailed': 'Bild konnte nicht an die Projektgröße angepasst werden',
   'error.imageReplaceNoProject': 'Vor dem Ersetzen des Bilds ein Projekt öffnen',

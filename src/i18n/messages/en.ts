@@ -112,7 +112,6 @@ export const en = {
   'menu.replaceImage': 'Replace image…',
   'menu.undoCrop': 'Undo crop',
 
-  'confirm.newProject': 'Discard the current project and start a new one?',
   'confirm.deleteSavedProjectTitle': 'Delete project?',
   'confirm.deleteSavedProject': 'Delete “{name}”? This cannot be undone.',
   'confirm.deleteActiveSavedProject':
@@ -318,6 +317,7 @@ export const en = {
 
   'error.dismiss': 'Dismiss',
   'error.projectLoadFailed': 'Failed to load the project',
+  'error.projectSaveFailed': 'Failed to save the current project',
   'error.imageReadFailed': 'Failed to read the image',
   'error.imageFitFailed': 'Failed to resize the image to match the project',
   'error.imageReplaceNoProject': 'Open a project before replacing the image',
