@@ -18,12 +18,18 @@ import {
 export async function runSectionDetection(core: StoreCore): Promise<void> {
   const { state, imageElement, isDetecting, screenParser } = core
   if (!imageElement.value) return
+  const startedAt = performance.now()
+  console.log('[image-analysis] UI element detection started')
   isDetecting.value = true
   try {
     const sections = await detectSectionsML(imageElement.value, screenParser)
     state.sections = sections
     state.sectionVisibility = defaultSectionVisibility()
     state.selectedSectionIds = []
+    console.log('[image-analysis] UI element detection completed', {
+      ms: Math.round(performance.now() - startedAt),
+      sectionCount: sections.length,
+    })
   } finally {
     isDetecting.value = false
     // Only ever loaded for the duration of an analysis — unload right away
@@ -42,20 +48,35 @@ export async function rediscoverSectionsAfterReplace(core: StoreCore): Promise<v
   core.refreshDocumentAndLayouts()
 }
 
-async function applyImageSource(
+interface PreparedImageSource {
+  image: HTMLImageElement
+  retainedAfterCrop?: { sections: Section[]; annotations: Annotation[] }
+}
+
+async function prepareImageSource(
   core: StoreCore,
   source: Blob,
   options: {
     revokePrevious?: boolean
     retainedAfterCrop?: { sections: Section[]; annotations: Annotation[] }
   } = {},
-): Promise<void> {
-  const { state, imageElement, ocrLines, isRecognizingText } = core
+): Promise<PreparedImageSource> {
+  const { state, imageElement, ocrLines } = core
+  const startedAt = performance.now()
   const revokePrevious = options.revokePrevious ?? true
   if (revokePrevious && state.imageUrl) URL.revokeObjectURL(state.imageUrl)
 
   const url = URL.createObjectURL(source)
+  const decodeStartedAt = performance.now()
+  console.log('[image-import] browser image decode started')
   const image = await core.loadImageElement(url)
+  console.log('[image-import] browser image decode completed', {
+    ms: Math.round(performance.now() - decodeStartedAt),
+    width: image.naturalWidth,
+    height: image.naturalHeight,
+  })
+
+  const stateStartedAt = performance.now()
   imageElement.value = image
   state.imageUrl = url
   state.imageWidth = image.naturalWidth
@@ -68,27 +89,61 @@ async function applyImageSource(
   state.sectionVisibility = defaultSectionVisibility()
   ocrLines.value = []
   core.refreshDocumentAndLayouts()
+  console.log('[image-import] editor state and layout initialized', {
+    ms: Math.round(performance.now() - stateStartedAt),
+    totalMs: Math.round(performance.now() - startedAt),
+  })
+
+  return { image, retainedAfterCrop: options.retainedAfterCrop }
+}
+
+async function analyzeImageSource(
+  core: StoreCore,
+  prepared: PreparedImageSource,
+): Promise<void> {
+  const { state, ocrLines, isRecognizingText } = core
 
   // Sequential, not parallel: each analysis step loads its own model, runs,
   // and unloads before the next one starts, so at most one model is ever
   // resident in memory at a time.
   await runSectionDetection(core)
-  if (options.retainedAfterCrop) {
-    state.sections = [...state.sections, ...options.retainedAfterCrop.sections]
+  if (prepared.retainedAfterCrop) {
+    state.sections = [...state.sections, ...prepared.retainedAfterCrop.sections]
     core.refreshDocumentAndLayouts()
   }
 
   isRecognizingText.value = true
+  const ocrStartedAt = performance.now()
+  console.log('[image-analysis] OCR started')
   try {
-    const ocrResult = await recognizeTextFromImage(image)
+    const ocrResult = await recognizeTextFromImage(prepared.image)
     ocrLines.value = ocrResult.lines
+    console.log('[image-analysis] OCR completed', {
+      ms: Math.round(performance.now() - ocrStartedAt),
+      lineCount: ocrResult.lines.length,
+    })
   } finally {
     isRecognizingText.value = false
   }
   core.refreshDocumentAndLayouts()
 }
 
-export async function loadImageFile(core: StoreCore, file: File): Promise<void> {
+async function applyImageSource(
+  core: StoreCore,
+  source: Blob,
+  options: {
+    revokePrevious?: boolean
+    retainedAfterCrop?: { sections: Section[]; annotations: Annotation[] }
+  } = {},
+): Promise<void> {
+  const prepared = await prepareImageSource(core, source, options)
+  await analyzeImageSource(core, prepared)
+}
+
+export async function loadImageFile(
+  core: StoreCore,
+  file: File,
+): Promise<{ analysis: Promise<void> }> {
   const { state, cropHistory, activeNamedProject } = core
   if (cropHistory.value) {
     URL.revokeObjectURL(cropHistory.value.imageUrl)
@@ -99,7 +154,8 @@ export async function loadImageFile(core: StoreCore, file: File): Promise<void> 
   core.clearEditUndoStack()
   state.variations = []
   state.activeVariation = null
-  await applyImageSource(core, file)
+  const prepared = await prepareImageSource(core, file)
+  return { analysis: analyzeImageSource(core, prepared) }
 }
 
 export async function replaceImageFile(core: StoreCore, file: File): Promise<void> {

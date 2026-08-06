@@ -33,6 +33,7 @@ export const ja: Record<MessageKey, string> = {
   'status.modelRetry': '再試行',
   'status.proposing': '提案中…',
   'status.recognizingText': '文字を認識しています…',
+  'status.detectingUiElements': 'UI要素を認識しています…',
 
   'variation.default': '既定',
   'variation.buttonLabel': 'バリエーション: {name}',
@@ -91,6 +92,8 @@ export const ja: Record<MessageKey, string> = {
   'confirm.newProject': '現在のプロジェクトを破棄して新規作成しますか？',
   'confirm.deleteSavedProjectTitle': 'プロジェクトを削除しますか？',
   'confirm.deleteSavedProject': '「{name}」を削除しますか？この操作は取り消せません。',
+  'confirm.deleteActiveSavedProject':
+    'このプロジェクトは現在編集中です。削除しますか？この操作は取り消せません。',
   'confirm.cancel': 'キャンセル',
   'confirm.delete': '削除',
 

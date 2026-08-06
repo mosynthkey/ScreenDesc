@@ -33,6 +33,7 @@ export const de: Record<MessageKey, string> = {
   'status.modelRetry': 'Erneut versuchen',
   'status.proposing': 'Vorschläge werden erstellt…',
   'status.recognizingText': 'Text wird erkannt…',
+  'status.detectingUiElements': 'UI-Elemente werden erkannt…',
 
   'variation.default': 'Standard',
   'variation.buttonLabel': 'Variante: {name}',
@@ -92,6 +93,8 @@ export const de: Record<MessageKey, string> = {
   'confirm.newProject': 'Aktuelles Projekt verwerfen und ein neues beginnen?',
   'confirm.deleteSavedProjectTitle': 'Projekt löschen?',
   'confirm.deleteSavedProject': '„{name}“ löschen? Dies kann nicht rückgängig gemacht werden.',
+  'confirm.deleteActiveSavedProject':
+    'Dieses Projekt wird derzeit bearbeitet. Löschen? Dies kann nicht rückgängig gemacht werden.',
   'confirm.cancel': 'Abbrechen',
   'confirm.delete': 'Löschen',
 

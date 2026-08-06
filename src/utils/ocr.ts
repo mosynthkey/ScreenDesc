@@ -40,7 +40,7 @@ async function getOcrClient(): Promise<OcrClient> {
       lang: 'japan',
       worker: true,
       ortOptions: {
-        backend: 'wasm',
+        backend: 'auto',
         wasmPaths: `${baseUrl}ort/`,
       },
       textDetectionModelName: 'PP-OCRv6_small_det',

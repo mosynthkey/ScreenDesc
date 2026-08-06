@@ -33,6 +33,7 @@ export const zh: Record<MessageKey, string> = {
   'status.modelRetry': '重试',
   'status.proposing': '正在生成建议…',
   'status.recognizingText': '正在识别文字…',
+  'status.detectingUiElements': '正在识别界面元素…',
 
   'variation.default': '默认',
   'variation.buttonLabel': '变体：{name}',
@@ -90,6 +91,7 @@ export const zh: Record<MessageKey, string> = {
   'confirm.newProject': '放弃当前项目并新建一个吗？',
   'confirm.deleteSavedProjectTitle': '删除项目？',
   'confirm.deleteSavedProject': '删除“{name}”？此操作无法撤销。',
+  'confirm.deleteActiveSavedProject': '此项目当前正在编辑。要删除吗？此操作无法撤销。',
   'confirm.cancel': '取消',
   'confirm.delete': '删除',
 

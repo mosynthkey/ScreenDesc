@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 defineProps<{
   open: boolean
   projectName: string
+  isActiveProject: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +24,13 @@ const { t } = useI18n()
       :aria-label="t('confirm.deleteSavedProjectTitle')"
     >
       <h2>{{ t('confirm.deleteSavedProjectTitle') }}</h2>
-      <p class="body">{{ t('confirm.deleteSavedProject', { name: projectName }) }}</p>
+      <p class="body">
+        {{
+          isActiveProject
+            ? t('confirm.deleteActiveSavedProject')
+            : t('confirm.deleteSavedProject', { name: projectName })
+        }}
+      </p>
       <div class="modal-actions">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('confirm.cancel') }}

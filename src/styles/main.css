@@ -381,12 +381,32 @@ input[type='radio'] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 11px;
+  box-sizing: border-box;
+  padding: 7px 14px;
   border-radius: 980px;
   background: var(--accent-soft);
   color: var(--accent-strong);
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 590;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.status-chip-spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: status-chip-spin 700ms linear infinite;
+}
+
+@keyframes status-chip-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .modal-backdrop {

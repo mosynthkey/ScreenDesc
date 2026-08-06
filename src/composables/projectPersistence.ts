@@ -13,12 +13,13 @@ import { renderThumbnailBlob } from './projectThumbnail'
 import type { StoreCore } from '../stores/annotationStore'
 
 let restored = false
-let saveTimer: ReturnType<typeof setTimeout> | null = null
-let namedSaveTimer: ReturnType<typeof setTimeout> | null = null
+let sessionSaveQueued = false
+let namedSaveQueued = false
+let sessionSaveGeneration = 0
+let namedSaveGeneration = 0
+let sessionSaveChain = Promise.resolve()
+let namedSaveChain = Promise.resolve()
 let namedSaveDirty = false
-const SESSION_SAVE_DEBOUNCE_MS = 600
-const NAMED_SAVE_DEBOUNCE_MS = 2500
-const NAMED_SAVE_INTERVAL_MS = 30_000
 
 export async function buildCurrentSnapshot(core: StoreCore): Promise<ProjectSnapshot | null> {
   const { state } = core
@@ -77,7 +78,7 @@ export async function persistCurrentProject(core: StoreCore): Promise<void> {
 /**
  * @param withThumbnail Re-renders the annotated thumbnail too. Costly (font
  * loading + SVG rasterization), so callers only pass true at natural
- * settle points (leaving the project), not on the frequent edit-debounce path.
+ * settle points (leaving the project), not on the frequent edit-save path.
  */
 export async function persistActiveNamedProject(core: StoreCore, withThumbnail = false): Promise<void> {
   const { activeNamedProject, state } = core
@@ -137,10 +138,11 @@ export async function ensureActiveNamedProject(core: StoreCore): Promise<void> {
   }
 }
 
-/** Flush pending debounced saves before leaving the current project. */
+/** Flush pending saves before leaving the current project. */
 export async function flushPersistCurrentProject(core: StoreCore): Promise<void> {
   clearSessionSaveSchedule()
   clearNamedSaveSchedule()
+  await Promise.all([sessionSaveChain, namedSaveChain])
   if (!core.state.imageUrl) return
   await ensureActiveNamedProject(core)
   await persistActiveNamedProject(core, true)
@@ -149,45 +151,49 @@ export async function flushPersistCurrentProject(core: StoreCore): Promise<void>
 
 export function scheduleSave(core: StoreCore): void {
   if (!restored || !core.state.imageUrl) return
-  if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    void (async () => {
-      await ensureActiveNamedProject(core)
-      await persistCurrentProject(core)
-    })()
-  }, SESSION_SAVE_DEBOUNCE_MS)
+  if (!sessionSaveQueued) {
+    sessionSaveQueued = true
+    const generation = sessionSaveGeneration
+    queueMicrotask(() => {
+      sessionSaveQueued = false
+      if (generation !== sessionSaveGeneration) return
+      sessionSaveChain = sessionSaveChain.then(async () => {
+        if (generation !== sessionSaveGeneration) return
+        await ensureActiveNamedProject(core)
+        await persistCurrentProject(core)
+      })
+    })
+  }
 
   namedSaveDirty = true
-  if (namedSaveTimer) clearTimeout(namedSaveTimer)
-  namedSaveTimer = setTimeout(() => {
-    void (async () => {
-      await ensureActiveNamedProject(core)
-      await persistActiveNamedProject(core)
-    })()
-  }, NAMED_SAVE_DEBOUNCE_MS)
+  if (!namedSaveQueued) {
+    namedSaveQueued = true
+    const generation = namedSaveGeneration
+    queueMicrotask(() => {
+      namedSaveQueued = false
+      if (generation !== namedSaveGeneration) return
+      namedSaveChain = namedSaveChain.then(async () => {
+        if (generation !== namedSaveGeneration) return
+        await ensureActiveNamedProject(core)
+        await persistActiveNamedProject(core)
+      })
+    })
+  }
 }
 
 export function clearNamedSaveSchedule(): void {
-  if (namedSaveTimer) {
-    clearTimeout(namedSaveTimer)
-    namedSaveTimer = null
-  }
+  namedSaveGeneration += 1
+  namedSaveQueued = false
   namedSaveDirty = false
 }
 
 export function clearSessionSaveSchedule(): void {
-  if (saveTimer) {
-    clearTimeout(saveTimer)
-    saveTimer = null
-  }
+  sessionSaveGeneration += 1
+  sessionSaveQueued = false
 }
 
 export function markNamedSaveClean(): void {
-  namedSaveDirty = false
-  if (namedSaveTimer) {
-    clearTimeout(namedSaveTimer)
-    namedSaveTimer = null
-  }
+  clearNamedSaveSchedule()
 }
 
 export function isNamedSaveDirty(): boolean {
@@ -268,16 +274,6 @@ export function initializePersistence(core: StoreCore): void {
     () => scheduleSave(core),
     { deep: true },
   )
-
-  if (typeof window !== 'undefined') {
-    window.setInterval(() => {
-      if (!namedSaveDirty || !state.imageUrl) return
-      void (async () => {
-        await ensureActiveNamedProject(core)
-        await persistActiveNamedProject(core)
-      })()
-    }, NAMED_SAVE_INTERVAL_MS)
-  }
 
   void restorePersistedProject(core)
 }

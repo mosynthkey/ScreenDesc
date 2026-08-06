@@ -57,6 +57,7 @@ const {
   cropImage,
   undoCrop,
   undoEdit,
+  redoEdit,
   addSection,
   setToolMode,
   setCropDraft,
@@ -114,8 +115,10 @@ const pendingCropRect = ref<Rect | null>(null)
 const replaceDetectOpen = ref(false)
 const pendingDeleteProjectId = ref<string | null>(null)
 const pendingDeleteProjectName = ref('')
+const pendingDeleteProjectIsActive = ref(false)
 const appPage = ref<AppPageId>('files')
 const isImportingFile = ref(false)
+const isInitialImageAnalysisRunning = ref(false)
 
 const ANNOTATION_PANE_STORAGE_KEY = 'screendesc.annotationPanePercent'
 const ANNOTATION_PANE_MIN = 18
@@ -188,11 +191,10 @@ const effectiveCalloutBorderWidth = computed(() =>
 const showToolDock = computed(() => hasImage.value && appPage.value === 'edit')
 const modelReady = computed(() => modelStatus.value === 'ready')
 const canOpenEdit = computed(() => hasImage.value)
-// Blocking for either reason: waiting on the section-detection model outside
-// a fresh import (e.g. replacing the image), or the whole import pipeline
-// itself (decode → model → detect → OCR) — one banner covers both.
 const importBannerBlocking = computed(
-  () => (modelAwaitingUse.value && !modelReady.value) || isImportingFile.value,
+  () =>
+    isImportingFile.value ||
+    (modelAwaitingUse.value && !modelReady.value && !isInitialImageAnalysisRunning.value),
 )
 
 function clearAppNotice(): void {
@@ -230,18 +232,52 @@ function goToPage(page: AppPageId): void {
 }
 
 async function onFile(file: File): Promise<void> {
+  const importStartedAt = performance.now()
+  console.log('[image-import] started', { size: file.size, type: file.type })
   clearProjectLoadError()
   isImportingFile.value = true
   // Yield a frame so the loading spinner paints before the heavy work starts.
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  console.log('[image-import] loading indicator painted', {
+    ms: Math.round(performance.now() - importStartedAt),
+  })
   try {
-    if (hasImage.value) await flushPersistCurrentProject()
-    await loadImageFile(file)
+    if (hasImage.value) {
+      const saveStartedAt = performance.now()
+      console.log('[image-import] saving current project…')
+      await flushPersistCurrentProject()
+      console.log('[image-import] current project saved', {
+        ms: Math.round(performance.now() - saveStartedAt),
+      })
+    }
+
+    const loadStartedAt = performance.now()
+    console.log('[image-import] decoding image…')
+    const { analysis } = await loadImageFile(file)
+    console.log('[image-import] image decoded and canvas prepared', {
+      ms: Math.round(performance.now() - loadStartedAt),
+      totalMs: Math.round(performance.now() - importStartedAt),
+    })
+
     appPage.value = 'edit'
+    isImportingFile.value = false
+    isInitialImageAnalysisRunning.value = true
+    console.log('[image-import] switched to edit page', {
+      totalMs: Math.round(performance.now() - importStartedAt),
+    })
+    await analysis
+    console.log('[image-import] background analysis completed', {
+      totalMs: Math.round(performance.now() - importStartedAt),
+    })
   } catch (err) {
+    console.error('[image-import] failed', {
+      totalMs: Math.round(performance.now() - importStartedAt),
+      error: err,
+    })
     showProjectLoadError(err instanceof Error ? err.message : t('error.imageReadFailed'))
   } finally {
     isImportingFile.value = false
+    isInitialImageAnalysisRunning.value = false
   }
 }
 
@@ -535,20 +571,27 @@ function onRemoveSavedProject(id: string): void {
   const target = savedProjects.value.find((item) => item.id === id)
   pendingDeleteProjectId.value = id
   pendingDeleteProjectName.value = target?.name?.trim() || t('header.untitledProject')
+  pendingDeleteProjectIsActive.value = activeNamedProject.value?.id === id
 }
 
 function closeDeleteSavedProject(): void {
   pendingDeleteProjectId.value = null
   pendingDeleteProjectName.value = ''
+  pendingDeleteProjectIsActive.value = false
 }
 
 async function confirmDeleteSavedProject(): Promise<void> {
   const id = pendingDeleteProjectId.value
   if (!id) return
+  const isActiveProject = pendingDeleteProjectIsActive.value
   closeDeleteSavedProject()
   projectStorageBusy.value = true
   try {
     await removeSavedProject(id)
+    if (isActiveProject) {
+      await clearCurrentProject()
+      appPage.value = 'files'
+    }
     await refreshSavedProjects()
   } finally {
     projectStorageBusy.value = false
@@ -634,9 +677,15 @@ function onKeydown(event: KeyboardEvent): void {
   if (appPage.value !== 'edit' || !hasImage.value) return
 
   if ((event.metaKey || event.ctrlKey) && !event.altKey && (event.key === 'z' || event.key === 'Z')) {
-    if (event.shiftKey) return
     event.preventDefault()
-    undoEdit()
+    if (event.shiftKey) redoEdit()
+    else undoEdit()
+    return
+  }
+
+  if (event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'y' || event.key === 'Y')) {
+    event.preventDefault()
+    redoEdit()
     return
   }
 
@@ -706,6 +755,7 @@ function onKeydown(event: KeyboardEvent): void {
         :tool-mode="state.toolMode"
         :section-visibility="state.sectionVisibility"
         :is-detecting="isDetecting"
+        :is-recognizing-text="isRecognizingText"
         :can-export="hasImage && !isExporting"
         :copy-just-succeeded="copyJustSucceeded"
         :has-image="hasImage"
@@ -910,6 +960,7 @@ function onKeydown(event: KeyboardEvent): void {
       <DeleteSavedProjectDialog
         :open="pendingDeleteProjectId !== null"
         :project-name="pendingDeleteProjectName"
+        :is-active-project="pendingDeleteProjectIsActive"
         @close="closeDeleteSavedProject"
         @confirm="confirmDeleteSavedProject"
       />

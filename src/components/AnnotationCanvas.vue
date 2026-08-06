@@ -887,7 +887,6 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
     <div v-if="emptyHint && !isDetecting" class="canvas-banner">
       {{ t('canvas.emptyHint') }}
     </div>
-    <div v-if="isDetecting" class="canvas-banner detecting">{{ t('canvas.detecting') }}</div>
     <div
       class="canvas-stage"
       :style="{ width: `${stageWidth}px`, height: `${stageHeight}px` }"

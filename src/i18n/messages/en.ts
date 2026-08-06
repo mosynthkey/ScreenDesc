@@ -31,6 +31,7 @@ export const en = {
   'status.modelRetry': 'Retry',
   'status.proposing': 'Proposing…',
   'status.recognizingText': 'Recognizing text…',
+  'status.detectingUiElements': 'Recognizing UI elements…',
 
   'variation.default': 'Default',
   'variation.buttonLabel': 'Variation: {name}',
@@ -89,6 +90,8 @@ export const en = {
   'confirm.newProject': 'Discard the current project and start a new one?',
   'confirm.deleteSavedProjectTitle': 'Delete project?',
   'confirm.deleteSavedProject': 'Delete “{name}”? This cannot be undone.',
+  'confirm.deleteActiveSavedProject':
+    'This project is currently being edited. Delete it? This cannot be undone.',
   'confirm.cancel': 'Cancel',
   'confirm.delete': 'Delete',
 

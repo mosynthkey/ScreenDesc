@@ -39,6 +39,7 @@ const props = withDefaults(
     toolMode: ToolMode
     sectionVisibility: SectionVisibilityMap
     isDetecting: boolean
+    isRecognizingText: boolean
     canExport: boolean
     copyJustSucceeded?: boolean
     hasImage: boolean
@@ -309,7 +310,14 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
     </div>
 
     <div v-else class="header-actions">
-      <span v-if="isDetecting" class="status-chip">{{ t('status.proposing') }}</span>
+      <span v-if="isDetecting" class="status-chip">
+        <span class="status-chip-spinner" aria-hidden="true" />
+        {{ t('status.detectingUiElements') }}
+      </span>
+      <span v-else-if="isRecognizingText" class="status-chip">
+        <span class="status-chip-spinner" aria-hidden="true" />
+        {{ t('status.recognizingText') }}
+      </span>
 
       <div class="variation-menu-wrap">
         <button

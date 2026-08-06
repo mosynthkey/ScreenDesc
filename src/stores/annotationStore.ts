@@ -348,6 +348,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   const MAX_EDIT_UNDO = 40
   const editUndoStack = ref<EditSnapshot[]>([])
+  const editRedoStack = ref<EditSnapshot[]>([])
   let editUndoCoalesceKey: string | null = null
   let editUndoCoalesceUntil = 0
 
@@ -360,6 +361,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function clearEditUndoStack(): void {
     editUndoStack.value = []
+    editRedoStack.value = []
     editUndoCoalesceKey = null
     editUndoCoalesceUntil = 0
   }
@@ -371,6 +373,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   /** Snapshot current sections/annotations before a mutating edit. */
   function pushEditUndo(coalesceKey: string | null = null): void {
+    editRedoStack.value = []
     const now = performance.now()
     if (
       coalesceKey !== null &&
@@ -1244,12 +1247,27 @@ export const useAnnotationStore = defineStore('annotation', () => {
   function undoEdit(): boolean {
     const snapshot = editUndoStack.value.pop()
     if (!snapshot) return false
+    editRedoStack.value.push(cloneEditSnapshot())
+    if (editRedoStack.value.length > MAX_EDIT_UNDO) {
+      editRedoStack.value.shift()
+    }
     resetEditUndoCoalesce()
     restoreEditSnapshot(snapshot)
     return true
   }
 
-  const canUndoEdit = computed(() => editUndoStack.value.length > 0)
+  function redoEdit(): boolean {
+    const snapshot = editRedoStack.value.pop()
+    if (!snapshot) return false
+    editUndoStack.value.push(cloneEditSnapshot())
+    if (editUndoStack.value.length > MAX_EDIT_UNDO) {
+      editUndoStack.value.shift()
+    }
+    resetEditUndoCoalesce()
+    restoreEditSnapshot(snapshot)
+    return true
+  }
+
 
   async function renderExportBlob(options: ExportOptions): Promise<Blob | null> {
     if (!imageElement.value) return null
@@ -1376,7 +1394,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     labelPositions,
     canUndoCrop,
     undoEdit,
-    canUndoEdit,
+    redoEdit,
     imageElement: readonly(imageElement),
     loadImageFile: (file: File) => loadImageFile(core, file),
     replaceImageFile: (file: File) => replaceImageFile(core, file),
