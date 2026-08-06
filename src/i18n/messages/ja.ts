@@ -60,7 +60,7 @@ export const ja: Record<MessageKey, string> = {
   'status.recognizingText': '文字を認識しています…',
   'status.detectingUiElements': 'UI要素を認識しています…',
 
-  'variation.default': '既定',
+  'variation.default': 'デフォルト',
   'variation.buttonLabel': 'バリエーション: {name}',
   'variation.addPlaceholder': '新しいバリエーション名',
   'variation.addButton': '追加',
