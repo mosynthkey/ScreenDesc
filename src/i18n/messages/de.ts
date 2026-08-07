@@ -78,7 +78,7 @@ export const de: Record<MessageKey, string> = {
   'header.untitledProject': 'Unbenanntes Projekt',
   'header.projectNameAria': 'Projektname',
 
-  'tooltip.projectMenu': 'Projekt speichern oder laden',
+  'tooltip.projectMenu': 'Projektaktionen',
   'tooltip.copyClipboard': 'Das kommentierte Bild in die Zwischenablage kopieren',
   'tooltip.export': 'Das kommentierte Bild exportieren',
   'tooltip.newProject': 'Ein neues Projekt aus einem Screenshot erstellen',
@@ -108,12 +108,15 @@ export const de: Record<MessageKey, string> = {
   'sectionVisibility.manual': 'Manuell hinzugefügt',
 
   'menu.newProject': 'Neues Projekt',
+  'menu.duplicateProject': 'Projekt duplizieren',
   'menu.projectStorage': 'Speichern / laden (im Browser)',
   'menu.projectStorage.desktop': 'Speichern / laden (Dokumente)',
   'menu.exportProjectFile': 'Exportieren (in Datei schreiben)',
   'menu.importProjectFile': 'Importieren (aus Datei lesen)',
   'menu.replaceImage': 'Bild ersetzen…',
   'menu.undoCrop': 'Zuschnitt rückgängig machen',
+  'project.copyName': '{name} – Kopie',
+  'project.copyNameNumbered': '{name} – Kopie ({number})',
 
   'confirm.deleteSavedProjectTitle': 'Projekt löschen?',
   'confirm.deleteSavedProject': '„{name}“ löschen? Dies kann nicht rückgängig gemacht werden.',

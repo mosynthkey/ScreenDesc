@@ -78,7 +78,7 @@ export const fr: Record<MessageKey, string> = {
   'header.untitledProject': 'Projet sans titre',
   'header.projectNameAria': 'Nom du projet',
 
-  'tooltip.projectMenu': 'Enregistrer ou charger le projet',
+  'tooltip.projectMenu': 'Actions du projet',
   'tooltip.copyClipboard': 'Copier l’image annotée dans le presse-papiers',
   'tooltip.export': 'Exporter l’image annotée',
   'tooltip.newProject': 'Créer un nouveau projet à partir d’une capture d’écran',
@@ -108,12 +108,15 @@ export const fr: Record<MessageKey, string> = {
   'sectionVisibility.manual': 'Ajoutées manuellement',
 
   'menu.newProject': 'Nouveau projet',
+  'menu.duplicateProject': 'Dupliquer le projet',
   'menu.projectStorage': 'Enregistrer / charger (dans le navigateur)',
   'menu.projectStorage.desktop': 'Enregistrer / charger (Documents)',
   'menu.exportProjectFile': 'Exporter (écrire dans un fichier)',
   'menu.importProjectFile': 'Importer (lire depuis un fichier)',
   'menu.replaceImage': 'Remplacer l’image…',
   'menu.undoCrop': 'Annuler le recadrage',
+  'project.copyName': 'Copie de {name}',
+  'project.copyNameNumbered': 'Copie de {name} ({number})',
 
   'confirm.deleteSavedProjectTitle': 'Supprimer le projet ?',
   'confirm.deleteSavedProject': 'Supprimer « {name} » ? Cette action est irréversible.',

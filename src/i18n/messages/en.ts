@@ -75,7 +75,7 @@ export const en = {
   'header.untitledProject': 'Untitled project',
   'header.projectNameAria': 'Project name',
 
-  'tooltip.projectMenu': 'Save or load project',
+  'tooltip.projectMenu': 'Project actions',
   'tooltip.copyClipboard': 'Copy the annotated image to the clipboard',
   'tooltip.export': 'Export the annotated image',
   'tooltip.newProject': 'Create a new project from a screenshot',
@@ -105,12 +105,15 @@ export const en = {
   'sectionVisibility.manual': 'Manually added',
 
   'menu.newProject': 'New project',
+  'menu.duplicateProject': 'Duplicate project',
   'menu.projectStorage': 'Save / load (in browser)',
   'menu.projectStorage.desktop': 'Save / load (Documents)',
   'menu.exportProjectFile': 'Export (write to file)',
   'menu.importProjectFile': 'Import (read from file)',
   'menu.replaceImage': 'Replace image…',
   'menu.undoCrop': 'Undo crop',
+  'project.copyName': '{name} copy',
+  'project.copyNameNumbered': '{name} copy ({number})',
 
   'confirm.deleteSavedProjectTitle': 'Delete project?',
   'confirm.deleteSavedProject': 'Delete “{name}”? This cannot be undone.',

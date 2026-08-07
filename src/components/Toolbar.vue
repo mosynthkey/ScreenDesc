@@ -30,7 +30,7 @@ import {
   XIcon,
 } from '@lucide/vue'
 
-const { t, tr } = useI18n()
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -63,9 +63,9 @@ const emit = defineEmits<{
   export: []
   undoCrop: []
   exportProjectFile: []
+  duplicateProject: []
   openImportProject: []
   replaceImage: []
-  openProjectStorage: []
   newProject: []
   renameProject: [name: string]
   confirmCrop: []
@@ -162,8 +162,8 @@ function toggleProjectMenu(): void {
   projectMenuOpen.value = !projectMenuOpen.value
 }
 
-function chooseProjectStorage(): void {
-  emit('openProjectStorage')
+function chooseDuplicateProject(): void {
+  emit('duplicateProject')
   projectMenuOpen.value = false
 }
 
@@ -240,13 +240,14 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
             <span>{{ t('button.project') }}</span>
           </button>
           <div v-if="projectMenuOpen" class="project-menu" @click.stop>
-            <button class="project-menu-item" type="button" @click="chooseNewProject">
-              <PlusIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
-              <span>{{ t('menu.newProject') }}</span>
-            </button>
-            <button class="project-menu-item" type="button" @click="chooseProjectStorage">
-              <FolderIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
-              <span>{{ tr('menu.projectStorage') }}</span>
+            <button
+              class="project-menu-item"
+              type="button"
+              :disabled="!hasImage"
+              @click="chooseDuplicateProject"
+            >
+              <CopyIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
+              <span>{{ t('menu.duplicateProject') }}</span>
             </button>
             <div class="project-menu-sep" />
             <button
@@ -258,11 +259,6 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               <FileUpIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
               <span>{{ t('menu.exportProjectFile') }}</span>
             </button>
-            <button class="project-menu-item" type="button" @click="chooseImportProject">
-              <FileDownIcon class="project-menu-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
-              <span>{{ t('menu.importProjectFile') }}</span>
-            </button>
-            <div class="project-menu-sep" />
             <button
               class="project-menu-item"
               type="button"

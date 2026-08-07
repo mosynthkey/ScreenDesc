@@ -7,7 +7,6 @@ import AnnotationList from './components/AnnotationList.vue'
 import AnnotationStyleSettings from './components/AnnotationStyleSettings.vue'
 import ProjectStyleSettings from './components/ProjectStyleSettings.vue'
 import ExportDialog from './components/ExportDialog.vue'
-import ProjectStorageDialog from './components/ProjectStorageDialog.vue'
 import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
 import DeleteSavedProjectDialog from './components/DeleteSavedProjectDialog.vue'
@@ -115,7 +114,6 @@ const replaceImageInputRef = ref<HTMLInputElement | null>(null)
 const homeRef = ref<{ openFilePicker: () => void } | null>(null)
 const appNotice = ref<{ message: string; tone: 'error' | 'info' } | null>(null)
 let appNoticeTimer: ReturnType<typeof setTimeout> | undefined
-const projectStorageOpen = ref(false)
 const savedProjects = ref<SavedProjectMeta[]>([])
 const projectFolders = ref<ProjectFolder[]>([])
 const currentFolderId = ref<string | null>(null)
@@ -632,20 +630,27 @@ async function onMoveFolder(id: string, parentId: string | null): Promise<void> 
   await refreshProjectBrowser()
 }
 
-async function onOpenProjectStorage(): Promise<void> {
-  projectStorageOpen.value = true
-  await refreshSavedProjects()
-}
-
-async function onSaveNamedProject(name: string): Promise<void> {
+async function onDuplicateProject(): Promise<void> {
+  if (!hasImage.value) return
+  clearProjectLoadError()
   projectStorageBusy.value = true
   try {
-    await saveProjectAs(name)
-    const projectId = activeNamedProject.value?.id
-    if (projectId && currentFolderId.value) {
-      await moveNamedProject(projectId, currentFolderId.value)
+    await flushPersistCurrentProject()
+    const projects = await fetchSavedProjects()
+    const source = projects.find((project) => project.id === activeNamedProject.value?.id)
+    const sourceName = activeNamedProject.value?.name?.trim() || t('header.untitledProject')
+    const existingNames = new Set(projects.map((project) => project.name))
+    let copyName = t('project.copyName', { name: sourceName })
+    let copyNumber = 2
+    while (existingNames.has(copyName)) {
+      copyName = t('project.copyNameNumbered', { name: sourceName, number: copyNumber })
+      copyNumber += 1
     }
-    await refreshSavedProjects()
+    const projectId = await saveProjectAs(copyName)
+    if (projectId && source?.folderId) await moveNamedProject(projectId, source.folderId)
+    await refreshProjectBrowser()
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.projectSaveFailed'))
   } finally {
     projectStorageBusy.value = false
   }
@@ -674,24 +679,11 @@ async function onRevealSavedProject(id: string): Promise<void> {
   }
 }
 
-async function onOverwriteSavedProject(id: string): Promise<void> {
-  const target = savedProjects.value.find((item) => item.id === id)
-  if (!target) return
-  projectStorageBusy.value = true
-  try {
-    await saveProjectAs(target.name, id)
-    await refreshSavedProjects()
-  } finally {
-    projectStorageBusy.value = false
-  }
-}
-
 async function onLoadSavedProject(id: string): Promise<void> {
   projectStorageBusy.value = true
   clearProjectLoadError()
   try {
     await loadSavedProject(id)
-    projectStorageOpen.value = false
     appPage.value = 'edit'
   } catch (err) {
     const message = err instanceof Error ? err.message : t('error.projectLoadFailed')
@@ -910,10 +902,10 @@ function onKeydown(event: KeyboardEvent): void {
         @copy-clipboard="onCopyClipboard"
         @export="exportOpen = true"
         @undo-crop="onUndoCrop"
+        @duplicate-project="onDuplicateProject"
         @export-project-file="onExportProjectFile"
         @open-import-project="onOpenImportProject"
         @replace-image="onReplaceImage"
-        @open-project-storage="onOpenProjectStorage"
         @new-project="onNewProject"
         @rename-project="onRenameProject"
         @confirm-crop="confirmCrop"
@@ -1085,20 +1077,6 @@ function onKeydown(event: KeyboardEvent): void {
         :is-busy="projectStorageBusy"
         @close="closeBundleImport"
         @import="importSelectedBundle"
-      />
-      <ProjectStorageDialog
-        :open="projectStorageOpen"
-        :has-image="hasImage"
-        :projects="savedProjects"
-        :is-busy="projectStorageBusy"
-        :active-project-id="activeNamedProject?.id ?? null"
-        :active-project-name="activeNamedProject?.name ?? null"
-        @close="projectStorageOpen = false"
-        @save="onSaveNamedProject"
-        @overwrite="onOverwriteSavedProject"
-        @load="onLoadSavedProject"
-        @remove="onRemoveSavedProject"
-        @download-bundle="onDownloadAllProjectsBundle"
       />
       <CommonSettingsDialog
         :open="commonSettingsOpen"

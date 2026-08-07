@@ -77,7 +77,7 @@ export const zh: Record<MessageKey, string> = {
   'header.untitledProject': '未命名项目',
   'header.projectNameAria': '项目名称',
 
-  'tooltip.projectMenu': '保存或加载项目',
+  'tooltip.projectMenu': '项目操作',
   'tooltip.copyClipboard': '将带注释的图片复制到剪贴板',
   'tooltip.export': '导出带注释的图片',
   'tooltip.newProject': '从一张截图新建项目',
@@ -106,12 +106,15 @@ export const zh: Record<MessageKey, string> = {
   'sectionVisibility.manual': '手动添加',
 
   'menu.newProject': '新建项目',
+  'menu.duplicateProject': '复制项目',
   'menu.projectStorage': '保存 / 加载（浏览器内）',
   'menu.projectStorage.desktop': '保存 / 加载（文稿）',
   'menu.exportProjectFile': '导出（写入文件）',
   'menu.importProjectFile': '导入（从文件读取）',
   'menu.replaceImage': '替换图片…',
   'menu.undoCrop': '撤销裁剪',
+  'project.copyName': '{name} 副本',
+  'project.copyNameNumbered': '{name} 副本 ({number})',
 
   'confirm.deleteSavedProjectTitle': '删除项目？',
   'confirm.deleteSavedProject': '删除“{name}”？此操作无法撤销。',

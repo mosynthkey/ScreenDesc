@@ -77,7 +77,7 @@ export const ja: Record<MessageKey, string> = {
   'header.untitledProject': '名称未設定のプロジェクト',
   'header.projectNameAria': 'プロジェクト名',
 
-  'tooltip.projectMenu': 'プロジェクトの保存・読み込み',
+  'tooltip.projectMenu': 'プロジェクト操作',
   'tooltip.copyClipboard': '注釈付き画像をクリップボードにコピーします',
   'tooltip.export': '注釈付き画像を書き出します',
   'tooltip.newProject': 'スクリーンショットから新規プロジェクトを作成します',
@@ -107,12 +107,15 @@ export const ja: Record<MessageKey, string> = {
   'sectionVisibility.manual': '手動で追加',
 
   'menu.newProject': '新規作成',
+  'menu.duplicateProject': 'プロジェクトを複製',
   'menu.projectStorage': '保存 / 読み込み(ブラウザ内)',
   'menu.projectStorage.desktop': '保存 / 読み込み(書類フォルダ)',
   'menu.exportProjectFile': 'エクスポート(ファイルに書き出し)',
   'menu.importProjectFile': 'インポート(ファイルから読み込み)',
   'menu.replaceImage': '画像を差し替え…',
   'menu.undoCrop': '切り抜きを元に戻す',
+  'project.copyName': '{name} のコピー',
+  'project.copyNameNumbered': '{name} のコピー ({number})',
 
   'confirm.deleteSavedProjectTitle': 'プロジェクトを削除しますか？',
   'confirm.deleteSavedProject': '「{name}」を削除しますか？この操作は取り消せません。',

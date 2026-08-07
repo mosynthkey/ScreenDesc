@@ -78,7 +78,7 @@ export const es: Record<MessageKey, string> = {
   'header.untitledProject': 'Proyecto sin título',
   'header.projectNameAria': 'Nombre del proyecto',
 
-  'tooltip.projectMenu': 'Guardar o cargar proyecto',
+  'tooltip.projectMenu': 'Acciones del proyecto',
   'tooltip.copyClipboard': 'Copiar la imagen anotada al portapapeles',
   'tooltip.export': 'Exportar la imagen anotada',
   'tooltip.newProject': 'Crear un nuevo proyecto a partir de una captura',
@@ -108,12 +108,15 @@ export const es: Record<MessageKey, string> = {
   'sectionVisibility.manual': 'Añadidas manualmente',
 
   'menu.newProject': 'Nuevo proyecto',
+  'menu.duplicateProject': 'Duplicar proyecto',
   'menu.projectStorage': 'Guardar / cargar (en el navegador)',
   'menu.projectStorage.desktop': 'Guardar / cargar (Documentos)',
   'menu.exportProjectFile': 'Exportar (escribir en archivo)',
   'menu.importProjectFile': 'Importar (leer desde archivo)',
   'menu.replaceImage': 'Reemplazar imagen…',
   'menu.undoCrop': 'Deshacer recorte',
+  'project.copyName': 'Copia de {name}',
+  'project.copyNameNumbered': 'Copia de {name} ({number})',
 
   'confirm.deleteSavedProjectTitle': '¿Eliminar proyecto?',
   'confirm.deleteSavedProject': '¿Eliminar “{name}”? Esta acción no se puede deshacer.',
