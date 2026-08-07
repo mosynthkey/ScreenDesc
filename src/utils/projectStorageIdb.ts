@@ -1,4 +1,5 @@
 import type { ProjectFolder, ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
+import { buildProjectSearchText } from './projectSearch'
 
 const DB_NAME = 'screendesc'
 const DB_VERSION = 4
@@ -105,6 +106,7 @@ export async function saveNamedProject(
     updatedAt: Date.now(),
     contentHash,
     folderId: existing?.folderId ?? null,
+    searchText: buildProjectSearchText(snapshot),
   }
   await new Promise<void>((resolve, reject) => {
     const stores = thumbnail
@@ -151,10 +153,25 @@ export async function patchSavedProjectMeta(
 export async function listSavedProjects(): Promise<SavedProjectMeta[]> {
   const db = await openDb()
   const metas = await new Promise<SavedProjectMeta[]>((resolve, reject) => {
-    const tx = db.transaction(SAVED_META_STORE, 'readonly')
-    const request = tx.objectStore(SAVED_META_STORE).getAll()
-    request.onsuccess = () => resolve((request.result as SavedProjectMeta[]) ?? [])
-    request.onerror = () => reject(request.error)
+    const tx = db.transaction([SAVED_META_STORE, SAVED_DATA_STORE], 'readwrite')
+    const metaStore = tx.objectStore(SAVED_META_STORE)
+    const dataStore = tx.objectStore(SAVED_DATA_STORE)
+    const request = metaStore.getAll()
+    let result: SavedProjectMeta[] = []
+    request.onsuccess = () => {
+      result = (request.result as SavedProjectMeta[]) ?? []
+      for (const meta of result) {
+        if (typeof meta.searchText === 'string') continue
+        const snapshotRequest = dataStore.get(meta.id)
+        snapshotRequest.onsuccess = () => {
+          const snapshot = snapshotRequest.result as ProjectSnapshot | undefined
+          meta.searchText = snapshot ? buildProjectSearchText(snapshot) : ''
+          metaStore.put(meta)
+        }
+      }
+    }
+    tx.oncomplete = () => resolve(result)
+    tx.onerror = () => reject(tx.error)
   })
   db.close()
   return metas.sort((left, right) => right.updatedAt - left.updatedAt)

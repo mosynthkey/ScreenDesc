@@ -55,6 +55,8 @@ export interface SavedProjectMeta {
   /** SHA-256 hex matching portable project contentHash. */
   contentHash?: string
   folderId?: string | null
+  /** Annotation text cached for project-list search. */
+  searchText?: string
 }
 
 export interface ProjectFolder {

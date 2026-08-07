@@ -4,7 +4,7 @@ import type { ProjectFolder, SavedProjectMeta } from '../utils/projectStorage'
 import { loadNamedProjectImageBlob, loadNamedProjectThumbnail } from '../utils/projectStorage'
 import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
-import { FolderIcon, FolderPlusIcon, InfoIcon } from '@lucide/vue'
+import { FolderIcon, FolderPlusIcon, InfoIcon, SearchIcon, XIcon } from '@lucide/vue'
 
 const props = defineProps<{
   projects: SavedProjectMeta[]
@@ -51,14 +51,35 @@ const folderEditor = ref<{
   parentId: string | null
 } | null>(null)
 const folderPendingDelete = ref<string | null>(null)
+const searchQuery = ref('')
+
+function normalizeSearchText(value: string): string {
+  return value.normalize('NFKC').toLocaleLowerCase(locale.value)
+}
+
+const searchTerms = computed(() =>
+  normalizeSearchText(searchQuery.value)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean),
+)
+const isSearching = computed(() => searchTerms.value.length > 0)
 
 const currentFolders = computed(() =>
+  isSearching.value
+    ? []
+    :
   props.folders
     .filter((folder) => folder.parentId === props.currentFolderId)
     .sort((left, right) => left.name.localeCompare(right.name)),
 )
 const currentProjects = computed(() =>
-  props.projects.filter((project) => (project.folderId ?? null) === props.currentFolderId),
+  isSearching.value
+    ? props.projects.filter((project) => {
+        const searchable = normalizeSearchText(`${project.name}\n${project.searchText ?? ''}`)
+        return searchTerms.value.every((term) => searchable.includes(term))
+      })
+    : props.projects.filter((project) => (project.folderId ?? null) === props.currentFolderId),
 )
 const breadcrumbs = computed(() => {
   const byId = new Map(props.folders.map((folder) => [folder.id, folder]))
@@ -347,7 +368,28 @@ defineExpose({ openFilePicker })
           </button>
         </div>
       </div>
-      <nav class="folder-breadcrumbs" :aria-label="t('folder.breadcrumbAria')">
+      <div class="files-search">
+        <SearchIcon :size="17" :stroke-width="1.8" aria-hidden="true" />
+        <input
+          v-model="searchQuery"
+          type="search"
+          :placeholder="t('home.searchPlaceholder')"
+          :aria-label="t('home.searchAria')"
+          @keydown.esc="searchQuery = ''"
+        />
+        <span v-if="isSearching" class="files-search-count">
+          {{ t('home.searchResultCount', { count: currentProjects.length }) }}
+        </span>
+        <button
+          v-if="searchQuery"
+          type="button"
+          :aria-label="t('home.searchClear')"
+          @click="searchQuery = ''"
+        >
+          <XIcon :size="15" :stroke-width="2" aria-hidden="true" />
+        </button>
+      </div>
+      <nav v-if="!isSearching" class="folder-breadcrumbs" :aria-label="t('folder.breadcrumbAria')">
         <button
           type="button"
           :class="{ active: currentFolderId === null }"
@@ -376,7 +418,11 @@ defineExpose({ openFilePicker })
         @dragover.prevent
         @drop="dropIntoFolder(currentFolderId, $event)"
       >
-        {{ projects.length === 0 && folders.length === 0 ? t('home.filesEmpty') : t('folder.empty') }}
+        {{ isSearching
+          ? t('home.searchEmpty')
+          : projects.length === 0 && folders.length === 0
+            ? t('home.filesEmpty')
+            : t('folder.empty') }}
       </p>
       <ul v-else class="files-grid">
         <li
@@ -639,6 +685,62 @@ defineExpose({ openFilePicker })
   align-items: baseline;
   gap: 12px;
   min-width: 0;
+}
+
+.files-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  margin-bottom: 14px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-solid);
+  color: var(--ink-muted);
+}
+
+.files-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.files-search input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+
+.files-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.files-search-count {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.files-search button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.files-search button:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
 }
 
 .files-header h2 {

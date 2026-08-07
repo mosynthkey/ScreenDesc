@@ -93,10 +93,28 @@ async function listMetas(root) {
   const entries = await fs.readdir(dir, { withFileTypes: true })
   for (const entry of entries) {
     if (!entry.isDirectory()) continue
-    const meta = await readJson(path.join(dir, entry.name, 'meta.json'))
-    if (meta && meta.id) metas.push(meta)
+    const metaPath = path.join(dir, entry.name, 'meta.json')
+    const meta = await readJson(metaPath)
+    if (!meta || !meta.id) continue
+    if (typeof meta.searchText !== 'string') {
+      const data = await readJson(path.join(dir, entry.name, 'data.json'))
+      meta.searchText = buildProjectSearchText(data)
+      await writeJson(metaPath, meta)
+    }
+    metas.push(meta)
   }
   return metas.sort((left, right) => right.updatedAt - left.updatedAt)
+}
+
+function buildProjectSearchText(snapshot) {
+  if (!Array.isArray(snapshot?.annotations)) return ''
+  return snapshot.annotations
+    .flatMap((annotation) => [
+      annotation.description,
+      ...Object.values(annotation.variationText || {}),
+    ])
+    .filter(Boolean)
+    .join('\n')
 }
 
 async function listFolders(root) {
@@ -239,6 +257,9 @@ async function handleStorageRequest(req, res, url, browserWindow) {
         updatedAt: Date.now(),
         contentHash: body.contentHash,
         folderId: existing?.folderId ?? null,
+        searchText: typeof body.searchText === 'string'
+          ? body.searchText
+          : buildProjectSearchText(body.snapshot),
       }
       await writeSnapshotFiles(dir, body.snapshot)
       await writeThumbnailFile(dir, body.thumbnailBase64)

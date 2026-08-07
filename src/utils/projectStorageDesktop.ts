@@ -1,4 +1,5 @@
 import type { ProjectFolder, ProjectSnapshot, SavedProjectMeta } from './projectStorageTypes'
+import { buildProjectSearchText } from './projectSearch'
 
 export type { ProjectFolder, ProjectSnapshot, SavedProjectMeta }
 
@@ -139,6 +140,7 @@ export async function saveNamedProject(
     id,
     name,
     contentHash,
+    searchText: buildProjectSearchText(snapshot),
     snapshot: await snapshotToStored(snapshot),
     // Omitted means "leave the previously stored thumbnail untouched".
     thumbnailBase64: thumbnail
