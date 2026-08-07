@@ -107,12 +107,8 @@ export const de: Record<MessageKey, string> = {
   'sectionVisibility.aiText': 'Text (OCR)',
   'sectionVisibility.manual': 'Manuell hinzugefügt',
 
-  'menu.newProject': 'Neues Projekt',
   'menu.duplicateProject': 'Projekt duplizieren',
-  'menu.projectStorage': 'Speichern / laden (im Browser)',
-  'menu.projectStorage.desktop': 'Speichern / laden (Dokumente)',
   'menu.exportProjectFile': 'Exportieren (in Datei schreiben)',
-  'menu.importProjectFile': 'Importieren (aus Datei lesen)',
   'menu.replaceImage': 'Bild ersetzen…',
   'menu.undoCrop': 'Zuschnitt rückgängig machen',
   'project.copyName': '{name} – Kopie',
@@ -199,39 +195,8 @@ export const de: Record<MessageKey, string> = {
   'export.download': 'Herunterladen',
   'export.download.desktop': 'Speichern',
 
-  'projectStorage.defaultName': 'Projekt {stamp}',
-  'projectStorage.title': 'Im Browser-Speicher speichern / laden',
-  'projectStorage.title.desktop': 'In Dokumente/ScreenDesc speichern / laden',
-  'projectStorage.autosaveHint':
-    'Ihre aktuelle Arbeit wird während der Bearbeitung automatisch in diesem Browser gespeichert.',
-  'projectStorage.autosaveHint.desktop':
-    'Ihre aktuelle Arbeit wird während der Bearbeitung automatisch unter Dokumente/ScreenDesc gespeichert.',
-  'projectStorage.currentLabel': 'Aktuelles Projekt',
-  'projectStorage.currentBadge': 'In Bearbeitung',
-  'projectStorage.currentNamedHint':
-    'Dieses benannte Projekt wird automatisch überschrieben, solange Sie weiter bearbeiten.',
-  'projectStorage.currentUntitledHint':
-    'Unbenannte Arbeit wird automatisch mit einem datumsbasierten Namen gespeichert.',
-  'projectStorage.saveAsLabel': 'Speichern unter',
-  'projectStorage.saveAsHint': 'Erstellt eine weitere benannte Kopie unter Dateien.',
-  'projectStorage.namePlaceholder': 'Projektname',
-  'projectStorage.save': 'Speichern',
-  'projectStorage.needImageHint': 'Vor dem Speichern ein Bild öffnen.',
-  'projectStorage.savedListLabel': 'Andere gespeicherte Projekte',
-  'projectStorage.empty': 'Noch keine gespeicherten Projekte.',
-  'projectStorage.emptyOthers': 'Keine weiteren gespeicherten Projekte.',
-  'projectStorage.open': 'Öffnen',
-  'projectStorage.overwriteTitle':
-    'Diesen Speicherstand mit dem aktuellen Projekt überschreiben',
-  'projectStorage.overwrite': 'Überschreiben',
-  'projectStorage.remove': 'Löschen',
-  'projectStorage.downloadBundle': 'Alle herunterladen',
-  'projectStorage.downloadBundle.desktop': 'Alle exportieren',
-  'projectStorage.downloadBundleTitle':
-    'Alle gespeicherten Projekte als eine Paketdatei herunterladen',
-  'projectStorage.downloadBundleTitle.desktop':
-    'Alle gespeicherten Projekte als eine Paketdatei exportieren',
-  'projectStorage.close': 'Schließen',
+  'project.defaultName': 'Projekt {stamp}',
+  'project.remove': 'Löschen',
 
   'style.projectSettingsTitle': 'Gemeinsame Einstellungen',
   'style.presetsManage': 'Voreinstellungen',

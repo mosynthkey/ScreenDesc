@@ -9,5 +9,5 @@ export function defaultProjectName(date = new Date()): string {
     hour: '2-digit',
     minute: '2-digit',
   })
-  return t('projectStorage.defaultName', { stamp })
+  return t('project.defaultName', { stamp })
 }

@@ -448,7 +448,7 @@ defineExpose({ openFilePicker })
             type="button"
             :disabled="isBusy"
             :aria-label="t('home.removeAria')"
-            :title="t('projectStorage.remove')"
+            :title="t('project.remove')"
             @click.stop="emit('remove', project.id)"
           >
             ×

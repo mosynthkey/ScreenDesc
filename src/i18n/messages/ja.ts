@@ -42,7 +42,7 @@ export const ja: Record<MessageKey, string> = {
   'bundleImport.description': 'インポートするプロジェクトを選択してください。',
   'bundleImport.selectAll': 'すべて選択',
   'bundleImport.clearAll': '選択を解除',
-  'bundleImport.alreadyExists': 'すでにあります',
+  'bundleImport.alreadyExists': 'すでに存在します',
   'bundleImport.noImportableProjects': 'このバンドル内のプロジェクトはすべてインポート済みです。',
   'bundleImport.importSelected': '選択した項目をインポート（{count}）',
 
@@ -106,12 +106,8 @@ export const ja: Record<MessageKey, string> = {
   'sectionVisibility.aiText': 'テキスト(OCR)',
   'sectionVisibility.manual': '手動で追加',
 
-  'menu.newProject': '新規作成',
   'menu.duplicateProject': 'プロジェクトを複製',
-  'menu.projectStorage': '保存 / 読み込み(ブラウザ内)',
-  'menu.projectStorage.desktop': '保存 / 読み込み(書類フォルダ)',
   'menu.exportProjectFile': 'エクスポート(ファイルに書き出し)',
-  'menu.importProjectFile': 'インポート(ファイルから読み込み)',
   'menu.replaceImage': '画像を差し替え…',
   'menu.undoCrop': '切り抜きを元に戻す',
   'project.copyName': '{name} のコピー',
@@ -193,38 +189,8 @@ export const ja: Record<MessageKey, string> = {
   'export.download': 'ダウンロード',
   'export.download.desktop': '保存',
 
-  'projectStorage.defaultName': 'プロジェクト {stamp}',
-  'projectStorage.title': 'ブラウザ内ストレージに保存 / 読み込み',
-  'projectStorage.title.desktop': '書類/ScreenDesc に保存 / 読み込み',
-  'projectStorage.autosaveHint':
-    '編集中の内容は、このブラウザに自動保存されます。',
-  'projectStorage.autosaveHint.desktop':
-    '編集中の内容は、書類（Documents）/ScreenDesc に自動保存されます。',
-  'projectStorage.currentLabel': 'いまのプロジェクト',
-  'projectStorage.currentBadge': '編集中',
-  'projectStorage.currentNamedHint':
-    '名前付きプロジェクトは、編集を続けると自動で上書き保存されます。',
-  'projectStorage.currentUntitledHint':
-    '名称未設定の作業は、日時付きの名前で自動保存されます。',
-  'projectStorage.saveAsLabel': '名前を付けて保存',
-  'projectStorage.saveAsHint': 'ファイルに別名のコピーを作ります。',
-  'projectStorage.namePlaceholder': 'プロジェクト名',
-  'projectStorage.save': '保存',
-  'projectStorage.needImageHint': '画像を開いてから保存できます。',
-  'projectStorage.savedListLabel': 'ほかの保存済みプロジェクト',
-  'projectStorage.empty': 'まだ保存されたプロジェクトはありません。',
-  'projectStorage.emptyOthers': 'ほかに保存済みのプロジェクトはありません。',
-  'projectStorage.open': '開く',
-  'projectStorage.overwriteTitle': '現在のプロジェクトでこの保存を上書きします',
-  'projectStorage.overwrite': '上書き保存',
-  'projectStorage.remove': '削除',
-  'projectStorage.downloadBundle': 'すべてダウンロード',
-  'projectStorage.downloadBundle.desktop': 'すべてエクスポート',
-  'projectStorage.downloadBundleTitle':
-    '保存済みプロジェクトを1つのバンドルファイルとしてダウンロード',
-  'projectStorage.downloadBundleTitle.desktop':
-    '保存済みプロジェクトを1つのバンドルファイルとしてエクスポート',
-  'projectStorage.close': '閉じる',
+  'project.defaultName': 'プロジェクト {stamp}',
+  'project.remove': '削除',
 
   'style.projectSettingsTitle': '共通設定',
   'style.presetsManage': 'プリセット',

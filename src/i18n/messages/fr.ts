@@ -107,12 +107,8 @@ export const fr: Record<MessageKey, string> = {
   'sectionVisibility.aiText': 'Texte (OCR)',
   'sectionVisibility.manual': 'Ajoutées manuellement',
 
-  'menu.newProject': 'Nouveau projet',
   'menu.duplicateProject': 'Dupliquer le projet',
-  'menu.projectStorage': 'Enregistrer / charger (dans le navigateur)',
-  'menu.projectStorage.desktop': 'Enregistrer / charger (Documents)',
   'menu.exportProjectFile': 'Exporter (écrire dans un fichier)',
-  'menu.importProjectFile': 'Importer (lire depuis un fichier)',
   'menu.replaceImage': 'Remplacer l’image…',
   'menu.undoCrop': 'Annuler le recadrage',
   'project.copyName': 'Copie de {name}',
@@ -198,37 +194,8 @@ export const fr: Record<MessageKey, string> = {
   'export.download': 'Télécharger',
   'export.download.desktop': 'Enregistrer',
 
-  'projectStorage.defaultName': 'Projet {stamp}',
-  'projectStorage.title': 'Enregistrer / charger dans le stockage du navigateur',
-  'projectStorage.title.desktop': 'Enregistrer / charger dans Documents/ScreenDesc',
-  'projectStorage.autosaveHint':
-    'Votre travail actuel est enregistré automatiquement dans ce navigateur au fil de l’édition.',
-  'projectStorage.autosaveHint.desktop':
-    'Votre travail actuel est enregistré automatiquement dans Documents/ScreenDesc au fil de l’édition.',
-  'projectStorage.currentLabel': 'Projet actuel',
-  'projectStorage.currentBadge': 'En cours d’édition',
-  'projectStorage.currentNamedHint':
-    'Ce projet nommé reçoit des écrasements automatiques tant que vous continuez à l’éditer.',
-  'projectStorage.currentUntitledHint':
-    'Le travail sans titre est enregistré automatiquement avec un nom basé sur la date.',
-  'projectStorage.saveAsLabel': 'Enregistrer sous',
-  'projectStorage.saveAsHint': 'Crée une autre copie nommée dans Fichiers.',
-  'projectStorage.namePlaceholder': 'Nom du projet',
-  'projectStorage.save': 'Enregistrer',
-  'projectStorage.needImageHint': 'Ouvrez une image avant d’enregistrer.',
-  'projectStorage.savedListLabel': 'Autres projets enregistrés',
-  'projectStorage.empty': 'Aucun projet enregistré pour le moment.',
-  'projectStorage.emptyOthers': 'Aucun autre projet enregistré.',
-  'projectStorage.open': 'Ouvrir',
-  'projectStorage.overwriteTitle': 'Écraser cet enregistrement avec le projet actuel',
-  'projectStorage.overwrite': 'Écraser',
-  'projectStorage.remove': 'Supprimer',
-  'projectStorage.downloadBundle': 'Tout télécharger',
-  'projectStorage.downloadBundle.desktop': 'Tout exporter',
-  'projectStorage.downloadBundleTitle': 'Télécharger tous les projets enregistrés en un seul lot',
-  'projectStorage.downloadBundleTitle.desktop':
-    'Exporter tous les projets enregistrés en un seul lot',
-  'projectStorage.close': 'Fermer',
+  'project.defaultName': 'Projet {stamp}',
+  'project.remove': 'Supprimer',
 
   'style.projectSettingsTitle': 'Paramètres partagés',
   'style.presetsManage': 'Préréglages',

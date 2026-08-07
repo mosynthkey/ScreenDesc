@@ -107,12 +107,8 @@ export const es: Record<MessageKey, string> = {
   'sectionVisibility.aiText': 'Texto (OCR)',
   'sectionVisibility.manual': 'Añadidas manualmente',
 
-  'menu.newProject': 'Nuevo proyecto',
   'menu.duplicateProject': 'Duplicar proyecto',
-  'menu.projectStorage': 'Guardar / cargar (en el navegador)',
-  'menu.projectStorage.desktop': 'Guardar / cargar (Documentos)',
   'menu.exportProjectFile': 'Exportar (escribir en archivo)',
-  'menu.importProjectFile': 'Importar (leer desde archivo)',
   'menu.replaceImage': 'Reemplazar imagen…',
   'menu.undoCrop': 'Deshacer recorte',
   'project.copyName': 'Copia de {name}',
@@ -196,37 +192,8 @@ export const es: Record<MessageKey, string> = {
   'export.download': 'Descargar',
   'export.download.desktop': 'Guardar',
 
-  'projectStorage.defaultName': 'Proyecto {stamp}',
-  'projectStorage.title': 'Guardar / cargar en el almacenamiento del navegador',
-  'projectStorage.title.desktop': 'Guardar / cargar en Documentos/ScreenDesc',
-  'projectStorage.autosaveHint':
-    'Tu trabajo actual se guarda automáticamente en este navegador mientras editas.',
-  'projectStorage.autosaveHint.desktop':
-    'Tu trabajo actual se guarda automáticamente en Documentos/ScreenDesc mientras editas.',
-  'projectStorage.currentLabel': 'Proyecto actual',
-  'projectStorage.currentBadge': 'Editando',
-  'projectStorage.currentNamedHint':
-    'Este proyecto con nombre recibe sobrescrituras automáticas mientras sigues editando.',
-  'projectStorage.currentUntitledHint':
-    'El trabajo sin título se guarda automáticamente con un nombre basado en la fecha.',
-  'projectStorage.saveAsLabel': 'Guardar como',
-  'projectStorage.saveAsHint': 'Crea otra copia con nombre en Archivos.',
-  'projectStorage.namePlaceholder': 'Nombre del proyecto',
-  'projectStorage.save': 'Guardar',
-  'projectStorage.needImageHint': 'Abre una imagen antes de guardar.',
-  'projectStorage.savedListLabel': 'Otros proyectos guardados',
-  'projectStorage.empty': 'Todavía no hay proyectos guardados.',
-  'projectStorage.emptyOthers': 'No hay otros proyectos guardados.',
-  'projectStorage.open': 'Abrir',
-  'projectStorage.overwriteTitle': 'Sobrescribir este guardado con el proyecto actual',
-  'projectStorage.overwrite': 'Sobrescribir',
-  'projectStorage.remove': 'Eliminar',
-  'projectStorage.downloadBundle': 'Descargar todo',
-  'projectStorage.downloadBundle.desktop': 'Exportar todo',
-  'projectStorage.downloadBundleTitle': 'Descargar todos los proyectos guardados en un solo paquete',
-  'projectStorage.downloadBundleTitle.desktop':
-    'Exportar todos los proyectos guardados en un solo paquete',
-  'projectStorage.close': 'Cerrar',
+  'project.defaultName': 'Proyecto {stamp}',
+  'project.remove': 'Eliminar',
 
   'style.projectSettingsTitle': 'Ajustes compartidos',
   'style.presetsManage': 'Preajustes',
