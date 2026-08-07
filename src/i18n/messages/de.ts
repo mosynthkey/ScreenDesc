@@ -64,6 +64,7 @@ export const de: Record<MessageKey, string> = {
   'variation.buttonLabel': 'Variante: {name}',
   'variation.addPlaceholder': 'Name der neuen Variante',
   'variation.addButton': 'Hinzufügen',
+  'variation.renameDefault': 'Standardvariante umbenennen',
   'variation.hint':
     'Praktisch zum Erstellen von Bildern mit unterschiedlichen Anmerkungen, etwa für verschiedene Sprachen.',
 
@@ -158,6 +159,7 @@ export const de: Record<MessageKey, string> = {
   'home.downloadBundleTitle': 'Alle gespeicherten Projekte als eine Paketdatei herunterladen',
   'home.downloadBundleTitle.desktop': 'Alle gespeicherten Projekte als eine Paketdatei exportieren',
   'home.openLocation': 'Im Finder anzeigen',
+  'home.exportProject': 'Dieses Projekt exportieren',
   'home.openLocationTitle': 'Den Ordner dieses Projekts auf der Festplatte anzeigen',
   'storage.notice.before':
     'Projekte werden in diesem Browser gespeichert. Sie können verloren gehen, wenn Website-Daten gelöscht oder der private Modus verwendet wird. ',
@@ -194,6 +196,11 @@ export const de: Record<MessageKey, string> = {
   'export.filename': 'Dateiname',
   'export.scale': 'Auflösung (PNG)',
   'export.includeSectionGuides': 'Abschnittsumrisse einbeziehen',
+  'export.allVariations': 'Alle Varianten exportieren',
+  'export.allVariationsHint': 'Speichert die Standardvariante und alle weiteren Varianten im ausgewählten Ordner.',
+  'export.allVariationsHint.web': 'Lädt die Standardvariante und alle weiteren Varianten in einer ZIP-Datei herunter.',
+  'export.selectFolder': 'Ordner auswählen',
+  'export.downloadZip': 'ZIP herunterladen',
   'export.cancel': 'Abbrechen',
   'export.download': 'Herunterladen',
   'export.download.desktop': 'Speichern',
@@ -301,6 +308,7 @@ export const de: Record<MessageKey, string> = {
   'error.dismiss': 'Verwerfen',
   'error.projectLoadFailed': 'Projekt konnte nicht geladen werden',
   'error.projectSaveFailed': 'Das aktuelle Projekt konnte nicht gespeichert werden',
+  'error.projectExportFailed': 'Das Projekt konnte nicht exportiert werden',
   'error.imageReadFailed': 'Bild konnte nicht gelesen werden',
   'error.imageFitFailed': 'Bild konnte nicht an die Projektgröße angepasst werden',
   'error.imageReplaceNoProject': 'Vor dem Ersetzen des Bilds ein Projekt öffnen',

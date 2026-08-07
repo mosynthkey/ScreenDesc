@@ -64,6 +64,7 @@ export const es: Record<MessageKey, string> = {
   'variation.buttonLabel': 'Variación: {name}',
   'variation.addPlaceholder': 'Nombre de la nueva variación',
   'variation.addButton': 'Añadir',
+  'variation.renameDefault': 'Cambiar el nombre de la variación predeterminada',
   'variation.hint':
     'Útil para crear imágenes con anotaciones distintas, como versiones en varios idiomas.',
 
@@ -158,6 +159,7 @@ export const es: Record<MessageKey, string> = {
   'home.downloadBundleTitle': 'Descargar todos los proyectos guardados en un solo paquete',
   'home.downloadBundleTitle.desktop': 'Exportar todos los proyectos guardados en un solo paquete',
   'home.openLocation': 'Mostrar en el Finder',
+  'home.exportProject': 'Exportar este proyecto',
   'home.openLocationTitle': 'Revelar la carpeta de este proyecto en el disco',
   'storage.notice.before':
     'Los proyectos se almacenan en este navegador. Podrían perderse si borras los datos del sitio o usas la navegación privada. ',
@@ -193,6 +195,11 @@ export const es: Record<MessageKey, string> = {
   'export.filename': 'Nombre de archivo',
   'export.scale': 'Resolución (PNG)',
   'export.includeSectionGuides': 'Incluir contornos de sección',
+  'export.allVariations': 'Exportar todas las variaciones',
+  'export.allVariationsHint': 'Guarda la variación predeterminada y todas las demás en la carpeta seleccionada.',
+  'export.allVariationsHint.web': 'Descarga la variación predeterminada y todas las demás en un archivo ZIP.',
+  'export.selectFolder': 'Elegir carpeta',
+  'export.downloadZip': 'Descargar ZIP',
   'export.cancel': 'Cancelar',
   'export.download': 'Descargar',
   'export.download.desktop': 'Guardar',
@@ -300,6 +307,7 @@ export const es: Record<MessageKey, string> = {
   'error.dismiss': 'Descartar',
   'error.projectLoadFailed': 'No se pudo cargar el proyecto',
   'error.projectSaveFailed': 'No se pudo guardar el proyecto actual',
+  'error.projectExportFailed': 'No se pudo exportar el proyecto',
   'error.imageReadFailed': 'No se pudo leer la imagen',
   'error.imageFitFailed': 'No se pudo redimensionar la imagen para que coincida con el proyecto',
   'error.imageReplaceNoProject': 'Abre un proyecto antes de reemplazar la imagen',

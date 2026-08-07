@@ -64,6 +64,7 @@ export const fr: Record<MessageKey, string> = {
   'variation.buttonLabel': 'Variante : {name}',
   'variation.addPlaceholder': 'Nom de la nouvelle variante',
   'variation.addButton': 'Ajouter',
+  'variation.renameDefault': 'Renommer la variante par défaut',
   'variation.hint':
     'Pratique pour créer des images aux annotations différentes, notamment dans plusieurs langues.',
 
@@ -158,6 +159,7 @@ export const fr: Record<MessageKey, string> = {
   'home.downloadBundleTitle': 'Télécharger tous les projets enregistrés en un seul lot',
   'home.downloadBundleTitle.desktop': 'Exporter tous les projets enregistrés en un seul lot',
   'home.openLocation': 'Afficher dans le Finder',
+  'home.exportProject': 'Exporter ce projet',
   'home.openLocationTitle': 'Révéler le dossier de ce projet sur le disque',
   'storage.notice.before':
     'Les projets sont stockés dans ce navigateur. Ils peuvent être perdus si vous effacez les données du site ou utilisez la navigation privée. ',
@@ -194,6 +196,11 @@ export const fr: Record<MessageKey, string> = {
   'export.filename': 'Nom de fichier',
   'export.scale': 'Résolution (PNG)',
   'export.includeSectionGuides': 'Inclure les contours des sections',
+  'export.allVariations': 'Exporter toutes les variantes',
+  'export.allVariationsHint': 'Enregistre la variante par défaut et toutes les autres dans le dossier sélectionné.',
+  'export.allVariationsHint.web': 'Télécharge la variante par défaut et toutes les autres dans un fichier ZIP.',
+  'export.selectFolder': 'Choisir un dossier',
+  'export.downloadZip': 'Télécharger le ZIP',
   'export.cancel': 'Annuler',
   'export.download': 'Télécharger',
   'export.download.desktop': 'Enregistrer',
@@ -302,6 +309,7 @@ export const fr: Record<MessageKey, string> = {
   'error.dismiss': 'Ignorer',
   'error.projectLoadFailed': 'Échec du chargement du projet',
   'error.projectSaveFailed': 'Échec de l’enregistrement du projet actuel',
+  'error.projectExportFailed': 'Échec de l’exportation du projet',
   'error.imageReadFailed': 'Échec de la lecture de l’image',
   'error.imageFitFailed': 'Échec du redimensionnement de l’image pour correspondre au projet',
   'error.imageReplaceNoProject': 'Ouvrez un projet avant de remplacer l’image',
