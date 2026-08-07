@@ -27,6 +27,7 @@ export async function renderThumbnailBlob(core: StoreCore): Promise<Blob | null>
     options: {
       format: 'png',
       includeSectionGuides: false,
+      allVariations: false,
       scale: THUMBNAIL_TARGET_WIDTH / documentWidth,
       filename: 'thumbnail',
     },

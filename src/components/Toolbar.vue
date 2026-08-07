@@ -23,6 +23,7 @@ import {
   ListChecksIcon,
   MessageSquareIcon,
   MousePointer2Icon,
+  PencilIcon,
   PlusIcon,
   ScanIcon,
   SquarePlusIcon,
@@ -47,6 +48,7 @@ const props = withDefaults(
     showToolDock?: boolean
     canUndoCrop: boolean
     variations: string[]
+    defaultVariationName: string
     activeVariation: string | null
   }>(),
   {
@@ -72,12 +74,15 @@ const emit = defineEmits<{
   cancelCrop: []
   'update:activeVariation': [variation: string | null]
   addVariation: [name: string]
+  renameDefaultVariation: [name: string]
 }>()
 
 const cropMenuOpen = ref(false)
 const projectMenuOpen = ref(false)
 const variationMenuOpen = ref(false)
 const newVariationDraft = ref('')
+const defaultVariationDraft = ref('')
+const defaultVariationEditing = ref(false)
 const titleDraft = ref('')
 const titleInputRef = ref<HTMLInputElement | null>(null)
 
@@ -190,6 +195,19 @@ function chooseReplaceImage(): void {
 function toggleVariationMenu(): void {
   variationMenuOpen.value = !variationMenuOpen.value
   if (variationMenuOpen.value) newVariationDraft.value = ''
+  else defaultVariationEditing.value = false
+}
+
+function startDefaultVariationRename(): void {
+  defaultVariationDraft.value = props.defaultVariationName
+  defaultVariationEditing.value = true
+}
+
+function submitDefaultVariationRename(): void {
+  const name = defaultVariationDraft.value.trim()
+  if (!name) return
+  emit('renameDefaultVariation', name)
+  defaultVariationEditing.value = false
 }
 
 function chooseVariation(variation: string | null): void {
@@ -324,17 +342,50 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           @click.stop="toggleVariationMenu"
         >
           <ListChecksIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
-          <span>{{ t('variation.buttonLabel', { name: activeVariation ?? t('variation.default') }) }}</span>
+          <span>{{ t('variation.buttonLabel', { name: activeVariation ?? defaultVariationName }) }}</span>
         </button>
         <div v-if="variationMenuOpen" class="variation-menu" @click.stop>
-          <button
-            class="variation-menu-item"
-            type="button"
-            :class="{ active: activeVariation === null }"
-            @click="chooseVariation(null)"
+          <form
+            v-if="defaultVariationEditing"
+            class="variation-add-row"
+            @submit.prevent="submitDefaultVariationRename"
           >
-            {{ t('variation.default') }}
-          </button>
+            <input
+              v-model="defaultVariationDraft"
+              class="variation-add-input"
+              type="text"
+              :aria-label="t('variation.renameDefault')"
+              autofocus
+              @keydown.esc.prevent="defaultVariationEditing = false"
+            />
+            <button
+              class="variation-add-btn"
+              type="submit"
+              :disabled="!defaultVariationDraft.trim()"
+              :aria-label="t('folder.save')"
+            >
+              <CheckIcon :size="14" :stroke-width="2" aria-hidden="true" />
+            </button>
+          </form>
+          <div v-else class="variation-default-row">
+            <button
+              class="variation-menu-item"
+              type="button"
+              :class="{ active: activeVariation === null }"
+              @click="chooseVariation(null)"
+            >
+              {{ defaultVariationName }}
+            </button>
+            <button
+              class="variation-rename-btn"
+              type="button"
+              :aria-label="t('variation.renameDefault')"
+              :title="t('variation.renameDefault')"
+              @click="startDefaultVariationRename"
+            >
+              <PencilIcon :size="14" :stroke-width="1.8" aria-hidden="true" />
+            </button>
+          </div>
           <button
             v-for="variation in variations"
             :key="variation"
@@ -822,6 +873,36 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 .variation-menu-item.active {
   color: var(--accent-strong);
   font-weight: 700;
+}
+
+.variation-default-row {
+  display: flex;
+  align-items: center;
+}
+
+.variation-default-row .variation-menu-item {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.variation-rename-btn {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.variation-rename-btn:hover {
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--ink);
 }
 
 .variation-menu-sep {

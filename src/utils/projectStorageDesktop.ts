@@ -41,6 +41,7 @@ interface StoredSnapshot {
   pageBackgroundColor: string
   sectionVisibility: ProjectSnapshot['sectionVisibility']
   variations: string[]
+  defaultVariationName?: string | null
   activeNamedProjectId?: string | null
   activeNamedProjectName?: string | null
 }
@@ -303,4 +304,21 @@ export async function saveExportedFile(blob: Blob, filename: string): Promise<st
     body: JSON.stringify({ filename, base64: bytesToBase64(bytes) }),
   })
   return result.canceled ? null : result.path
+}
+
+export async function saveExportedFiles(
+  files: Array<{ blob: Blob; filename: string }>,
+): Promise<boolean> {
+  const payload = await Promise.all(
+    files.map(async ({ blob, filename }) => ({
+      filename,
+      base64: bytesToBase64(new Uint8Array(await blob.arrayBuffer())),
+    })),
+  )
+  const result = await requestJson<{ canceled: boolean }>('/export-many', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ files: payload }),
+  })
+  return !result.canceled
 }

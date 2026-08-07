@@ -60,6 +60,7 @@ export async function buildCurrentSnapshot(core: StoreCore): Promise<ProjectSnap
     pageBackgroundColor: state.pageBackgroundColor,
     sectionVisibility: { ...state.sectionVisibility },
     variations: [...state.variations],
+    defaultVariationName: state.defaultVariationName,
     activeNamedProjectId: core.activeNamedProject.value?.id ?? null,
     activeNamedProjectName: core.activeNamedProject.value?.name ?? null,
   }
@@ -270,6 +271,7 @@ export function initializePersistence(core: StoreCore): void {
       state.pageBackgroundColor,
       state.sectionVisibility,
       state.variations,
+      state.defaultVariationName,
     ],
     () => scheduleSave(core),
     { deep: true },

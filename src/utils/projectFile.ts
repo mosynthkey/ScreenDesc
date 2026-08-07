@@ -80,6 +80,7 @@ export interface ProjectFileData {
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
   variations: string[]
+  defaultVariationName?: string | null
   /** SHA-256 hex of canonical project bytes (excluding this field). Written on export. */
   contentHash?: string
 }
@@ -238,6 +239,7 @@ export async function contentHashFromSnapshot(snapshot: {
   pageBackgroundColor: string
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   variations: string[]
+  defaultVariationName?: string | null
 }): Promise<string> {
   const data = await buildProjectFileData(
     snapshot.imageBlob,
@@ -278,8 +280,15 @@ function fileStamp(): string {
   return new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
 }
 
-export function suggestProjectFileName(): string {
-  return `screendesc-${fileStamp()}${FILE_EXTENSION}`
+export function suggestProjectFileName(projectName?: string): string {
+  const safeName = projectName
+    ?.trim()
+    .replace(/\.screendesc$/i, '')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+  return safeName
+    ? `${safeName}${FILE_EXTENSION}`
+    : `screendesc-${fileStamp()}${FILE_EXTENSION}`
 }
 
 export function suggestProjectBundleFileName(): string {
@@ -477,6 +486,7 @@ export function projectFileFieldsFromSnapshot(
     pageBackgroundColor: string
     sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
     variations: string[]
+    defaultVariationName?: string | null
   },
 ): ProjectFileFields {
   return {
@@ -513,5 +523,6 @@ export function projectFileFieldsFromSnapshot(
     pageBackgroundColor: snapshot.pageBackgroundColor,
     sectionVisibility: snapshot.sectionVisibility,
     variations: snapshot.variations,
+    defaultVariationName: snapshot.defaultVariationName ?? null,
   }
 }

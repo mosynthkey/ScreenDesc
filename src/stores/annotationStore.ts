@@ -22,7 +22,7 @@ import { type OcrLineHit } from '../utils/ocr'
 import { defaultSectionVisibility, normalizeSectionVisibility } from '../utils/sectionVisibility'
 import { useScreenParser } from '../composables/useScreenParser'
 import { createManualSection } from '../utils/mlSectionDetection'
-import { downloadBlob, exportScene } from '../utils/export'
+import { createDirectoryExportSession, downloadBlob, exportScene } from '../utils/export'
 import { blobToPngBlob } from '../utils/export/imageDataUrl'
 import {
   layoutCalloutsForImage,
@@ -119,6 +119,7 @@ import {
 import { flushPersistCurrentProject, initializePersistence } from '../composables/projectPersistence'
 import {
   downloadAllProjectsBundle,
+  exportSavedProjectToFile,
   fetchSavedProjects,
   loadSavedProject,
   inspectProjectFile,
@@ -180,6 +181,7 @@ export interface RestorableFields {
   showSections?: boolean
   sectionVisibility?: unknown
   variations?: string[]
+  defaultVariationName?: string | null
 }
 
 /**
@@ -248,6 +250,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     calloutLayouts: [],
     document: createDefaultDocumentLayout(0, 0, 0),
     variations: [],
+    defaultVariationName: null,
     activeVariation: null,
   })
 
@@ -533,6 +536,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
     state.variations = Array.isArray(fields.variations)
       ? fields.variations.filter((name): name is string => typeof name === 'string')
       : []
+    state.defaultVariationName =
+      typeof fields.defaultVariationName === 'string' && fields.defaultVariationName.trim()
+        ? fields.defaultVariationName.trim()
+        : null
     state.activeVariation = null
     state.selectedSectionIds = []
     state.selectedAnnotationIds = []
@@ -1115,7 +1122,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
    */
   function addVariation(name: string): void {
     const trimmed = name.trim()
-    if (!trimmed) return
+    const defaultName = state.defaultVariationName ?? t('variation.default')
+    if (!trimmed || trimmed === defaultName) return
     if (!state.variations.includes(trimmed)) {
       pushEditUndo()
       state.variations = [...state.variations, trimmed]
@@ -1130,6 +1138,12 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function setActiveVariation(variation: string | null): void {
     state.activeVariation = variation !== null && state.variations.includes(variation) ? variation : null
+  }
+
+  function setDefaultVariationName(rawName: string): void {
+    const name = rawName.trim()
+    if (!name || state.variations.includes(name)) return
+    state.defaultVariationName = name
   }
 
   function updateAnnotations(annotationIds: string[], patch: AnnotationPatch): void {
@@ -1318,12 +1332,56 @@ export const useAnnotationStore = defineStore('annotation', () => {
     if (!imageElement.value) return
     isExporting.value = true
     try {
-      const blob = await renderExportBlob(options)
-      if (!blob) return
-      await downloadBlob(blob, `${options.filename}.${options.format}`)
+      if (!options.allVariations) {
+        const blob = await renderExportBlob(options)
+        if (!blob) return
+        await downloadBlob(blob, `${options.filename}.${options.format}`)
+        return
+      }
+
+      const originalVariation = state.activeVariation
+      const safeBaseName = sanitizeExportFilenamePart(options.filename, 'annotation')
+      const directorySession = await createDirectoryExportSession(
+        `${safeBaseName}_variations.zip`,
+      )
+      if (!directorySession) return
+      const variations: Array<string | null> = [null, ...state.variations]
+      const files: Array<{ blob: Blob; filename: string }> = []
+      const usedFilenames = new Set<string>()
+      try {
+        for (const variation of variations) {
+          state.activeVariation = variation
+          const blob = await renderExportBlob(options)
+          if (!blob) continue
+          const variationName = sanitizeExportFilenamePart(
+            variation ?? state.defaultVariationName ?? t('variation.default'),
+            t('variation.default'),
+          )
+          let filename = `${safeBaseName}_${variationName}.${options.format}`
+          let duplicateNumber = 2
+          while (usedFilenames.has(filename.toLocaleLowerCase())) {
+            filename = `${safeBaseName}_${variationName}_${duplicateNumber}.${options.format}`
+            duplicateNumber += 1
+          }
+          usedFilenames.add(filename.toLocaleLowerCase())
+          files.push({ blob, filename })
+        }
+        await directorySession.save(files)
+      } finally {
+        state.activeVariation = originalVariation
+        refreshDocumentAndLayouts()
+      }
     } finally {
       isExporting.value = false
     }
+  }
+
+  function sanitizeExportFilenamePart(value: string, fallback: string): string {
+    const sanitized = value
+      .trim()
+      .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-')
+      .replace(/[. ]+$/g, '')
+    return sanitized || fallback
   }
 
   async function copyAnnotatedImageToClipboard(): Promise<void> {
@@ -1344,6 +1402,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
           includeSectionGuides: false,
           scale: 2,
           filename: 'clipboard',
+          allVariations: false,
         })
         if (!blob) throw new Error('Failed to render image for clipboard')
         return blobToPngBlob(blob)
@@ -1461,6 +1520,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     commitDescription,
     addVariation,
     setActiveVariation,
+    setDefaultVariationName,
     nudgeCalloutPositions,
     removeAnnotations,
     reorderAnnotations,
@@ -1469,6 +1529,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     exportProject,
     copyAnnotatedImageToClipboard,
     saveProjectToFile: () => saveProjectToFile(core),
+    exportSavedProjectToFile,
     downloadAllProjectsBundle: () => downloadAllProjectsBundle(core),
     inspectProjectFile,
     openProjectFile: (file: File, selectedBundleIndexes?: number[]) =>

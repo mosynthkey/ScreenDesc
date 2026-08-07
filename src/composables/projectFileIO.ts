@@ -55,6 +55,17 @@ export async function saveProjectToFile(core: StoreCore): Promise<void> {
   await downloadBlob(fileBlob, suggestProjectFileName())
 }
 
+export async function exportSavedProjectToFile(id: string): Promise<void> {
+  const [snapshot, projects] = await Promise.all([loadNamedProject(id), listSavedProjects()])
+  if (!snapshot) throw new Error(t('error.savedProjectNotFound'))
+  const project = projects.find((item) => item.id === id)
+  const fileBlob = await buildProjectFile(
+    snapshot.imageBlob,
+    projectFileFieldsFromSnapshot(snapshot),
+  )
+  await downloadBlob(fileBlob, suggestProjectFileName(project?.name))
+}
+
 export async function downloadAllProjectsBundle(core: StoreCore): Promise<number> {
   if (isNamedSaveDirty()) {
     await persistActiveNamedProject(core)

@@ -155,6 +155,8 @@ export interface ProjectState {
   document: DocumentLayout
   /** Additional annotation-text variations beyond the base `description` (free-text names, e.g. "English", "Casual"). */
   variations: string[]
+  /** Custom display name for the base variation; null uses the localized default label. */
+  defaultVariationName: string | null
   /** Currently displayed/edited variation; `null` means the base `description`. */
   activeVariation: string | null
 }
@@ -166,4 +168,5 @@ export interface ExportOptions {
   includeSectionGuides: boolean
   scale: number
   filename: string
+  allVariations: boolean
 }

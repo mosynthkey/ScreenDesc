@@ -153,6 +153,7 @@ export async function loadImageFile(
   clearNamedSaveSchedule()
   core.clearEditUndoStack()
   state.variations = []
+  state.defaultVariationName = null
   state.activeVariation = null
   const prepared = await prepareImageSource(core, file)
   return { analysis: analyzeImageSource(core, prepared) }
@@ -213,6 +214,7 @@ export async function clearCurrentProject(core: StoreCore): Promise<void> {
   state.calloutLayouts = []
   state.document = createDefaultDocumentLayout(0, 0, 0)
   state.variations = []
+  state.defaultVariationName = null
   state.activeVariation = null
 
   await clearAutosaveStorage()

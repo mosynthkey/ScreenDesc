@@ -83,6 +83,7 @@ const {
   commitDescription,
   addVariation,
   setActiveVariation,
+  setDefaultVariationName,
   nudgeCalloutPositions,
   removeAnnotations,
   reorderAnnotations,
@@ -91,6 +92,7 @@ const {
   exportProject,
   copyAnnotatedImageToClipboard,
   saveProjectToFile,
+  exportSavedProjectToFile,
   downloadAllProjectsBundle,
   openProjectFile,
   inspectProjectFile,
@@ -548,6 +550,19 @@ async function onDownloadAllProjectsBundle(): Promise<void> {
   }
 }
 
+async function onExportSavedProject(id: string): Promise<void> {
+  clearProjectLoadError()
+  projectStorageBusy.value = true
+  try {
+    if (activeNamedProject.value?.id === id) await flushPersistCurrentProject()
+    await exportSavedProjectToFile(id)
+  } catch (err) {
+    showProjectLoadError(err instanceof Error ? err.message : t('error.projectExportFailed'))
+  } finally {
+    projectStorageBusy.value = false
+  }
+}
+
 async function refreshSavedProjects(): Promise<void> {
   savedProjects.value = await fetchSavedProjects()
 }
@@ -733,8 +748,12 @@ async function confirmDeleteSavedProject(): Promise<void> {
 }
 
 async function onExport(options: ExportOptions): Promise<void> {
-  await exportProject(options)
-  exportOpen.value = false
+  try {
+    await exportProject(options)
+    exportOpen.value = false
+  } catch (err) {
+    showAppNotice(err instanceof Error ? err.message : t('error.projectExportFailed'), 'error')
+  }
 }
 
 function refreshCommonSettingsPresets(): void {
@@ -896,6 +915,7 @@ function onKeydown(event: KeyboardEvent): void {
         :show-tool-dock="showToolDock"
         :can-undo-crop="canUndoCrop"
         :variations="[...state.variations]"
+        :default-variation-name="state.defaultVariationName ?? t('variation.default')"
         :active-variation="state.activeVariation"
         @update:tool-mode="setToolMode"
         @toggle-section-visibility="toggleSectionVisibility"
@@ -912,6 +932,7 @@ function onKeydown(event: KeyboardEvent): void {
         @cancel-crop="cancelCrop"
         @update:active-variation="setActiveVariation"
         @add-variation="addVariation"
+        @rename-default-variation="setDefaultVariationName"
       />
 
       <input
@@ -959,6 +980,7 @@ function onKeydown(event: KeyboardEvent): void {
           @open="onLoadSavedProject"
           @remove="onRemoveSavedProject"
           @download-bundle="onDownloadAllProjectsBundle"
+          @export-project="onExportSavedProject"
           @reveal="onRevealSavedProject"
           @navigate-folder="currentFolderId = $event"
           @create-folder="onCreateFolder"

@@ -2,6 +2,7 @@
 import { reactive } from 'vue'
 import type { ExportFormat, ExportOptions } from '../types/annotation'
 import { useI18n } from '../i18n'
+import { isDesktopApp } from '../runtime'
 
 defineProps<{
   open: boolean
@@ -19,6 +20,7 @@ const form = reactive({
   includeSectionGuides: false,
   scale: 2,
   filename: t('export.defaultFilename'),
+  allVariations: false,
 })
 
 function submit(): void {
@@ -67,12 +69,21 @@ function submit(): void {
         <input v-model="form.includeSectionGuides" type="checkbox" />
         {{ t('export.includeSectionGuides') }}
       </label>
+      <label class="check">
+        <input v-model="form.allVariations" type="checkbox" />
+        {{ t('export.allVariations') }}
+      </label>
+      <p v-if="form.allVariations" class="hint">
+        {{ t(isDesktopApp ? 'export.allVariationsHint' : 'export.allVariationsHint.web') }}
+      </p>
       <div class="modal-actions">
         <button class="btn btn-ghost" type="button" @click="emit('close')">
           {{ t('export.cancel') }}
         </button>
         <button class="btn btn-primary" type="button" @click="submit">
-          {{ tr('export.download') }}
+          {{ form.allVariations
+            ? t(isDesktopApp ? 'export.selectFolder' : 'export.downloadZip')
+            : tr('export.download') }}
         </button>
       </div>
     </div>
@@ -85,6 +96,13 @@ function submit(): void {
   align-items: center;
   gap: 8px;
   font-size: 0.875rem;
+}
+
+.hint {
+  margin: -2px 0 0 24px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-muted);
 }
 
 .format-buttons {

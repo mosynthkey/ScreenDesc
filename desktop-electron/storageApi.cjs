@@ -187,6 +187,18 @@ async function saveWithDialog(browserWindow, filename, bytes) {
   return filePath
 }
 
+async function saveManyWithDirectoryDialog(browserWindow, files) {
+  const { canceled, filePaths } = await dialog.showOpenDialog(browserWindow, {
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  if (canceled || !filePaths[0]) return false
+  for (const file of files) {
+    const safeFilename = path.basename(String(file.filename || 'export'))
+    await fs.writeFile(path.join(filePaths[0], safeFilename), Buffer.from(file.base64, 'base64'))
+  }
+  return true
+}
+
 /**
  * Handle a `/__screendesc/storage/*` request. Returns true if handled (response written),
  * false if the path is outside this API's prefix.
@@ -238,6 +250,16 @@ async function handleStorageRequest(req, res, url, browserWindow) {
       const bytes = Buffer.from(body.base64, 'base64')
       const savedPath = await saveWithDialog(browserWindow, safeFilename, bytes)
       jsonResponse(res, { path: savedPath, canceled: savedPath === null })
+      return true
+    }
+
+    if (subPath === '/export-many' && method === 'POST') {
+      const body = await readBodyJson(req)
+      const saved = await saveManyWithDirectoryDialog(
+        browserWindow,
+        Array.isArray(body.files) ? body.files : [],
+      )
+      jsonResponse(res, { canceled: !saved })
       return true
     }
 

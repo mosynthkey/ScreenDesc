@@ -1,6 +1,7 @@
 import type { ExportFormat, ExportOptions } from '../../types/annotation'
 import { isDesktopApp } from '../../runtime'
-import { saveExportedFile } from '../projectStorageDesktop'
+import { saveExportedFile, saveExportedFiles } from '../projectStorageDesktop'
+import { createZipBlob } from './zip'
 import type { ExportScene, Exporter } from './types'
 import { pngExporter } from './pngExporter'
 import { svgExporter } from './svgExporter'
@@ -40,6 +41,22 @@ export async function downloadBlob(blob: Blob, filename: string): Promise<void> 
     return
   }
   downloadBlobInBrowser(blob, filename)
+}
+
+export interface DirectoryExportSession {
+  save(files: Array<{ blob: Blob; filename: string }>): Promise<boolean>
+}
+
+export async function createDirectoryExportSession(
+  archiveFilename: string,
+): Promise<DirectoryExportSession | null> {
+  if (isDesktopApp) return { save: saveExportedFiles }
+  return {
+    async save(files): Promise<boolean> {
+      downloadBlobInBrowser(await createZipBlob(files), archiveFilename)
+      return true
+    },
+  }
 }
 
 export type { ExportScene, Exporter }

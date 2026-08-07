@@ -20,6 +20,7 @@ const emit = defineEmits<{
   open: [id: string]
   remove: [id: string]
   downloadBundle: []
+  exportProject: [id: string]
   reveal: [id: string]
   navigateFolder: [id: string | null]
   createFolder: [name: string, color: string, parentId: string | null]
@@ -114,6 +115,12 @@ function onRevealFromMenu(): void {
   const projectId = contextMenu.value?.kind === 'project' ? contextMenu.value.id : null
   closeContextMenu()
   if (projectId) emit('reveal', projectId)
+}
+
+function onExportFromMenu(): void {
+  const projectId = contextMenu.value?.kind === 'project' ? contextMenu.value.id : null
+  closeContextMenu()
+  if (projectId) emit('exportProject', projectId)
 }
 
 function createFolder(): void {
@@ -509,17 +516,27 @@ defineExpose({ openFilePicker })
       role="menu"
       :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
     >
-      <button
-        v-if="contextMenu.kind === 'project'"
-        class="files-context-item"
-        type="button"
-        role="menuitem"
-        :disabled="isBusy"
-        :title="t('home.openLocationTitle')"
-        @click="onRevealFromMenu"
-      >
-        {{ t('home.openLocation') }}
-      </button>
+      <template v-if="contextMenu.kind === 'project'">
+        <button
+          class="files-context-item"
+          type="button"
+          role="menuitem"
+          :disabled="isBusy"
+          @click="onExportFromMenu"
+        >
+          {{ t('home.exportProject') }}
+        </button>
+        <button
+          class="files-context-item"
+          type="button"
+          role="menuitem"
+          :disabled="isBusy"
+          :title="t('home.openLocationTitle')"
+          @click="onRevealFromMenu"
+        >
+          {{ t('home.openLocation') }}
+        </button>
+      </template>
       <template v-else>
         <button class="files-context-item" type="button" @click="renameFolderFromMenu">
           {{ t('folder.rename') }}

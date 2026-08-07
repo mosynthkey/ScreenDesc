@@ -43,6 +43,7 @@ export interface ProjectSnapshot {
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
   variations: string[]
+  defaultVariationName?: string | null
   /** When set, edits auto-overwrite this named save. */
   activeNamedProjectId?: string | null
   activeNamedProjectName?: string | null
