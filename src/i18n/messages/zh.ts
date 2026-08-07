@@ -65,6 +65,9 @@ export const zh: Record<MessageKey, string> = {
   'variation.addPlaceholder': '新变体名称',
   'variation.addButton': '添加',
   'variation.renameDefault': '重命名默认变体',
+  'variation.rename': '重命名变体',
+  'variation.delete': '删除变体',
+  'variation.deleteConfirm': '删除“{name}”及其注释文本？',
   'variation.hint': '适合创建不同注释内容的图片，例如多语言版本。',
 
   'button.project': '项目',

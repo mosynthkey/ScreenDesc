@@ -65,6 +65,9 @@ export const de: Record<MessageKey, string> = {
   'variation.addPlaceholder': 'Name der neuen Variante',
   'variation.addButton': 'Hinzufügen',
   'variation.renameDefault': 'Standardvariante umbenennen',
+  'variation.rename': 'Variante umbenennen',
+  'variation.delete': 'Variante löschen',
+  'variation.deleteConfirm': '„{name}“ und den zugehörigen Anmerkungstext löschen?',
   'variation.hint':
     'Praktisch zum Erstellen von Bildern mit unterschiedlichen Anmerkungen, etwa für verschiedene Sprachen.',
 

@@ -63,6 +63,9 @@ export const en = {
   'variation.addPlaceholder': 'New variation name',
   'variation.addButton': 'Add',
   'variation.renameDefault': 'Rename default variation',
+  'variation.rename': 'Rename variation',
+  'variation.delete': 'Delete variation',
+  'variation.deleteConfirm': 'Delete “{name}” and its annotation text?',
   'variation.hint': 'Useful for creating images with different annotations, such as localized versions.',
 
   'button.project': 'Project',

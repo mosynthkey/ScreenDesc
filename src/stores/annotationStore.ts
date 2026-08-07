@@ -1146,6 +1146,40 @@ export const useAnnotationStore = defineStore('annotation', () => {
     state.defaultVariationName = name
   }
 
+  function renameVariation(currentName: string, rawNextName: string): void {
+    const nextName = rawNextName.trim()
+    const currentIndex = state.variations.indexOf(currentName)
+    const defaultName = state.defaultVariationName ?? t('variation.default')
+    if (
+      currentIndex < 0 ||
+      !nextName ||
+      nextName === defaultName ||
+      (nextName !== currentName && state.variations.includes(nextName))
+    ) return
+    if (nextName === currentName) return
+
+    state.variations = state.variations.map((name, index) =>
+      index === currentIndex ? nextName : name,
+    )
+    for (const annotation of state.annotations) {
+      if (!Object.prototype.hasOwnProperty.call(annotation.variationText, currentName)) continue
+      const { [currentName]: text, ...remaining } = annotation.variationText
+      annotation.variationText = { ...remaining, [nextName]: text ?? '' }
+    }
+    if (state.activeVariation === currentName) state.activeVariation = nextName
+  }
+
+  function removeVariation(name: string): void {
+    if (!state.variations.includes(name)) return
+    state.variations = state.variations.filter((variation) => variation !== name)
+    for (const annotation of state.annotations) {
+      if (!Object.prototype.hasOwnProperty.call(annotation.variationText, name)) continue
+      const { [name]: _removed, ...remaining } = annotation.variationText
+      annotation.variationText = remaining
+    }
+    if (state.activeVariation === name) state.activeVariation = null
+  }
+
   function updateAnnotations(annotationIds: string[], patch: AnnotationPatch): void {
     if (annotationIds.length === 0) return
     if (annotationIds.length === 1) {
@@ -1521,6 +1555,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     addVariation,
     setActiveVariation,
     setDefaultVariationName,
+    renameVariation,
+    removeVariation,
     nudgeCalloutPositions,
     removeAnnotations,
     reorderAnnotations,

@@ -65,6 +65,9 @@ export const fr: Record<MessageKey, string> = {
   'variation.addPlaceholder': 'Nom de la nouvelle variante',
   'variation.addButton': 'Ajouter',
   'variation.renameDefault': 'Renommer la variante par défaut',
+  'variation.rename': 'Renommer la variante',
+  'variation.delete': 'Supprimer la variante',
+  'variation.deleteConfirm': 'Supprimer « {name} » et le texte de ses annotations ?',
   'variation.hint':
     'Pratique pour créer des images aux annotations différentes, notamment dans plusieurs langues.',
 

@@ -65,6 +65,9 @@ export const ja: Record<MessageKey, string> = {
   'variation.addPlaceholder': '新しいバリエーション名',
   'variation.addButton': '追加',
   'variation.renameDefault': 'デフォルトのバリエーション名を変更',
+  'variation.rename': 'バリエーション名を変更',
+  'variation.delete': 'バリエーションを削除',
+  'variation.deleteConfirm': '「{name}」と、このバリエーションの注釈文を削除しますか？',
   'variation.hint': '多言語版など、注釈違いの画像を作るときに便利です。',
 
   'button.project': 'プロジェクト',

@@ -84,6 +84,8 @@ const {
   addVariation,
   setActiveVariation,
   setDefaultVariationName,
+  renameVariation,
+  removeVariation,
   nudgeCalloutPositions,
   removeAnnotations,
   reorderAnnotations,
@@ -933,6 +935,8 @@ function onKeydown(event: KeyboardEvent): void {
         @update:active-variation="setActiveVariation"
         @add-variation="addVariation"
         @rename-default-variation="setDefaultVariationName"
+        @rename-variation="renameVariation"
+        @remove-variation="removeVariation"
       />
 
       <input

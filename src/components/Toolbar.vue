@@ -28,6 +28,7 @@ import {
   ScanIcon,
   SquarePlusIcon,
   TypeIcon,
+  Trash2Icon,
   XIcon,
 } from '@lucide/vue'
 
@@ -75,6 +76,8 @@ const emit = defineEmits<{
   'update:activeVariation': [variation: string | null]
   addVariation: [name: string]
   renameDefaultVariation: [name: string]
+  renameVariation: [currentName: string, nextName: string]
+  removeVariation: [name: string]
 }>()
 
 const cropMenuOpen = ref(false)
@@ -83,6 +86,9 @@ const variationMenuOpen = ref(false)
 const newVariationDraft = ref('')
 const defaultVariationDraft = ref('')
 const defaultVariationEditing = ref(false)
+const variationRenameTarget = ref<string | null>(null)
+const variationRenameDraft = ref('')
+const variationPendingDelete = ref<string | null>(null)
 const titleDraft = ref('')
 const titleInputRef = ref<HTMLInputElement | null>(null)
 
@@ -195,12 +201,38 @@ function chooseReplaceImage(): void {
 function toggleVariationMenu(): void {
   variationMenuOpen.value = !variationMenuOpen.value
   if (variationMenuOpen.value) newVariationDraft.value = ''
-  else defaultVariationEditing.value = false
+  else {
+    defaultVariationEditing.value = false
+    variationRenameTarget.value = null
+    variationPendingDelete.value = null
+  }
 }
 
 function startDefaultVariationRename(): void {
+  variationRenameTarget.value = null
   defaultVariationDraft.value = props.defaultVariationName
   defaultVariationEditing.value = true
+}
+
+function startVariationRename(variation: string): void {
+  defaultVariationEditing.value = false
+  variationRenameTarget.value = variation
+  variationRenameDraft.value = variation
+}
+
+function submitVariationRename(): void {
+  const currentName = variationRenameTarget.value
+  const nextName = variationRenameDraft.value.trim()
+  if (!currentName || !nextName) return
+  emit('renameVariation', currentName, nextName)
+  variationRenameTarget.value = null
+}
+
+function confirmVariationDelete(): void {
+  const name = variationPendingDelete.value
+  if (!name) return
+  emit('removeVariation', name)
+  variationPendingDelete.value = null
 }
 
 function submitDefaultVariationRename(): void {
@@ -386,16 +418,69 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
               <PencilIcon :size="14" :stroke-width="1.8" aria-hidden="true" />
             </button>
           </div>
-          <button
-            v-for="variation in variations"
-            :key="variation"
-            class="variation-menu-item"
-            type="button"
-            :class="{ active: activeVariation === variation }"
-            @click="chooseVariation(variation)"
-          >
-            {{ variation }}
-          </button>
+          <template v-for="variation in variations" :key="variation">
+            <form
+              v-if="variationRenameTarget === variation"
+              class="variation-add-row"
+              @submit.prevent="submitVariationRename"
+            >
+              <input
+                v-model="variationRenameDraft"
+                class="variation-add-input"
+                type="text"
+                :aria-label="t('variation.rename')"
+                autofocus
+                @keydown.esc.prevent="variationRenameTarget = null"
+              />
+              <button
+                class="variation-add-btn"
+                type="submit"
+                :disabled="!variationRenameDraft.trim()"
+                :aria-label="t('folder.save')"
+              >
+                <CheckIcon :size="14" :stroke-width="2" aria-hidden="true" />
+              </button>
+            </form>
+            <div v-else class="variation-default-row">
+              <button
+                class="variation-menu-item"
+                type="button"
+                :class="{ active: activeVariation === variation }"
+                @click="chooseVariation(variation)"
+              >
+                {{ variation }}
+              </button>
+              <button
+                class="variation-rename-btn"
+                type="button"
+                :aria-label="t('variation.rename')"
+                :title="t('variation.rename')"
+                @click="startVariationRename(variation)"
+              >
+                <PencilIcon :size="14" :stroke-width="1.8" aria-hidden="true" />
+              </button>
+              <button
+                class="variation-rename-btn danger"
+                type="button"
+                :aria-label="t('variation.delete')"
+                :title="t('variation.delete')"
+                @click="variationPendingDelete = variation"
+              >
+                <Trash2Icon :size="14" :stroke-width="1.8" aria-hidden="true" />
+              </button>
+            </div>
+          </template>
+          <div v-if="variationPendingDelete" class="variation-delete-confirm">
+            <p>{{ t('variation.deleteConfirm', { name: variationPendingDelete }) }}</p>
+            <div>
+              <button type="button" class="btn btn-ghost" @click="variationPendingDelete = null">
+                {{ t('confirm.cancel') }}
+              </button>
+              <button type="button" class="btn btn-danger" @click="confirmVariationDelete">
+                {{ t('variation.delete') }}
+              </button>
+            </div>
+          </div>
           <div class="variation-menu-sep" />
           <form class="variation-add-row" @submit.prevent="submitNewVariation">
             <input
@@ -903,6 +988,36 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
 .variation-rename-btn:hover {
   background: rgba(120, 120, 128, 0.12);
   color: var(--ink);
+}
+
+.variation-rename-btn.danger:hover {
+  color: var(--danger);
+}
+
+.variation-delete-confirm {
+  margin: 4px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 7%, var(--bg-elevated));
+}
+
+.variation-delete-confirm p {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.variation-delete-confirm > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.variation-delete-confirm .btn {
+  min-height: 28px;
+  padding: 4px 9px;
+  font-size: 0.75rem;
 }
 
 .variation-menu-sep {

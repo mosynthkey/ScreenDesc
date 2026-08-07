@@ -65,6 +65,9 @@ export const es: Record<MessageKey, string> = {
   'variation.addPlaceholder': 'Nombre de la nueva variación',
   'variation.addButton': 'Añadir',
   'variation.renameDefault': 'Cambiar el nombre de la variación predeterminada',
+  'variation.rename': 'Cambiar el nombre de la variación',
+  'variation.delete': 'Eliminar variación',
+  'variation.deleteConfirm': '¿Eliminar “{name}” y el texto de sus anotaciones?',
   'variation.hint':
     'Útil para crear imágenes con anotaciones distintas, como versiones en varios idiomas.',
 
