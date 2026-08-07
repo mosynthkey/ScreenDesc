@@ -65,9 +65,9 @@ export const de: Record<MessageKey, string> = {
   'variation.addPlaceholder': 'Name der neuen Variante',
   'variation.addButton': 'Hinzufügen',
   'variation.hint':
-    'Erstellen Sie Varianten Ihrer Anmerkungen — praktisch etwa für mehrere Sprachen.',
+    'Praktisch zum Erstellen von Bildern mit unterschiedlichen Anmerkungen, etwa für verschiedene Sprachen.',
 
-  'button.project': 'Projekt ▾',
+  'button.project': 'Projekt',
   'button.copyClipboard': 'In die Zwischenablage kopieren',
   'button.copied': 'In die Zwischenablage kopiert',
   'button.export': 'Exportieren',
@@ -108,7 +108,7 @@ export const de: Record<MessageKey, string> = {
   'sectionVisibility.manual': 'Manuell hinzugefügt',
 
   'menu.duplicateProject': 'Projekt duplizieren',
-  'menu.exportProjectFile': 'Exportieren (in Datei schreiben)',
+  'menu.exportProjectFile': 'Projekt exportieren',
   'menu.replaceImage': 'Bild ersetzen…',
   'menu.undoCrop': 'Zuschnitt rückgängig machen',
   'project.copyName': '{name} – Kopie',
@@ -121,22 +121,22 @@ export const de: Record<MessageKey, string> = {
   'confirm.cancel': 'Abbrechen',
   'confirm.delete': 'Löschen',
 
-  'cropConfirm.title': 'Zuschneiden und neu beginnen?',
+  'cropConfirm.title': 'Bild zuschneiden?',
   'cropConfirm.body':
-    'Beim Zuschneiden wird das Bild ersetzt, daher werden Anmerkungen und Abschnitte auf dieser Fläche gelöscht. Wählen Sie, wie fortgefahren werden soll.',
-  'cropConfirm.asNewProject': 'Als neues Projekt fortfahren',
+    'Anmerkungen und Abschnitte werden aus dem zugeschnittenen Bild entfernt. Wählen Sie, wie es gespeichert werden soll.',
+  'cropConfirm.asNewProject': 'Als neues Projekt bearbeiten',
   'cropConfirm.asNewProjectHint':
-    'Behält das aktuelle Projekt unverändert bei und bearbeitet das zugeschnittene Bild separat',
+    'Behält das aktuelle Projekt bei und bearbeitet das zugeschnittene Bild in einem separaten Projekt',
   'cropConfirm.overwrite': 'Dieses Projekt überschreiben',
   'cropConfirm.overwriteHint':
-    'Ersetzt das Bild im aktuellen Projekt (der Zuschnitt kann einmal rückgängig gemacht werden)',
+    'Ersetzt das aktuelle Bild (ein Zuschnitt kann rückgängig gemacht werden)',
   'cropConfirm.cancel': 'Abbrechen',
 
   'replaceDetect.title': 'Automatische Erkennung erneut ausführen?',
   'replaceDetect.body':
-    'Das Bild wurde ersetzt. UI-Bereiche im neuen Bild erneut erkennen? Vorhandene Anmerkungen werden gelöscht.',
-  'replaceDetect.run': 'Erkennung ausführen',
-  'replaceDetect.keep': 'Aktuelle Abschnitte behalten',
+    'Abschnitte im ersetzten Bild erneut erkennen? Dabei werden die aktuellen Anmerkungen gelöscht.',
+  'replaceDetect.run': 'Erneut ausführen',
+  'replaceDetect.keep': 'Nicht erneut ausführen',
 
   'home.newTitle': 'Neues Projekt',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -145,6 +145,11 @@ export const de: Record<MessageKey, string> = {
   'home.importing': 'Bild wird geladen…',
   'home.filesTitle': 'Gespeicherte Projekte',
   'home.filesCount': '{count} gespeichert',
+  'home.searchPlaceholder': 'Projektnamen und Anmerkungen durchsuchen',
+  'home.searchAria': 'Projekte durchsuchen',
+  'home.searchClear': 'Suche löschen',
+  'home.searchResultCount': '{count} Ergebnisse',
+  'home.searchEmpty': 'Keine passenden Projekte gefunden.',
   'home.filesEmpty': 'Erstellen Sie über Neues Projekt ein Projekt. Ihre Arbeit wird automatisch gespeichert.',
   'home.editingBadge': 'In Bearbeitung',
   'home.removeAria': 'Gespeichertes Projekt löschen',
@@ -155,21 +160,19 @@ export const de: Record<MessageKey, string> = {
   'home.openLocation': 'Im Finder anzeigen',
   'home.openLocationTitle': 'Den Ordner dieses Projekts auf der Festplatte anzeigen',
   'storage.notice.before':
-    'Diese Daten werden in diesem Browser gespeichert. Sie können verloren gehen, wenn Sie Website-Daten löschen oder den privaten Modus verlassen. ',
+    'Projekte werden in diesem Browser gespeichert. Sie können verloren gehen, wenn Website-Daten gelöscht oder der private Modus verwendet wird. ',
   'storage.notice.link': 'Alle Daten hier herunterladen',
   'storage.notice.after': '.',
   'home.devNotice.aria': 'Hinweis zum Entwicklungsstatus',
   'home.devNotice.body':
-    'Diese App befindet sich derzeit in der Entwicklung. Das Verhalten kann sich ohne Vorankündigung ändern.',
-  'home.devNotice.issueLink':
-    'Wunsch oder Fehler gefunden? Bitte ein Issue erstellen',
+    'Diese App befindet sich in der Entwicklung und kann sich ohne Vorankündigung ändern.',
+  'home.devNotice.issueLink': 'Wünsche und Fehler über ein GitHub Issue melden',
 
   'annotationList.title': 'Anmerkungen',
   'annotationList.emptyHint': 'Auf einen Abschnitt klicken, um eine Anmerkung hinzuzufügen.',
   'annotationList.dragTitle': 'Zum Umordnen ziehen',
   'annotationList.assignNumbers': 'Nummerieren',
-  'annotationList.assignNumbersTitle':
-    'Jeder Anmerkung ein Schrittnummer-Präfix zuweisen',
+  'annotationList.assignNumbersTitle': 'Am Anfang jeder Anmerkung eine Nummer hinzufügen',
   'annotationList.numberDirectionLabel': 'Reihenfolge',
   'annotationList.numberDirection.leftToRight': 'Von links nach rechts',
   'annotationList.numberDirection.topToBottom': 'Von oben nach unten',
@@ -179,7 +182,7 @@ export const de: Record<MessageKey, string> = {
   'annotationList.removeTitle': 'Entfernen',
   'annotationList.multiSelectHint': 'Umschalt-Klick für Mehrfachauswahl',
   'annotationList.resizePane':
-    'Ziehen, um Anmerkungsliste und Editor in der Größe anzupassen',
+    'Ziehen, um die Höhe von Anmerkungsliste und Editor anzupassen',
 
   'canvas.emptyHint':
     'Ziehen, um den Bereich zu zeichnen, den Sie kommentieren möchten — er wird zu einem Abschnitt.',
@@ -271,7 +274,7 @@ export const de: Record<MessageKey, string> = {
   'commonSettings.defaultName': 'Einstellungen {stamp}',
   'commonSettings.title': 'Voreinstellungen für gemeinsame Einstellungen',
   'commonSettings.description':
-    'Speichern Sie die aktuellen gemeinsamen Einstellungen, um sie später in jedem Projekt anzuwenden.',
+    'Speichern Sie die aktuellen gemeinsamen Einstellungen als Voreinstellung und wenden Sie sie auf andere Projekte an.',
   'commonSettings.saveAsLabel': 'Speichern unter',
   'commonSettings.namePlaceholder': 'Name der Voreinstellung',
   'commonSettings.save': 'Speichern',
@@ -286,7 +289,7 @@ export const de: Record<MessageKey, string> = {
   'lineStyle.solid': 'Durchgezogen',
   'lineStyle.dashed': 'Gestrichelt',
   'lineStyle.invert': 'Invertiert',
-  'lineStyle.invertHint': 'Auf jedem Hintergrund sichtbar',
+  'lineStyle.invertHint': 'Verwendet eine zum Hintergrund invertierte Farbe',
 
   'anchorStyle.dot': 'Punkt',
   'anchorStyle.arrow': 'Pfeil',
@@ -306,9 +309,9 @@ export const de: Record<MessageKey, string> = {
     'Ungültiges Projektdateiformat (JSON-Parsefehler)',
   'error.projectFileUnsupported': 'Nicht unterstützte Projektdatei',
   'status.bundleImportResult':
-    '{imported} importiert. {skipped} identische Projekte, die bereits in Dateien vorhanden waren, wurden übersprungen.',
+    '{imported} importiert und {skipped} mit identischem Inhalt übersprungen.',
   'status.bundleImportSkippedAll':
-    '{skipped} Projekte übersprungen — identischer Inhalt existiert bereits in Dateien.',
+    'Alle {skipped} übersprungen, da ihr Inhalt bereits importiert wurde.',
   'status.bundleImportOk': '{imported} Projekte importiert.',
 
   'error.projectBundleInvalid': 'Ungültige Projektpaketdatei',

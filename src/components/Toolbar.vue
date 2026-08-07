@@ -238,6 +238,7 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
           >
             <FolderIcon class="header-btn-icon" :size="15" :stroke-width="1.8" aria-hidden="true" />
             <span>{{ t('button.project') }}</span>
+            <ChevronDownIcon :size="14" :stroke-width="2" aria-hidden="true" />
           </button>
           <div v-if="projectMenuOpen" class="project-menu" @click.stop>
             <button

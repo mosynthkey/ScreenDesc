@@ -17,7 +17,7 @@ export const en = {
   'nav.aria': 'Main navigation',
   'nav.files': 'Files',
   'nav.edit': 'Edit',
-  'nav.editDisabledHint': 'Open a project first',
+  'nav.editDisabledHint': 'Open a project to edit',
   'nav.desktopApp': 'Desktop app',
 
   'folder.new': 'New folder',
@@ -62,9 +62,9 @@ export const en = {
   'variation.buttonLabel': 'Variation: {name}',
   'variation.addPlaceholder': 'New variation name',
   'variation.addButton': 'Add',
-  'variation.hint': 'Create variations of your annotations — handy for things like multiple languages.',
+  'variation.hint': 'Useful for creating images with different annotations, such as localized versions.',
 
-  'button.project': 'Project ▾',
+  'button.project': 'Project',
   'button.copyClipboard': 'Copy to clipboard',
   'button.copied': 'Copied to clipboard',
   'button.export': 'Export',
@@ -100,12 +100,12 @@ export const en = {
   'aria.cropApply': 'Apply crop',
   'aria.cropCancel': 'Cancel crop',
   'aria.toggleSections': 'Section visibility',
-  'sectionVisibility.aiRegion': 'UI elements (AI-detected)',
+  'sectionVisibility.aiRegion': 'UI elements (AI-recognized)',
   'sectionVisibility.aiText': 'Text (OCR)',
   'sectionVisibility.manual': 'Manually added',
 
   'menu.duplicateProject': 'Duplicate project',
-  'menu.exportProjectFile': 'Export (write to file)',
+  'menu.exportProjectFile': 'Export project',
   'menu.replaceImage': 'Replace image…',
   'menu.undoCrop': 'Undo crop',
   'project.copyName': '{name} copy',
@@ -118,20 +118,20 @@ export const en = {
   'confirm.cancel': 'Cancel',
   'confirm.delete': 'Delete',
 
-  'cropConfirm.title': 'Crop and start fresh?',
+  'cropConfirm.title': 'Crop image?',
   'cropConfirm.body':
-    'Cropping replaces the image, so annotations and sections on this canvas will be cleared. Choose how to continue.',
-  'cropConfirm.asNewProject': 'Continue as a new project',
-  'cropConfirm.asNewProjectHint': 'Keep the current project as it is, and edit the cropped image separately',
+    'Annotations and sections will be removed from the cropped image. Choose how to save it.',
+  'cropConfirm.asNewProject': 'Edit as a new project',
+  'cropConfirm.asNewProjectHint': 'Keep the current project and edit the cropped image in a separate project',
   'cropConfirm.overwrite': 'Overwrite this project',
-  'cropConfirm.overwriteHint': 'Replace the image in the current project (you can undo the crop once)',
+  'cropConfirm.overwriteHint': 'Replace the current image (you can undo one crop)',
   'cropConfirm.cancel': 'Cancel',
 
-  'replaceDetect.title': 'Run auto-detection again?',
+  'replaceDetect.title': 'Run automatic recognition again?',
   'replaceDetect.body':
-    'The image was replaced. Detect UI regions again on the new image? Existing annotations will be cleared.',
-  'replaceDetect.run': 'Run detection',
-  'replaceDetect.keep': 'Keep current sections',
+    'Recognize sections again from the replacement image? Running it removes the current annotations.',
+  'replaceDetect.run': 'Run again',
+  'replaceDetect.keep': 'Do not run again',
 
   'home.newTitle': 'New project',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -140,6 +140,11 @@ export const en = {
   'home.importing': 'Loading image…',
   'home.filesTitle': 'Saved projects',
   'home.filesCount': '{count} saved',
+  'home.searchPlaceholder': 'Search project names and annotations',
+  'home.searchAria': 'Search projects',
+  'home.searchClear': 'Clear search',
+  'home.searchResultCount': '{count} results',
+  'home.searchEmpty': 'No projects match your search.',
   'home.filesEmpty': 'Create a project from New Project. Your work is saved automatically.',
   'home.editingBadge': 'Editing',
   'home.removeAria': 'Delete saved project',
@@ -150,19 +155,18 @@ export const en = {
   'home.openLocation': 'Show in Finder',
   'home.openLocationTitle': 'Reveal this project folder on disk',
   'storage.notice.before':
-    'This data is stored in this browser. It may be lost if you clear site data or leave private browsing. ',
+    'Projects are stored in this browser. They may be lost if site data is cleared or private browsing is used. ',
   'storage.notice.link': 'Download all data from here',
   'storage.notice.after': '.',
   'home.devNotice.aria': 'Development status notice',
-  'home.devNotice.body':
-    'This app is currently under development. Behavior may change without notice.',
-  'home.devNotice.issueLink': 'Have a request or found a bug? Please open an issue',
+  'home.devNotice.body': 'This app is in development, so its behavior may change without notice.',
+  'home.devNotice.issueLink': 'Share requests and bugs in a GitHub Issue',
 
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Click a section to add an annotation.',
   'annotationList.dragTitle': 'Drag to reorder',
   'annotationList.assignNumbers': 'Number',
-  'annotationList.assignNumbersTitle': 'Set a step number prefix on each annotation',
+  'annotationList.assignNumbersTitle': 'Add a number to the start of each annotation',
   'annotationList.numberDirectionLabel': 'Order',
   'annotationList.numberDirection.leftToRight': 'Left to right',
   'annotationList.numberDirection.topToBottom': 'Top to bottom',
@@ -171,7 +175,7 @@ export const en = {
   'annotationList.emptyDescription': 'No description',
   'annotationList.removeTitle': 'Remove',
   'annotationList.multiSelectHint': 'Shift-click to select multiple',
-  'annotationList.resizePane': 'Drag to resize annotation list and editor',
+  'annotationList.resizePane': 'Drag to adjust the height of the annotation list and editor',
 
   'canvas.emptyHint':
     'Drag to draw the region you want to annotate — it becomes a section.',
@@ -262,7 +266,7 @@ export const en = {
   'commonSettings.defaultName': 'Settings {stamp}',
   'commonSettings.title': 'Shared settings presets',
   'commonSettings.description':
-    'Save the current shared settings and apply them later in any project.',
+    'Save the current shared settings as a preset and apply them to other projects.',
   'commonSettings.saveAsLabel': 'Save as',
   'commonSettings.namePlaceholder': 'Preset name',
   'commonSettings.save': 'Save',
@@ -277,7 +281,7 @@ export const en = {
   'lineStyle.solid': 'Solid',
   'lineStyle.dashed': 'Dashed',
   'lineStyle.invert': 'Invert',
-  'lineStyle.invertHint': 'Visible on any background',
+  'lineStyle.invertHint': 'Uses a color inverted from the background',
 
   'anchorStyle.dot': 'Dot',
   'anchorStyle.arrow': 'Arrow',
@@ -296,9 +300,9 @@ export const en = {
   'error.projectFileInvalidJson': 'Invalid project file format (JSON parse error)',
   'error.projectFileUnsupported': 'Unsupported project file',
   'status.bundleImportResult':
-    'Imported {imported}. Skipped {skipped} identical projects already in Files.',
+    'Imported {imported} and skipped {skipped} with identical content.',
   'status.bundleImportSkippedAll':
-    'Skipped {skipped} projects — identical content already exists in Files.',
+    'Skipped all {skipped} because their content has already been imported.',
   'status.bundleImportOk': 'Imported {imported} projects.',
 
   'error.projectBundleInvalid': 'Invalid project bundle file',

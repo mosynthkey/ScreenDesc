@@ -65,9 +65,9 @@ export const es: Record<MessageKey, string> = {
   'variation.addPlaceholder': 'Nombre de la nueva variación',
   'variation.addButton': 'Añadir',
   'variation.hint':
-    'Crea variaciones de tus anotaciones — útil para cosas como varios idiomas.',
+    'Útil para crear imágenes con anotaciones distintas, como versiones en varios idiomas.',
 
-  'button.project': 'Proyecto ▾',
+  'button.project': 'Proyecto',
   'button.copyClipboard': 'Copiar al portapapeles',
   'button.copied': 'Copiado al portapapeles',
   'button.export': 'Exportar',
@@ -103,12 +103,12 @@ export const es: Record<MessageKey, string> = {
   'aria.cropApply': 'Aplicar recorte',
   'aria.cropCancel': 'Cancelar recorte',
   'aria.toggleSections': 'Visibilidad de secciones',
-  'sectionVisibility.aiRegion': 'Elementos de interfaz (detectados por IA)',
+  'sectionVisibility.aiRegion': 'Elementos de interfaz (reconocidos por IA)',
   'sectionVisibility.aiText': 'Texto (OCR)',
   'sectionVisibility.manual': 'Añadidas manualmente',
 
   'menu.duplicateProject': 'Duplicar proyecto',
-  'menu.exportProjectFile': 'Exportar (escribir en archivo)',
+  'menu.exportProjectFile': 'Exportar proyecto',
   'menu.replaceImage': 'Reemplazar imagen…',
   'menu.undoCrop': 'Deshacer recorte',
   'project.copyName': 'Copia de {name}',
@@ -121,22 +121,22 @@ export const es: Record<MessageKey, string> = {
   'confirm.cancel': 'Cancelar',
   'confirm.delete': 'Eliminar',
 
-  'cropConfirm.title': '¿Recortar y empezar de nuevo?',
+  'cropConfirm.title': '¿Recortar la imagen?',
   'cropConfirm.body':
-    'Recortar reemplaza la imagen, así que las anotaciones y secciones de este lienzo se borrarán. Elige cómo continuar.',
-  'cropConfirm.asNewProject': 'Continuar como proyecto nuevo',
+    'Las anotaciones y secciones se eliminarán de la imagen recortada. Elige cómo guardarla.',
+  'cropConfirm.asNewProject': 'Editar como proyecto nuevo',
   'cropConfirm.asNewProjectHint':
-    'Mantiene el proyecto actual tal cual y edita la imagen recortada por separado',
+    'Conserva el proyecto actual y edita la imagen recortada en otro proyecto',
   'cropConfirm.overwrite': 'Sobrescribir este proyecto',
   'cropConfirm.overwriteHint':
-    'Reemplaza la imagen del proyecto actual (puedes deshacer el recorte una vez)',
+    'Reemplaza la imagen actual (puedes deshacer un recorte)',
   'cropConfirm.cancel': 'Cancelar',
 
-  'replaceDetect.title': '¿Ejecutar la detección automática de nuevo?',
+  'replaceDetect.title': '¿Ejecutar el reconocimiento automático de nuevo?',
   'replaceDetect.body':
-    'La imagen se reemplazó. ¿Detectar de nuevo las regiones de la interfaz en la nueva imagen? Las anotaciones existentes se borrarán.',
-  'replaceDetect.run': 'Ejecutar detección',
-  'replaceDetect.keep': 'Mantener las secciones actuales',
+    '¿Reconocer de nuevo las secciones de la imagen reemplazada? Se eliminarán las anotaciones actuales.',
+  'replaceDetect.run': 'Ejecutar de nuevo',
+  'replaceDetect.keep': 'No ejecutar de nuevo',
 
   'home.newTitle': 'Nuevo proyecto',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -145,6 +145,11 @@ export const es: Record<MessageKey, string> = {
   'home.importing': 'Cargando imagen…',
   'home.filesTitle': 'Proyectos guardados',
   'home.filesCount': '{count} guardados',
+  'home.searchPlaceholder': 'Buscar en nombres y anotaciones',
+  'home.searchAria': 'Buscar proyectos',
+  'home.searchClear': 'Borrar búsqueda',
+  'home.searchResultCount': '{count} resultados',
+  'home.searchEmpty': 'No hay proyectos que coincidan con la búsqueda.',
   'home.filesEmpty': 'Crea un proyecto desde Nuevo proyecto. Tu trabajo se guarda automáticamente.',
   'home.editingBadge': 'Editando',
   'home.removeAria': 'Eliminar proyecto guardado',
@@ -155,19 +160,19 @@ export const es: Record<MessageKey, string> = {
   'home.openLocation': 'Mostrar en el Finder',
   'home.openLocationTitle': 'Revelar la carpeta de este proyecto en el disco',
   'storage.notice.before':
-    'Estos datos se almacenan en este navegador. Podrían perderse si borras los datos del sitio o sales de la navegación privada. ',
+    'Los proyectos se almacenan en este navegador. Podrían perderse si borras los datos del sitio o usas la navegación privada. ',
   'storage.notice.link': 'Descarga todos los datos desde aquí',
   'storage.notice.after': '.',
   'home.devNotice.aria': 'Aviso de estado de desarrollo',
   'home.devNotice.body':
-    'Esta aplicación está actualmente en desarrollo. Su comportamiento puede cambiar sin previo aviso.',
-  'home.devNotice.issueLink': '¿Tienes una petición o encontraste un error? Abre un issue',
+    'Esta aplicación está en desarrollo, por lo que puede cambiar sin previo aviso.',
+  'home.devNotice.issueLink': 'Comparte solicitudes y errores en un GitHub Issue',
 
   'annotationList.title': 'Anotaciones',
   'annotationList.emptyHint': 'Haz clic en una sección para añadir una anotación.',
   'annotationList.dragTitle': 'Arrastra para reordenar',
   'annotationList.assignNumbers': 'Numerar',
-  'annotationList.assignNumbersTitle': 'Añade un prefijo de número de paso a cada anotación',
+  'annotationList.assignNumbersTitle': 'Añade un número al principio de cada anotación',
   'annotationList.numberDirectionLabel': 'Orden',
   'annotationList.numberDirection.leftToRight': 'De izquierda a derecha',
   'annotationList.numberDirection.topToBottom': 'De arriba a abajo',
@@ -176,7 +181,7 @@ export const es: Record<MessageKey, string> = {
   'annotationList.emptyDescription': 'Sin descripción',
   'annotationList.removeTitle': 'Eliminar',
   'annotationList.multiSelectHint': 'Shift + clic para seleccionar varias',
-  'annotationList.resizePane': 'Arrastra para redimensionar la lista de anotaciones y el editor',
+  'annotationList.resizePane': 'Arrastra para ajustar la altura de la lista de anotaciones y el editor',
 
   'canvas.emptyHint':
     'Arrastra para dibujar la región que quieres anotar; se convertirá en una sección.',
@@ -268,7 +273,7 @@ export const es: Record<MessageKey, string> = {
   'commonSettings.defaultName': 'Ajustes {stamp}',
   'commonSettings.title': 'Preajustes de ajustes compartidos',
   'commonSettings.description':
-    'Guarda los ajustes compartidos actuales y aplícalos más tarde en cualquier proyecto.',
+    'Guarda los ajustes compartidos actuales como preajuste y aplícalos a otros proyectos.',
   'commonSettings.saveAsLabel': 'Guardar como',
   'commonSettings.namePlaceholder': 'Nombre del preajuste',
   'commonSettings.save': 'Guardar',
@@ -283,7 +288,7 @@ export const es: Record<MessageKey, string> = {
   'lineStyle.solid': 'Sólida',
   'lineStyle.dashed': 'Discontinua',
   'lineStyle.invert': 'Invertida',
-  'lineStyle.invertHint': 'Visible sobre cualquier fondo',
+  'lineStyle.invertHint': 'Usa un color invertido respecto al fondo',
 
   'anchorStyle.dot': 'Punto',
   'anchorStyle.arrow': 'Flecha',
@@ -303,9 +308,9 @@ export const es: Record<MessageKey, string> = {
     'Formato de archivo de proyecto no válido (error al analizar el JSON)',
   'error.projectFileUnsupported': 'Archivo de proyecto no compatible',
   'status.bundleImportResult':
-    'Se importaron {imported}. Se omitieron {skipped} proyectos idénticos que ya estaban en Archivos.',
+    'Se importaron {imported} y se omitieron {skipped} con contenido idéntico.',
   'status.bundleImportSkippedAll':
-    'Se omitieron {skipped} proyectos: ya existe contenido idéntico en Archivos.',
+    'Se omitieron los {skipped} porque su contenido ya se había importado.',
   'status.bundleImportOk': 'Se importaron {imported} proyectos.',
 
   'error.projectBundleInvalid': 'Archivo de paquete de proyectos no válido',

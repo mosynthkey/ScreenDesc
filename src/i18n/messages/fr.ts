@@ -65,9 +65,9 @@ export const fr: Record<MessageKey, string> = {
   'variation.addPlaceholder': 'Nom de la nouvelle variante',
   'variation.addButton': 'Ajouter',
   'variation.hint':
-    'Créez des variantes de vos annotations — pratique pour gérer plusieurs langues, par exemple.',
+    'Pratique pour créer des images aux annotations différentes, notamment dans plusieurs langues.',
 
-  'button.project': 'Projet ▾',
+  'button.project': 'Projet',
   'button.copyClipboard': 'Copier dans le presse-papiers',
   'button.copied': 'Copié dans le presse-papiers',
   'button.export': 'Exporter',
@@ -103,12 +103,12 @@ export const fr: Record<MessageKey, string> = {
   'aria.cropApply': 'Appliquer le recadrage',
   'aria.cropCancel': 'Annuler le recadrage',
   'aria.toggleSections': 'Visibilité des sections',
-  'sectionVisibility.aiRegion': 'Éléments d’interface (détectés par IA)',
+  'sectionVisibility.aiRegion': 'Éléments d’interface (reconnus par IA)',
   'sectionVisibility.aiText': 'Texte (OCR)',
   'sectionVisibility.manual': 'Ajoutées manuellement',
 
   'menu.duplicateProject': 'Dupliquer le projet',
-  'menu.exportProjectFile': 'Exporter (écrire dans un fichier)',
+  'menu.exportProjectFile': 'Exporter le projet',
   'menu.replaceImage': 'Remplacer l’image…',
   'menu.undoCrop': 'Annuler le recadrage',
   'project.copyName': 'Copie de {name}',
@@ -121,22 +121,22 @@ export const fr: Record<MessageKey, string> = {
   'confirm.cancel': 'Annuler',
   'confirm.delete': 'Supprimer',
 
-  'cropConfirm.title': 'Recadrer et repartir de zéro ?',
+  'cropConfirm.title': 'Recadrer l’image ?',
   'cropConfirm.body':
-    'Le recadrage remplace l’image ; les annotations et sections de ce canevas seront donc effacées. Choisissez comment continuer.',
-  'cropConfirm.asNewProject': 'Continuer en tant que nouveau projet',
+    'Les annotations et sections seront supprimées de l’image recadrée. Choisissez comment l’enregistrer.',
+  'cropConfirm.asNewProject': 'Modifier dans un nouveau projet',
   'cropConfirm.asNewProjectHint':
-    'Conserve le projet actuel tel quel et modifie l’image recadrée séparément',
+    'Conserve le projet actuel et modifie l’image recadrée dans un projet distinct',
   'cropConfirm.overwrite': 'Écraser ce projet',
   'cropConfirm.overwriteHint':
-    'Remplace l’image du projet actuel (vous pouvez annuler le recadrage une fois)',
+    'Remplace l’image actuelle (vous pouvez annuler un recadrage)',
   'cropConfirm.cancel': 'Annuler',
 
-  'replaceDetect.title': 'Relancer la détection automatique ?',
+  'replaceDetect.title': 'Relancer la reconnaissance automatique ?',
   'replaceDetect.body':
-    'L’image a été remplacée. Détecter à nouveau les zones d’interface sur la nouvelle image ? Les annotations existantes seront effacées.',
-  'replaceDetect.run': 'Lancer la détection',
-  'replaceDetect.keep': 'Conserver les sections actuelles',
+    'Reconnaître à nouveau les sections de l’image remplacée ? Les annotations actuelles seront supprimées.',
+  'replaceDetect.run': 'Relancer',
+  'replaceDetect.keep': 'Ne pas relancer',
 
   'home.newTitle': 'Nouveau projet',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -145,6 +145,11 @@ export const fr: Record<MessageKey, string> = {
   'home.importing': 'Chargement de l’image…',
   'home.filesTitle': 'Projets enregistrés',
   'home.filesCount': '{count} enregistrés',
+  'home.searchPlaceholder': 'Rechercher dans les noms et annotations',
+  'home.searchAria': 'Rechercher des projets',
+  'home.searchClear': 'Effacer la recherche',
+  'home.searchResultCount': '{count} résultats',
+  'home.searchEmpty': 'Aucun projet ne correspond à la recherche.',
   'home.filesEmpty': 'Créez un projet depuis Nouveau projet. Votre travail est enregistré automatiquement.',
   'home.editingBadge': 'En cours d’édition',
   'home.removeAria': 'Supprimer le projet enregistré',
@@ -155,20 +160,19 @@ export const fr: Record<MessageKey, string> = {
   'home.openLocation': 'Afficher dans le Finder',
   'home.openLocationTitle': 'Révéler le dossier de ce projet sur le disque',
   'storage.notice.before':
-    'Ces données sont stockées dans ce navigateur. Elles peuvent être perdues si vous effacez les données du site ou quittez la navigation privée. ',
+    'Les projets sont stockés dans ce navigateur. Ils peuvent être perdus si vous effacez les données du site ou utilisez la navigation privée. ',
   'storage.notice.link': 'Téléchargez toutes les données ici',
   'storage.notice.after': '.',
   'home.devNotice.aria': 'Avis sur l’état de développement',
   'home.devNotice.body':
-    'Cette application est actuellement en développement. Son comportement peut changer sans préavis.',
-  'home.devNotice.issueLink':
-    'Une demande ou un bug à signaler ? Ouvrez un ticket (issue)',
+    'Cette application est en développement et peut changer sans préavis.',
+  'home.devNotice.issueLink': 'Signalez vos demandes et bugs dans une GitHub Issue',
 
   'annotationList.title': 'Annotations',
   'annotationList.emptyHint': 'Cliquez sur une section pour ajouter une annotation.',
   'annotationList.dragTitle': 'Glisser pour réorganiser',
   'annotationList.assignNumbers': 'Numéroter',
-  'annotationList.assignNumbersTitle': 'Définir un préfixe de numéro d’étape sur chaque annotation',
+  'annotationList.assignNumbersTitle': 'Ajouter un numéro au début de chaque annotation',
   'annotationList.numberDirectionLabel': 'Ordre',
   'annotationList.numberDirection.leftToRight': 'De gauche à droite',
   'annotationList.numberDirection.topToBottom': 'De haut en bas',
@@ -178,7 +182,7 @@ export const fr: Record<MessageKey, string> = {
   'annotationList.removeTitle': 'Supprimer',
   'annotationList.multiSelectHint': 'Maj + clic pour sélectionner plusieurs éléments',
   'annotationList.resizePane':
-    'Glisser pour redimensionner la liste des annotations et l’éditeur',
+    'Glisser pour ajuster la hauteur de la liste des annotations et de l’éditeur',
 
   'canvas.emptyHint':
     'Faites glisser pour dessiner la région à annoter — elle deviendra une section.',
@@ -271,7 +275,7 @@ export const fr: Record<MessageKey, string> = {
   'commonSettings.defaultName': 'Paramètres {stamp}',
   'commonSettings.title': 'Préréglages de paramètres partagés',
   'commonSettings.description':
-    'Enregistrez les paramètres partagés actuels pour les appliquer plus tard à n’importe quel projet.',
+    'Enregistrez les paramètres partagés actuels comme préréglage et appliquez-les à d’autres projets.',
   'commonSettings.saveAsLabel': 'Enregistrer sous',
   'commonSettings.namePlaceholder': 'Nom du préréglage',
   'commonSettings.save': 'Enregistrer',
@@ -286,7 +290,7 @@ export const fr: Record<MessageKey, string> = {
   'lineStyle.solid': 'Pleine',
   'lineStyle.dashed': 'Pointillée',
   'lineStyle.invert': 'Inversée',
-  'lineStyle.invertHint': 'Visible sur n’importe quel fond',
+  'lineStyle.invertHint': 'Utilise une couleur inversée par rapport au fond',
 
   'anchorStyle.dot': 'Point',
   'anchorStyle.arrow': 'Flèche',
@@ -306,9 +310,9 @@ export const fr: Record<MessageKey, string> = {
     'Format de fichier de projet invalide (erreur d’analyse JSON)',
   'error.projectFileUnsupported': 'Fichier de projet non pris en charge',
   'status.bundleImportResult':
-    '{imported} importé(s). {skipped} projets identiques déjà présents dans Fichiers ont été ignorés.',
+    '{imported} importé(s) et {skipped} au contenu identique ignoré(s).',
   'status.bundleImportSkippedAll':
-    '{skipped} projets ignorés — un contenu identique existe déjà dans Fichiers.',
+    'Les {skipped} ont tous été ignorés, car leur contenu avait déjà été importé.',
   'status.bundleImportOk': '{imported} projets importés.',
 
   'error.projectBundleInvalid': 'Fichier de lot de projets invalide',
