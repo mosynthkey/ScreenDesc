@@ -176,6 +176,7 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.assignNumbers': '番号を付ける',
   'annotationList.assignNumbersTitle': '各注釈の先頭に番号を付けます',
   'annotationList.numberDirectionLabel': '並び順',
+  'annotationList.numberDirection.listOrder': '注釈一覧の並び順',
   'annotationList.numberDirection.leftToRight': '左から右へ',
   'annotationList.numberDirection.topToBottom': '上から下へ',
   'annotationList.applyNumbers': '適用',
@@ -302,6 +303,12 @@ export const ja: Record<MessageKey, string> = {
   'anchorStyle.none': 'なし',
 
   'callout.emptyDescription': '説明',
+
+  'desktopDownload.title': 'デスクトップ版をダウンロード',
+  'desktopDownload.description':
+    'デスクトップ版では、プロジェクトをコンピュータ上に保存できます。ファイルの整理や編集を、より快適に行えます。',
+  'desktopDownload.macOS': 'macOS版',
+  'desktopDownload.windows': 'Windows版',
 
   'error.dismiss': '閉じる',
   'error.projectLoadFailed': 'プロジェクトの読み込みに失敗しました',

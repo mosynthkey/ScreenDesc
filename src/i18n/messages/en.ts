@@ -173,6 +173,7 @@ export const en = {
   'annotationList.assignNumbers': 'Number',
   'annotationList.assignNumbersTitle': 'Add a number to the start of each annotation',
   'annotationList.numberDirectionLabel': 'Order',
+  'annotationList.numberDirection.listOrder': 'Annotation list order',
   'annotationList.numberDirection.leftToRight': 'Left to right',
   'annotationList.numberDirection.topToBottom': 'Top to bottom',
   'annotationList.applyNumbers': 'Apply',
@@ -299,6 +300,12 @@ export const en = {
   'anchorStyle.none': 'None',
 
   'callout.emptyDescription': 'Description',
+
+  'desktopDownload.title': 'Download the desktop app',
+  'desktopDownload.description':
+    'The desktop app saves projects on your computer, making file organization and editing more convenient.',
+  'desktopDownload.macOS': 'macOS version',
+  'desktopDownload.windows': 'Windows version',
 
   'error.dismiss': 'Dismiss',
   'error.projectLoadFailed': 'Failed to load the project',

@@ -179,6 +179,7 @@ export const fr: Record<MessageKey, string> = {
   'annotationList.assignNumbers': 'Numéroter',
   'annotationList.assignNumbersTitle': 'Ajouter un numéro au début de chaque annotation',
   'annotationList.numberDirectionLabel': 'Ordre',
+  'annotationList.numberDirection.listOrder': 'Ordre de la liste des annotations',
   'annotationList.numberDirection.leftToRight': 'De gauche à droite',
   'annotationList.numberDirection.topToBottom': 'De haut en bas',
   'annotationList.applyNumbers': 'Appliquer',
@@ -308,6 +309,12 @@ export const fr: Record<MessageKey, string> = {
   'anchorStyle.none': 'Aucune',
 
   'callout.emptyDescription': 'Description',
+
+  'desktopDownload.title': 'Télécharger l’application de bureau',
+  'desktopDownload.description':
+    'L’application de bureau enregistre les projets sur votre ordinateur pour faciliter l’organisation et la modification des fichiers.',
+  'desktopDownload.macOS': 'Version macOS',
+  'desktopDownload.windows': 'Version Windows',
 
   'error.dismiss': 'Ignorer',
   'error.projectLoadFailed': 'Échec du chargement du projet',

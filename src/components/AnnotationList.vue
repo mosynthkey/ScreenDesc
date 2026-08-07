@@ -31,6 +31,7 @@ const numberDirection = ref<NumberPrefixDirection>('left-to-right')
 const numberStyle = ref<NumberPrefixStyle>('circled')
 
 const numberDirectionOptions: Array<{ value: NumberPrefixDirection; labelKey: MessageKey }> = [
+  { value: 'list-order', labelKey: 'annotationList.numberDirection.listOrder' },
   { value: 'left-to-right', labelKey: 'annotationList.numberDirection.leftToRight' },
   { value: 'top-to-bottom', labelKey: 'annotationList.numberDirection.topToBottom' },
 ]

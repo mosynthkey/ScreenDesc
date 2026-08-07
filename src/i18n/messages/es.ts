@@ -179,6 +179,7 @@ export const es: Record<MessageKey, string> = {
   'annotationList.assignNumbers': 'Numerar',
   'annotationList.assignNumbersTitle': 'Añade un número al principio de cada anotación',
   'annotationList.numberDirectionLabel': 'Orden',
+  'annotationList.numberDirection.listOrder': 'Orden de la lista de anotaciones',
   'annotationList.numberDirection.leftToRight': 'De izquierda a derecha',
   'annotationList.numberDirection.topToBottom': 'De arriba a abajo',
   'annotationList.applyNumbers': 'Aplicar',
@@ -306,6 +307,12 @@ export const es: Record<MessageKey, string> = {
   'anchorStyle.none': 'Ninguno',
 
   'callout.emptyDescription': 'Descripción',
+
+  'desktopDownload.title': 'Descargar la aplicación de escritorio',
+  'desktopDownload.description':
+    'La aplicación de escritorio guarda los proyectos en tu ordenador para que organizar y editar archivos sea más cómodo.',
+  'desktopDownload.macOS': 'Versión para macOS',
+  'desktopDownload.windows': 'Versión para Windows',
 
   'error.dismiss': 'Descartar',
   'error.projectLoadFailed': 'No se pudo cargar el proyecto',

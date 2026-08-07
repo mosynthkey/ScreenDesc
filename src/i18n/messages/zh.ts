@@ -171,6 +171,7 @@ export const zh: Record<MessageKey, string> = {
   'annotationList.assignNumbers': '编号',
   'annotationList.assignNumbersTitle': '在每条注释开头添加编号',
   'annotationList.numberDirectionLabel': '顺序',
+  'annotationList.numberDirection.listOrder': '按注释列表顺序',
   'annotationList.numberDirection.leftToRight': '从左到右',
   'annotationList.numberDirection.topToBottom': '从上到下',
   'annotationList.applyNumbers': '应用',
@@ -293,6 +294,12 @@ export const zh: Record<MessageKey, string> = {
   'anchorStyle.none': '无',
 
   'callout.emptyDescription': '说明',
+
+  'desktopDownload.title': '下载桌面版',
+  'desktopDownload.description':
+    '桌面版会将项目保存在您的电脑上，让文件整理和编辑更加方便。',
+  'desktopDownload.macOS': 'macOS 版',
+  'desktopDownload.windows': 'Windows 版',
 
   'error.dismiss': '关闭',
   'error.projectLoadFailed': '项目加载失败',

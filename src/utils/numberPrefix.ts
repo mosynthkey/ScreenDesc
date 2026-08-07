@@ -2,7 +2,7 @@ import type { Annotation, Section } from '../types/annotation'
 import { referencePointForAnnotation } from './calloutLayout'
 
 export type NumberPrefixStyle = 'circled' | 'paren' | 'dotted' | 'paren-suffix' | 'plain'
-export type NumberPrefixDirection = 'left-to-right' | 'top-to-bottom'
+export type NumberPrefixDirection = 'list-order' | 'left-to-right' | 'top-to-bottom'
 
 const CIRCLED_DIGITS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 
@@ -16,12 +16,14 @@ export function formatNumberPrefix(order: number, style: NumberPrefixStyle): str
   return String(order)
 }
 
-/** Annotations ordered left→right or top→bottom by their on-image position. */
 export function orderAnnotationsForNumbering(
   annotations: Annotation[],
   sections: Section[],
   direction: NumberPrefixDirection,
 ): Annotation[] {
+  if (direction === 'list-order') {
+    return [...annotations].sort((left, right) => left.order - right.order)
+  }
   const points = new Map(
     annotations.map((annotation) => [annotation.id, referencePointForAnnotation(annotation, sections)]),
   )
