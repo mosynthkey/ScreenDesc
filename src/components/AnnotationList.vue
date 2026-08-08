@@ -131,7 +131,7 @@ function onDrop(event: DragEvent): void {
       <div v-if="annotations.length > 1" class="list-header-actions">
         <div class="number-menu-anchor">
           <button
-            class="list-action-btn"
+            class="panel-action-btn"
             type="button"
             :title="t('annotationList.assignNumbersTitle')"
             @click="numberMenuOpen = !numberMenuOpen"
@@ -248,29 +248,6 @@ function onDrop(event: DragEvent): void {
   margin: 0;
 }
 
-.list-action-btn {
-  flex-shrink: 0;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg-panel);
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.2;
-  cursor: pointer;
-  transition:
-    background var(--spring),
-    border-color var(--spring),
-    color var(--spring);
-}
-
-.list-action-btn:hover {
-  border-color: var(--line-strong);
-  background: var(--bg-elevated);
-  color: var(--ink);
-}
-
 .list-header-actions {
   display: flex;
   align-items: center;
@@ -336,14 +313,13 @@ function onDrop(event: DragEvent): void {
 }
 
 .number-menu-clear {
-  background: transparent;
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink-muted);
-  border: 1px solid var(--line);
 }
 
 .number-menu-clear:hover {
+  background: rgba(120, 120, 128, 0.16);
   color: var(--ink);
-  border-color: var(--line-strong);
 }
 
 .hint,

@@ -195,9 +195,9 @@ onBeforeUnmount(() => {
   width: 100%;
   margin: 0;
   padding: 8px 10px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 10px;
-  background: var(--bg-elevated);
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink);
   font-size: 0.88rem;
   font-weight: 600;
@@ -207,12 +207,12 @@ onBeforeUnmount(() => {
 }
 
 .font-picker-trigger:hover {
-  border-color: var(--accent);
+  background: rgba(120, 120, 128, 0.16);
 }
 
 .font-picker-trigger:focus-visible {
   outline: none;
-  border-color: var(--accent);
+  background: var(--accent-soft);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.18);
 }
 

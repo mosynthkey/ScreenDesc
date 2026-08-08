@@ -910,7 +910,7 @@ defineExpose({ openFilePicker })
   flex-direction: column;
   gap: 0;
   padding: 0;
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 14px;
   overflow: hidden;
   background: var(--bg-solid);
@@ -920,18 +920,18 @@ defineExpose({ openFilePicker })
 }
 
 .files-card:hover:not(:disabled) {
-  border-color: var(--line-strong);
+  background: var(--bg-elevated);
   box-shadow: var(--shadow);
 }
 
 .files-card.is-editing {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .files-card.is-editing:hover:not(:disabled) {
-  border-color: var(--accent-strong);
-  box-shadow: 0 0 0 1px var(--accent-strong), var(--shadow);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-solid));
+  box-shadow: var(--shadow);
 }
 
 .files-card:disabled {

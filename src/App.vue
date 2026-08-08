@@ -1088,8 +1088,8 @@ function onKeydown(event: KeyboardEvent): void {
             @update-crop-draft="onUpdateCropDraft"
           />
 
-          <aside class="panel">
-            <div class="panel-section">
+          <aside class="panel panel-project-style">
+            <div class="panel-section panel-section-project-style">
               <ProjectStyleSettings @open-presets="onOpenCommonSettings" />
             </div>
           </aside>
@@ -1202,6 +1202,15 @@ function onKeydown(event: KeyboardEvent): void {
   overflow: auto;
   border-bottom: none;
   border-top: none;
+  background: var(--bg);
+}
+
+.panel-project-style {
+  background: var(--bg);
+}
+
+.panel-section-project-style {
+  border-bottom: none;
 }
 
 .app-notice {

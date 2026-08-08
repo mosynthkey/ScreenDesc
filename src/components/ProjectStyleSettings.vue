@@ -304,7 +304,7 @@ watch(
         <SlidersHorizontalIcon class="panel-heading-icon" :size="18" :stroke-width="2" aria-hidden="true" />
         {{ t('style.projectSettingsTitle') }}
       </h3>
-      <button class="presets-btn" type="button" @click="emit('openPresets')">
+      <button class="panel-action-btn" type="button" @click="emit('openPresets')">
         {{ t('style.presetsManage') }}
       </button>
     </div>
@@ -879,29 +879,12 @@ watch(
   margin: 0;
 }
 
-.presets-btn {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 5px 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: 980px;
-  background: var(--bg-elevated);
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.presets-btn:hover {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-
 .settings-group {
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 14px;
   padding: 14px;
-  background: rgba(120, 120, 128, 0.05);
+  background: var(--bg-solid);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-group + .settings-group,
@@ -996,7 +979,7 @@ watch(
   width: 36px;
   height: 28px;
   padding: 2px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 8px;
   background: var(--input-bg);
   cursor: pointer;
@@ -1039,9 +1022,9 @@ watch(
   gap: 6px;
   margin: 0;
   padding: 8px 6px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 10px;
-  background: var(--bg-elevated);
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 650;
@@ -1050,15 +1033,13 @@ watch(
 }
 
 .line-style-btn:hover {
-  border-color: var(--accent);
+  background: rgba(120, 120, 128, 0.16);
   color: var(--ink);
 }
 
 .line-style-btn.active {
-  border-color: rgba(0, 122, 255, 0.45);
   background: var(--accent-soft);
   color: var(--accent-strong);
-  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
 }
 
 .line-style-icon {
@@ -1078,23 +1059,21 @@ watch(
   justify-content: center;
   margin: 0;
   padding: 10px 6px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 10px;
-  background: var(--bg-elevated);
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink-muted);
   cursor: pointer;
 }
 
 .anchor-style-btn:hover {
-  border-color: var(--accent);
+  background: rgba(120, 120, 128, 0.16);
   color: var(--ink);
 }
 
 .anchor-style-btn.active {
-  border-color: rgba(0, 122, 255, 0.45);
   background: var(--accent-soft);
   color: var(--accent-strong);
-  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
 }
 
 .anchor-style-icon {

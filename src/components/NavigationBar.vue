@@ -512,9 +512,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
   gap: 9px;
   min-height: 48px;
   padding: 10px 14px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 11px;
-  background: var(--bg-elevated);
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink);
   font-size: 0.86rem;
   font-weight: 650;
@@ -522,7 +522,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
 }
 
 .desktop-download-btn:hover {
-  border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent-strong);
 }
@@ -577,16 +576,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
 .settings-language-btn {
   margin: 0;
   padding: 7px 10px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 10px;
-  background: var(--bg-elevated);
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink-muted);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition:
     background var(--spring),
-    border-color var(--spring),
     color var(--spring);
 }
 
@@ -604,13 +602,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onModalKeydown))
 
 .settings-theme-btn:hover,
 .settings-language-btn:hover {
-  border-color: var(--accent);
+  background: rgba(120, 120, 128, 0.16);
   color: var(--ink);
 }
 
 .settings-theme-btn.active,
 .settings-language-btn.active {
-  border-color: rgba(0, 122, 255, 0.45);
   background: var(--accent-soft);
   color: var(--accent-strong);
 }

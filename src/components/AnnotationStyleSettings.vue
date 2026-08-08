@@ -377,7 +377,7 @@ function resetLabelPosition(): void {
           {{ selectionTitle }}
         </h3>
         <button
-          class="clear-selection-btn"
+          class="panel-action-btn"
           type="button"
           :title="t('style.clearSelection')"
           @click="clearSelection"
@@ -608,7 +608,7 @@ function resetLabelPosition(): void {
           {{ t('style.selectedSectionTitle') }}
         </h3>
         <button
-          class="clear-selection-btn"
+          class="panel-action-btn"
           type="button"
           :title="t('style.clearSelection')"
           @click="clearSelection"
@@ -696,31 +696,12 @@ function resetLabelPosition(): void {
   min-width: 0;
 }
 
-.clear-selection-btn {
-  flex-shrink: 0;
-  margin: 0;
-  padding: 4px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 590;
-  line-height: 1.2;
-  cursor: pointer;
-}
-
-.clear-selection-btn:hover {
-  border-color: var(--line-strong);
-  background: var(--bg-panel);
-  color: var(--ink);
-}
-
 .settings-group {
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 12px;
   padding: 10px;
-  background: rgba(120, 120, 128, 0.05);
+  background: var(--bg-solid);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-group-compact {
@@ -740,8 +721,7 @@ function resetLabelPosition(): void {
 }
 
 .settings-stack-annotation .settings-group {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--bg-solid);
 }
 
 .settings-group .panel-title {
@@ -753,7 +733,7 @@ function resetLabelPosition(): void {
 .section-title {
   margin: 0 0 8px;
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: none;
@@ -853,9 +833,9 @@ function resetLabelPosition(): void {
   justify-content: center;
   margin: 0;
   padding: 5px 4px;
-  border: 1px solid var(--line-strong);
+  border: none;
   border-radius: 8px;
-  background: var(--bg-elevated);
+  background: rgba(120, 120, 128, 0.1);
   color: var(--ink-muted);
   font-size: 0.68rem;
   font-weight: 650;
@@ -864,14 +844,12 @@ function resetLabelPosition(): void {
 }
 
 .callout-side-btn:hover {
-  border-color: var(--accent);
+  background: rgba(120, 120, 128, 0.16);
   color: var(--ink);
 }
 
 .callout-side-btn.active {
-  border-color: rgba(0, 122, 255, 0.45);
   background: var(--accent-soft);
   color: var(--accent-strong);
-  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.12);
 }
 </style>

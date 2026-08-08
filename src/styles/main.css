@@ -248,6 +248,30 @@ input[type='radio'] {
   color: var(--accent-strong);
 }
 
+.panel-action-btn {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-solid);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition:
+    background var(--spring),
+    border-color var(--spring),
+    color var(--spring);
+}
+
+.panel-action-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--ink);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
