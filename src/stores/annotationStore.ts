@@ -20,6 +20,7 @@ import { DEFAULT_ANCHOR_STYLE, normalizeAnchorStyle } from '../utils/anchorStyle
 import { containmentRatio, normalizeRect, rectCenter } from '../utils/geometry'
 import { type OcrLineHit } from '../utils/ocr'
 import { defaultSectionVisibility, normalizeSectionVisibility } from '../utils/sectionVisibility'
+import { findOpaquePixelBounds } from '../utils/transparentBounds'
 import { useScreenParser } from '../composables/useScreenParser'
 import { createManualSection } from '../utils/mlSectionDetection'
 import { createDirectoryExportSession, downloadBlob, exportScene } from '../utils/export'
@@ -601,6 +602,26 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function setCropDraft(rect: Rect): void {
     state.cropDraft = rect
+  }
+
+  function fitCropDraftToVisiblePixels(): void {
+    const image = imageElement.value
+    if (!image || state.toolMode !== 'crop') return
+
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) return
+
+    try {
+      context.drawImage(image, 0, 0)
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+      const bounds = findOpaquePixelBounds(imageData.data, canvas.width, canvas.height)
+      if (bounds) state.cropDraft = bounds
+    } catch (error) {
+      console.warn('[crop] Could not inspect image transparency', error)
+    }
   }
 
   function setLineStyle(style: LineStyleId): void {
@@ -1500,6 +1521,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     rediscoverSectionsAfterReplace: () => rediscoverSectionsAfterReplace(core),
     setToolMode,
     setCropDraft,
+    fitCropDraftToVisiblePixels,
     setDefaultFontFamily,
     getCommonSettings,
     applyCommonSettings,

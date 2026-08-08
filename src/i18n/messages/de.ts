@@ -95,6 +95,7 @@ export const de: Record<MessageKey, string> = {
   'tooltip.toolCrop': 'Bild zuschneiden (X)',
   'tooltip.cropMenu': 'Zuschneiden-Menü',
   'tooltip.cropApply': 'Zuschnitt anwenden (Enter)',
+  'tooltip.cropTransparentPadding': 'Transparenten Rand und Schatten entfernen',
   'tooltip.cropCancel': 'Zuschnitt abbrechen (Esc)',
   'tooltip.variationMenu': 'Eine Anmerkungsvariante auswählen oder hinzufügen',
 
@@ -105,6 +106,7 @@ export const de: Record<MessageKey, string> = {
   'aria.toolCrop': 'Zuschneiden',
   'aria.cropMenu': 'Zuschneiden-Menü öffnen',
   'aria.cropApply': 'Zuschnitt anwenden',
+  'aria.cropTransparentPadding': 'Zuschnitt an den undurchsichtigen Bildbereich anpassen',
   'aria.cropCancel': 'Zuschnitt abbrechen',
   'aria.toggleSections': 'Sichtbarkeit der Abschnitte',
   'sectionVisibility.aiRegion': 'UI-Elemente (KI-erkannt)',
@@ -184,7 +186,7 @@ export const de: Record<MessageKey, string> = {
   'annotationList.numberDirection.topToBottom': 'Von oben nach unten',
   'annotationList.applyNumbers': 'Anwenden',
   'annotationList.clearNumbers': 'Zurücksetzen',
-  'annotationList.emptyDescription': 'Keine Beschreibung',
+  'annotationList.emptyDescription': 'Kein Anmerkungslabel',
   'annotationList.removeTitle': 'Entfernen',
   'annotationList.multiSelectHint': 'Umschalt-Klick für Mehrfachauswahl',
   'annotationList.resizePane':
@@ -239,16 +241,16 @@ export const de: Record<MessageKey, string> = {
   'style.anchorStyle': 'Ankerform',
   'style.lineHalo': 'Umrandung',
   'style.lineHaloColor': 'Farbe der Umrandung',
-  'style.calloutFontSize': 'Schriftgröße der Beschriftung',
+  'style.calloutFontSize': 'Schriftgröße des Anmerkungslabels',
   'style.fontBold': 'Fett',
   'style.fontItalic': 'Kursiv',
-  'style.calloutTextColor': 'Textfarbe',
-  'style.calloutFill': 'Hintergrund der Beschriftung',
+  'style.calloutTextColor': 'Textfarbe des Anmerkungslabels',
+  'style.calloutFill': 'Hintergrund für Anmerkungslabel',
   'style.pageBackground': 'Hintergrund der Ausgabe',
-  'style.calloutFillColor': 'Hintergrundfarbe',
-  'style.calloutFillOpacity': 'Deckkraft des Hintergrunds',
-  'style.calloutCornerRadius': 'Eckenradius',
-  'style.calloutBorder': 'Rahmen der Beschriftung',
+  'style.calloutFillColor': 'Hintergrundfarbe des Anmerkungslabels',
+  'style.calloutFillOpacity': 'Hintergrunddeckkraft des Anmerkungslabels',
+  'style.calloutCornerRadius': 'Eckenradius des Anmerkungslabels',
+  'style.calloutBorder': 'Rahmen für Anmerkungslabel',
   'style.calloutBorderHint': 'Wenn aktiviert, wird die Stärke der Führungslinie verwendet',
   'style.numberStyle': 'Nummerierungsstil',
   'style.numberStyle.circled': '① ② ③',
@@ -270,7 +272,7 @@ export const de: Record<MessageKey, string> = {
   'style.multiSelectionHint':
     'Seite, Beschriftungsposition und Ankerversatz gelten für alle ausgewählten Anmerkungen.',
   'style.mixed': 'Gemischt',
-  'style.calloutSide': 'Beschriftungsposition',
+  'style.calloutSide': 'Position des Anmerkungslabels',
   'style.calloutSide.left': 'Links',
   'style.calloutSide.right': 'Rechts',
   'style.calloutSide.top': 'Oben',
@@ -278,7 +280,7 @@ export const de: Record<MessageKey, string> = {
   'style.labelPositionX': 'Beschriftung X',
   'style.labelPositionY': 'Beschriftung Y',
   'style.labelPositionReset': 'Beschriftungsposition zurücksetzen',
-  'style.description': 'Beschreibung',
+  'style.description': 'Anmerkungslabel',
   'style.noSelectionHint':
     'Wählen Sie eine Anmerkung aus, um Stil und Beschreibung zu bearbeiten. Umschalt-Klick für Mehrfachauswahl.',
 
@@ -307,7 +309,7 @@ export const de: Record<MessageKey, string> = {
   'anchorStyle.chevron': 'Winkel',
   'anchorStyle.none': 'Keine',
 
-  'callout.emptyDescription': 'Beschreibung',
+  'callout.emptyDescription': 'Anmerkungslabel',
 
   'desktopDownload.title': 'Desktop-App herunterladen',
   'desktopDownload.description':

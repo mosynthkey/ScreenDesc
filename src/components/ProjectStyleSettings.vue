@@ -623,7 +623,7 @@ watch(
       </div>
     </div>
 
-    <div class="settings-group">
+    <div class="settings-group settings-group-frame">
       <div class="field">
         <label class="slider-label">
           <span>{{ t('style.highlightMargin') }}</span>
@@ -709,7 +709,7 @@ watch(
       </div>
     </div>
 
-    <div class="settings-group">
+    <div class="settings-group settings-group-label">
       <div class="field">
         <label>{{ t('style.defaultFont') }}</label>
         <FontFamilyPicker
@@ -885,6 +885,14 @@ watch(
   padding: 14px;
   background: var(--bg-solid);
   box-shadow: var(--shadow-sm);
+}
+
+.settings-group-label {
+  order: 1;
+}
+
+.settings-group-frame {
+  order: 2;
 }
 
 .settings-group + .settings-group,

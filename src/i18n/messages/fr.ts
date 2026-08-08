@@ -95,6 +95,7 @@ export const fr: Record<MessageKey, string> = {
   'tooltip.toolCrop': 'Recadrer l’image (X)',
   'tooltip.cropMenu': 'Menu de recadrage',
   'tooltip.cropApply': 'Appliquer le recadrage (Entrée)',
+  'tooltip.cropTransparentPadding': 'Supprimer la marge transparente et les ombres',
   'tooltip.cropCancel': 'Annuler le recadrage (Échap)',
   'tooltip.variationMenu': 'Sélectionner ou ajouter une variante d’annotation',
 
@@ -105,6 +106,7 @@ export const fr: Record<MessageKey, string> = {
   'aria.toolCrop': 'Recadrer',
   'aria.cropMenu': 'Ouvrir le menu de recadrage',
   'aria.cropApply': 'Appliquer le recadrage',
+  'aria.cropTransparentPadding': 'Ajuster le recadrage à la zone opaque de l’image',
   'aria.cropCancel': 'Annuler le recadrage',
   'aria.toggleSections': 'Visibilité des sections',
   'sectionVisibility.aiRegion': 'Éléments d’interface (reconnus par IA)',
@@ -184,7 +186,7 @@ export const fr: Record<MessageKey, string> = {
   'annotationList.numberDirection.topToBottom': 'De haut en bas',
   'annotationList.applyNumbers': 'Appliquer',
   'annotationList.clearNumbers': 'Effacer',
-  'annotationList.emptyDescription': 'Aucune description',
+  'annotationList.emptyDescription': 'Aucune étiquette d’annotation',
   'annotationList.removeTitle': 'Supprimer',
   'annotationList.multiSelectHint': 'Maj + clic pour sélectionner plusieurs éléments',
   'annotationList.resizePane':
@@ -240,16 +242,16 @@ export const fr: Record<MessageKey, string> = {
   'style.anchorStyle': 'Forme de l’ancre',
   'style.lineHalo': 'Liseré',
   'style.lineHaloColor': 'Couleur du liseré',
-  'style.calloutFontSize': 'Taille de police de l’étiquette',
+  'style.calloutFontSize': 'Taille de police de l’étiquette d’annotation',
   'style.fontBold': 'Gras',
   'style.fontItalic': 'Italique',
-  'style.calloutTextColor': 'Couleur du texte',
-  'style.calloutFill': 'Fond de l’étiquette',
+  'style.calloutTextColor': 'Couleur du texte de l’étiquette d’annotation',
+  'style.calloutFill': 'Ajouter un fond à l’étiquette d’annotation',
   'style.pageBackground': 'Fond de sortie',
-  'style.calloutFillColor': 'Couleur de fond',
-  'style.calloutFillOpacity': 'Opacité du fond',
-  'style.calloutCornerRadius': 'Rayon des coins',
-  'style.calloutBorder': 'Bordure de l’étiquette',
+  'style.calloutFillColor': 'Couleur de fond de l’étiquette d’annotation',
+  'style.calloutFillOpacity': 'Opacité du fond de l’étiquette d’annotation',
+  'style.calloutCornerRadius': 'Rayon des coins de l’étiquette d’annotation',
+  'style.calloutBorder': 'Ajouter une bordure à l’étiquette d’annotation',
   'style.calloutBorderHint': 'Si activé, utilise l’épaisseur de la ligne guide',
   'style.numberStyle': 'Style de numérotation',
   'style.numberStyle.circled': '① ② ③',
@@ -271,7 +273,7 @@ export const fr: Record<MessageKey, string> = {
   'style.multiSelectionHint':
     'Le côté, la position de l’étiquette et le décalage de l’ancre s’appliquent à toutes les annotations sélectionnées.',
   'style.mixed': 'Mixte',
-  'style.calloutSide': 'Position de l’étiquette',
+  'style.calloutSide': 'Position de l’étiquette d’annotation',
   'style.calloutSide.left': 'Gauche',
   'style.calloutSide.right': 'Droite',
   'style.calloutSide.top': 'Haut',
@@ -279,7 +281,7 @@ export const fr: Record<MessageKey, string> = {
   'style.labelPositionX': 'Étiquette X',
   'style.labelPositionY': 'Étiquette Y',
   'style.labelPositionReset': 'Réinitialiser la position de l’étiquette',
-  'style.description': 'Description',
+  'style.description': 'Étiquette d’annotation',
   'style.noSelectionHint':
     'Sélectionnez une annotation pour modifier son style et sa description. Maj + clic pour en sélectionner plusieurs.',
 
@@ -308,7 +310,7 @@ export const fr: Record<MessageKey, string> = {
   'anchorStyle.chevron': 'Chevron',
   'anchorStyle.none': 'Aucune',
 
-  'callout.emptyDescription': 'Description',
+  'callout.emptyDescription': 'Étiquette d’annotation',
 
   'desktopDownload.title': 'Télécharger l’application de bureau',
   'desktopDownload.description':

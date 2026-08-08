@@ -26,6 +26,7 @@ import {
   PencilIcon,
   PlusIcon,
   ScanIcon,
+  ShrinkIcon,
   SquarePlusIcon,
   TypeIcon,
   Trash2Icon,
@@ -72,6 +73,7 @@ const emit = defineEmits<{
   newProject: []
   renameProject: [name: string]
   confirmCrop: []
+  fitCropToVisiblePixels: []
   cancelCrop: []
   'update:activeVariation': [variation: string | null]
   addVariation: [name: string]
@@ -604,6 +606,15 @@ onBeforeUnmount(() => window.removeEventListener('click', handleWindowClick))
         </div>
 
         <template v-if="toolMode === 'crop'">
+          <button
+            class="tool-btn"
+            type="button"
+            :data-tooltip="t('tooltip.cropTransparentPadding')"
+            :aria-label="t('aria.cropTransparentPadding')"
+            @click="emit('fitCropToVisiblePixels')"
+          >
+            <ShrinkIcon :size="20" :stroke-width="2" aria-hidden="true" />
+          </button>
           <button
             class="tool-btn tool-btn-affirm"
             type="button"

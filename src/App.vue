@@ -70,6 +70,7 @@ const {
   addSection,
   setToolMode,
   setCropDraft,
+  fitCropDraftToVisiblePixels,
   toggleSectionVisibility,
   clearSelection,
   selectSection,
@@ -931,6 +932,7 @@ function onKeydown(event: KeyboardEvent): void {
         @new-project="onNewProject"
         @rename-project="onRenameProject"
         @confirm-crop="confirmCrop"
+        @fit-crop-to-visible-pixels="fitCropDraftToVisiblePixels"
         @cancel-crop="cancelCrop"
         @update:active-variation="setActiveVariation"
         @add-variation="addVariation"
