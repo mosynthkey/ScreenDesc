@@ -145,6 +145,10 @@ export interface ProjectState {
   calloutCornerRadius: number
   /** Page / export canvas color behind the screenshot and margins. */
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  /** Opacity of the layer that dims everything outside annotation targets. */
+  focusOverlayOpacity: number
   /**
    * Per-category visibility for section outlines (see `utils/sectionVisibility.ts`).
    * A single open-ended map so adding a new category later doesn't require

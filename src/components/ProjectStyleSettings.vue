@@ -76,6 +76,9 @@ const {
   calloutFillOpacity,
   calloutCornerRadius,
   pageBackgroundColor,
+  focusOverlayEnabled,
+  focusOverlayColor,
+  focusOverlayOpacity,
 } = toRefs(store.state)
 const {
   setDefaultFontFamily,
@@ -103,6 +106,9 @@ const {
   setCalloutFillOpacity,
   setCalloutCornerRadius,
   setPageBackgroundColor,
+  setFocusOverlayEnabled,
+  setFocusOverlayColor,
+  setFocusOverlayOpacity,
 } = store
 
 const { t } = useI18n()
@@ -286,6 +292,21 @@ function onCalloutFillOpacityChange(event: Event): void {
   }
   input.value = String(percent)
   setCalloutFillOpacity(percent / 100)
+}
+
+function displayFocusOverlayOpacityPercent(): string {
+  return String(Math.round(focusOverlayOpacity.value * 100))
+}
+
+function onFocusOverlayOpacityChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const percent = parseBoundedNumber(input.value, 0, 100, 5)
+  if (percent === null) {
+    input.value = displayFocusOverlayOpacityPercent()
+    return
+  }
+  input.value = String(percent)
+  setFocusOverlayOpacity(percent / 100)
 }
 
 watch(
@@ -853,6 +874,56 @@ watch(
         <p class="field-hint">{{ t('style.calloutBorderHint') }}</p>
       </div>
     </div>
+
+    <div class="settings-group settings-group-overlay">
+      <div class="field" style="margin-bottom: 0">
+        <label class="check">
+          <input
+            type="checkbox"
+            :checked="focusOverlayEnabled"
+            @change="setFocusOverlayEnabled(($event.target as HTMLInputElement).checked)"
+          />
+          <span>{{ t('style.focusOverlay') }}</span>
+        </label>
+        <p class="field-hint">{{ t('style.focusOverlayHint') }}</p>
+      </div>
+      <template v-if="focusOverlayEnabled">
+        <div class="field" style="margin-top: 12px">
+          <label class="color-swatch color-swatch-inline">
+            {{ t('style.focusOverlayColor') }}
+            <input
+              type="color"
+              :value="focusOverlayColor"
+              @input="setFocusOverlayColor(($event.target as HTMLInputElement).value)"
+            />
+          </label>
+        </div>
+        <div class="field" style="margin-bottom: 0">
+          <label class="slider-label">
+            <span>{{ t('style.focusOverlayOpacity') }}</span>
+            <div class="px-field px-field-compact">
+              <input
+                type="text"
+                inputmode="numeric"
+                :value="displayFocusOverlayOpacityPercent()"
+                @change="onFocusOverlayOpacityChange"
+                @keydown.enter.prevent="onFocusOverlayOpacityChange"
+              />
+              <span class="px-unit">%</span>
+            </div>
+          </label>
+          <input
+            class="size-slider"
+            type="range"
+            :min="CALLOUT_FILL_OPACITY_MIN"
+            :max="CALLOUT_FILL_OPACITY_MAX"
+            :step="0.05"
+            :value="focusOverlayOpacity"
+            @input="setFocusOverlayOpacity(Number(($event.target as HTMLInputElement).value))"
+          />
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -893,6 +964,10 @@ watch(
 
 .settings-group-frame {
   order: 2;
+}
+
+.settings-group-overlay {
+  order: 3;
 }
 
 .settings-group + .settings-group,

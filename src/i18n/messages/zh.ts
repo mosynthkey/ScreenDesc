@@ -95,6 +95,8 @@ export const zh: Record<MessageKey, string> = {
   'tooltip.cropApply': '应用裁剪 (Enter)',
   'tooltip.cropTransparentPadding': '移除透明边距和阴影',
   'tooltip.cropCancel': '取消裁剪 (Esc)',
+  'tooltip.editLabelApply': '应用标签编辑',
+  'tooltip.editLabelCancel': '取消标签编辑',
   'tooltip.variationMenu': '选择或添加注释变体',
 
   'aria.editToolbar': '编辑工具',
@@ -106,6 +108,8 @@ export const zh: Record<MessageKey, string> = {
   'aria.cropApply': '应用裁剪',
   'aria.cropTransparentPadding': '使裁剪范围贴合不透明图像区域',
   'aria.cropCancel': '取消裁剪',
+  'aria.editLabelApply': '应用注释标签编辑',
+  'aria.editLabelCancel': '取消注释标签编辑',
   'aria.toggleSections': '区块可见性',
   'sectionVisibility.aiRegion': 'UI 元素（AI 识别）',
   'sectionVisibility.aiText': '文本(OCR)',
@@ -136,6 +140,9 @@ export const zh: Record<MessageKey, string> = {
   'replaceDetect.body': '要从替换后的图片中重新识别区块吗？重新运行会删除当前注释。',
   'replaceDetect.run': '重新运行',
   'replaceDetect.keep': '不再运行',
+  'pasteImage.title': '已粘贴图片',
+  'pasteImage.body': '要将粘贴的图片作为新项目进行编辑吗？当前项目会自动保存。',
+  'pasteImage.confirm': '编辑图片',
 
   'home.newTitle': '新建项目',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -185,6 +192,8 @@ export const zh: Record<MessageKey, string> = {
 
   'canvas.emptyHint': '拖动绘制想要添加注释的区域——它会成为一个区块。',
   'canvas.detecting': '正在生成区块建议…',
+  'canvas.resizeHandleAria': '调整边框角点',
+  'canvas.resizeHandleHint': '使用方向键每次调整 1 像素',
 
   'export.defaultFilename': 'annotation',
   'export.title': '导出',
@@ -236,6 +245,10 @@ export const zh: Record<MessageKey, string> = {
   'style.calloutTextColor': '注释标签文字颜色',
   'style.calloutFill': '添加注释标签背景',
   'style.pageBackground': '导出背景色',
+  'style.focusOverlay': '突出显示注释目标',
+  'style.focusOverlayHint': '用半透明图层覆盖锚点目标和带框 UI 元素以外的图像。',
+  'style.focusOverlayColor': '图层颜色',
+  'style.focusOverlayOpacity': '图层不透明度',
   'style.calloutFillColor': '注释标签背景颜色',
   'style.calloutFillOpacity': '注释标签背景不透明度',
   'style.calloutCornerRadius': '注释标签圆角半径',

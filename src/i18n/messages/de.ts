@@ -97,6 +97,8 @@ export const de: Record<MessageKey, string> = {
   'tooltip.cropApply': 'Zuschnitt anwenden (Enter)',
   'tooltip.cropTransparentPadding': 'Transparenten Rand und Schatten entfernen',
   'tooltip.cropCancel': 'Zuschnitt abbrechen (Esc)',
+  'tooltip.editLabelApply': 'Labelbearbeitung anwenden',
+  'tooltip.editLabelCancel': 'Labelbearbeitung abbrechen',
   'tooltip.variationMenu': 'Eine Anmerkungsvariante auswählen oder hinzufügen',
 
   'aria.editToolbar': 'Bearbeitungswerkzeuge',
@@ -108,6 +110,8 @@ export const de: Record<MessageKey, string> = {
   'aria.cropApply': 'Zuschnitt anwenden',
   'aria.cropTransparentPadding': 'Zuschnitt an den undurchsichtigen Bildbereich anpassen',
   'aria.cropCancel': 'Zuschnitt abbrechen',
+  'aria.editLabelApply': 'Bearbeitung des Anmerkungslabels anwenden',
+  'aria.editLabelCancel': 'Bearbeitung des Anmerkungslabels abbrechen',
   'aria.toggleSections': 'Sichtbarkeit der Abschnitte',
   'sectionVisibility.aiRegion': 'UI-Elemente (KI-erkannt)',
   'sectionVisibility.aiText': 'Text (OCR)',
@@ -143,6 +147,10 @@ export const de: Record<MessageKey, string> = {
     'Abschnitte im ersetzten Bild erneut erkennen? Dabei werden die aktuellen Anmerkungen gelöscht.',
   'replaceDetect.run': 'Erneut ausführen',
   'replaceDetect.keep': 'Nicht erneut ausführen',
+  'pasteImage.title': 'Bild eingefügt',
+  'pasteImage.body':
+    'Das eingefügte Bild als neues Projekt bearbeiten? Das aktuelle Projekt wird automatisch gespeichert.',
+  'pasteImage.confirm': 'Bild bearbeiten',
 
   'home.newTitle': 'Neues Projekt',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -195,6 +203,8 @@ export const de: Record<MessageKey, string> = {
   'canvas.emptyHint':
     'Ziehen, um den Bereich zu zeichnen, den Sie kommentieren möchten — er wird zu einem Abschnitt.',
   'canvas.detecting': 'Abschnitte werden vorgeschlagen…',
+  'canvas.resizeHandleAria': 'Rahmenecke anpassen',
+  'canvas.resizeHandleHint': 'Mit den Pfeiltasten pixelweise anpassen',
 
   'export.defaultFilename': 'annotation',
   'export.title': 'Exportieren',
@@ -247,6 +257,10 @@ export const de: Record<MessageKey, string> = {
   'style.calloutTextColor': 'Textfarbe des Anmerkungslabels',
   'style.calloutFill': 'Hintergrund für Anmerkungslabel',
   'style.pageBackground': 'Hintergrund der Ausgabe',
+  'style.focusOverlay': 'Anmerkungsziele hervorheben',
+  'style.focusOverlayHint': 'Deckt das Bild außer Ankerzielen und umrahmten UI-Elementen ab.',
+  'style.focusOverlayColor': 'Ebenenfarbe',
+  'style.focusOverlayOpacity': 'Deckkraft der Ebene',
   'style.calloutFillColor': 'Hintergrundfarbe des Anmerkungslabels',
   'style.calloutFillOpacity': 'Hintergrunddeckkraft des Anmerkungslabels',
   'style.calloutCornerRadius': 'Eckenradius des Anmerkungslabels',

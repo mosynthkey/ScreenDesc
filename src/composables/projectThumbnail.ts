@@ -55,6 +55,9 @@ export async function renderThumbnailBlob(core: StoreCore): Promise<Blob | null>
     calloutFillOpacity: state.calloutFillOpacity,
     calloutCornerRadius: state.calloutCornerRadius,
     pageBackgroundColor: state.pageBackgroundColor,
+    focusOverlayEnabled: state.focusOverlayEnabled,
+    focusOverlayColor: state.focusOverlayColor,
+    focusOverlayOpacity: state.focusOverlayOpacity,
     fontFamily: state.defaultFontFamily,
   })
 }

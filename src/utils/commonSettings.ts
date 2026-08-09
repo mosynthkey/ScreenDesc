@@ -38,6 +38,9 @@ export const DEFAULT_CALLOUT_FILL_OPACITY = 1
 export const CALLOUT_FILL_OPACITY_MIN = 0
 export const CALLOUT_FILL_OPACITY_MAX = 1
 export const DEFAULT_PAGE_BACKGROUND_COLOR = '#ffffff'
+export const DEFAULT_FOCUS_OVERLAY_ENABLED = false
+export const DEFAULT_FOCUS_OVERLAY_COLOR = '#000000'
+export const DEFAULT_FOCUS_OVERLAY_OPACITY = 0.5
 
 export const DEFAULT_HIGHLIGHT_FILL_ENABLED = true
 export const DEFAULT_HIGHLIGHT_FILL_OPACITY = 0.2
@@ -70,6 +73,9 @@ export interface CommonSettings {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
 }
 
 export interface CommonSettingsPresetMeta {
@@ -109,6 +115,9 @@ export function createDefaultCommonSettings(): CommonSettings {
     calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
     calloutCornerRadius: DEFAULT_CALLOUT_CORNER_RADIUS,
     pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
+    focusOverlayEnabled: DEFAULT_FOCUS_OVERLAY_ENABLED,
+    focusOverlayColor: DEFAULT_FOCUS_OVERLAY_COLOR,
+    focusOverlayOpacity: DEFAULT_FOCUS_OVERLAY_OPACITY,
   }
 }
 
@@ -149,6 +158,25 @@ export function normalizePageBackgroundColor(value: unknown): string {
     if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
   }
   return DEFAULT_PAGE_BACKGROUND_COLOR
+}
+
+export function normalizeFocusOverlayEnabled(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : DEFAULT_FOCUS_OVERLAY_ENABLED
+}
+
+export function normalizeFocusOverlayColor(value: unknown): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase()
+  }
+  return DEFAULT_FOCUS_OVERLAY_COLOR
+}
+
+export function normalizeFocusOverlayOpacity(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(1, Math.max(0, value))
+  }
+  return DEFAULT_FOCUS_OVERLAY_OPACITY
 }
 
 export function normalizeCalloutFillOpacity(value: unknown): number {
@@ -258,6 +286,9 @@ export function normalizeCommonSettings(raw: unknown): CommonSettings | null {
     calloutFillOpacity: normalizeCalloutFillOpacity(raw.calloutFillOpacity),
     calloutCornerRadius: normalizeCalloutCornerRadius(raw.calloutCornerRadius),
     pageBackgroundColor: normalizePageBackgroundColor(raw.pageBackgroundColor),
+    focusOverlayEnabled: normalizeFocusOverlayEnabled(raw.focusOverlayEnabled),
+    focusOverlayColor: normalizeFocusOverlayColor(raw.focusOverlayColor),
+    focusOverlayOpacity: normalizeFocusOverlayOpacity(raw.focusOverlayOpacity),
   }
 }
 

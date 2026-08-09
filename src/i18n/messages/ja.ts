@@ -96,6 +96,8 @@ export const ja: Record<MessageKey, string> = {
   'tooltip.cropApply': '切り抜きを確定 (Enter)',
   'tooltip.cropTransparentPadding': '透明な余白と影を除外',
   'tooltip.cropCancel': '切り抜きをキャンセル (Esc)',
+  'tooltip.editLabelApply': '注釈ラベルの編集を確定',
+  'tooltip.editLabelCancel': '注釈ラベルの編集をキャンセル',
   'tooltip.variationMenu': '注釈のバリエーションを選択・追加',
 
   'aria.editToolbar': '編集ツール',
@@ -107,6 +109,8 @@ export const ja: Record<MessageKey, string> = {
   'aria.cropApply': '切り抜きを確定',
   'aria.cropTransparentPadding': '透明・半透明部分を除いて切り抜き範囲を合わせる',
   'aria.cropCancel': '切り抜きをキャンセル',
+  'aria.editLabelApply': '注釈ラベルの編集を確定',
+  'aria.editLabelCancel': '注釈ラベルの編集をキャンセル',
   'aria.toggleSections': 'セクション表示',
   'sectionVisibility.aiRegion': 'UI要素（AI認識）',
   'sectionVisibility.aiText': 'テキスト（OCR）',
@@ -140,6 +144,10 @@ export const ja: Record<MessageKey, string> = {
     '差し替えた画像からセクションを認識し直しますか？再実行すると、現在の注釈は削除されます。',
   'replaceDetect.run': '再実行する',
   'replaceDetect.keep': '再実行しない',
+  'pasteImage.title': '画像がペーストされました',
+  'pasteImage.body':
+    'ペーストした画像を新しいプロジェクトとして編集しますか？現在のプロジェクトは自動保存されます。',
+  'pasteImage.confirm': '画像を編集する',
 
   'home.newTitle': '新規作成',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -191,6 +199,8 @@ export const ja: Record<MessageKey, string> = {
   'canvas.emptyHint':
     '注釈したい範囲をドラッグしてセクションを追加してください。',
   'canvas.detecting': 'セクションを提案中…',
+  'canvas.resizeHandleAria': '枠の角を調整',
+  'canvas.resizeHandleHint': '矢印キーで1pxずつ調整できます',
 
   'export.defaultFilename': '注釈',
   'export.title': '書き出し',
@@ -242,6 +252,10 @@ export const ja: Record<MessageKey, string> = {
   'style.calloutTextColor': '注釈ラベルの文字色',
   'style.calloutFill': '注釈ラベルに背景をつける',
   'style.pageBackground': '制作画像の背景色',
+  'style.focusOverlay': '注釈対象を強調する',
+  'style.focusOverlayHint': 'アンカーの対象と枠をつけたUI要素以外を半透明のレイヤーで覆います。',
+  'style.focusOverlayColor': 'レイヤーの色',
+  'style.focusOverlayOpacity': 'レイヤーの不透明度',
   'style.calloutFillColor': '注釈ラベルの背景色',
   'style.calloutFillOpacity': '注釈ラベル背景の不透明度',
   'style.calloutCornerRadius': '注釈ラベルの角丸',

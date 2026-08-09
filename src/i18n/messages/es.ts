@@ -97,6 +97,8 @@ export const es: Record<MessageKey, string> = {
   'tooltip.cropApply': 'Aplicar recorte (Enter)',
   'tooltip.cropTransparentPadding': 'Eliminar margen transparente y sombras',
   'tooltip.cropCancel': 'Cancelar recorte (Esc)',
+  'tooltip.editLabelApply': 'Aplicar edición de etiqueta',
+  'tooltip.editLabelCancel': 'Cancelar edición de etiqueta',
   'tooltip.variationMenu': 'Seleccionar o añadir una variación de anotación',
 
   'aria.editToolbar': 'Herramientas de edición',
@@ -108,6 +110,8 @@ export const es: Record<MessageKey, string> = {
   'aria.cropApply': 'Aplicar recorte',
   'aria.cropTransparentPadding': 'Ajustar el recorte al área opaca de la imagen',
   'aria.cropCancel': 'Cancelar recorte',
+  'aria.editLabelApply': 'Aplicar edición de la etiqueta de anotación',
+  'aria.editLabelCancel': 'Cancelar edición de la etiqueta de anotación',
   'aria.toggleSections': 'Visibilidad de secciones',
   'sectionVisibility.aiRegion': 'Elementos de interfaz (reconocidos por IA)',
   'sectionVisibility.aiText': 'Texto (OCR)',
@@ -143,6 +147,10 @@ export const es: Record<MessageKey, string> = {
     '¿Reconocer de nuevo las secciones de la imagen reemplazada? Se eliminarán las anotaciones actuales.',
   'replaceDetect.run': 'Ejecutar de nuevo',
   'replaceDetect.keep': 'No ejecutar de nuevo',
+  'pasteImage.title': 'Imagen pegada',
+  'pasteImage.body':
+    '¿Editar la imagen pegada como un proyecto nuevo? El proyecto actual se guardará automáticamente.',
+  'pasteImage.confirm': 'Editar imagen',
 
   'home.newTitle': 'Nuevo proyecto',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -194,6 +202,8 @@ export const es: Record<MessageKey, string> = {
   'canvas.emptyHint':
     'Arrastra para dibujar la región que quieres anotar; se convertirá en una sección.',
   'canvas.detecting': 'Proponiendo secciones…',
+  'canvas.resizeHandleAria': 'Ajustar esquina del marco',
+  'canvas.resizeHandleHint': 'Usa las flechas para ajustar 1 px cada vez',
 
   'export.defaultFilename': 'annotation',
   'export.title': 'Exportar',
@@ -246,6 +256,10 @@ export const es: Record<MessageKey, string> = {
   'style.calloutTextColor': 'Color de texto de la etiqueta de anotación',
   'style.calloutFill': 'Añadir fondo a la etiqueta de anotación',
   'style.pageBackground': 'Fondo de salida',
+  'style.focusOverlay': 'Resaltar objetivos de anotación',
+  'style.focusOverlayHint': 'Cubre la imagen excepto los objetivos de anclaje y los elementos de UI enmarcados.',
+  'style.focusOverlayColor': 'Color de la capa',
+  'style.focusOverlayOpacity': 'Opacidad de la capa',
   'style.calloutFillColor': 'Color de fondo de la etiqueta de anotación',
   'style.calloutFillOpacity': 'Opacidad del fondo de la etiqueta de anotación',
   'style.calloutCornerRadius': 'Radio de esquina de la etiqueta de anotación',

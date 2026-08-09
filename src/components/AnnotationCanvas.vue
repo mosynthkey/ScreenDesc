@@ -35,8 +35,10 @@ import {
 } from '../utils/calloutLayout'
 import { measureTextBaselineFromCenter } from '../utils/textMeasure'
 import { resolveCalloutFill, resolveHighlightFill } from '../utils/commonSettings'
+import { buildFocusOverlayHoles } from '../utils/focusOverlay'
 import { useCanvasViewport } from '../composables/useCanvasViewport'
 import { useI18n } from '../i18n'
+import { CheckIcon, XIcon } from '@lucide/vue'
 
 const { t } = useI18n()
 
@@ -78,6 +80,9 @@ const props = defineProps<{
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   fontFamily: string
   isDetecting?: boolean
   emptyHint?: boolean
@@ -146,6 +151,7 @@ type DragState =
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
 type CropHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
+const RESIZE_HANDLES: readonly ResizeHandle[] = ['nw', 'ne', 'sw', 'se']
 const CROP_HANDLES: readonly CropHandle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const MIN_CROP_SIZE = 8
 
@@ -394,6 +400,49 @@ function cropHandleCursor(handle: CropHandle): string {
   return 'nesw-resize'
 }
 
+function onSectionHandleKeydown(
+  event: KeyboardEvent,
+  section: Section,
+  handle: ResizeHandle,
+): void {
+  const movement = {
+    ArrowLeft: { x: -1, y: 0 },
+    ArrowRight: { x: 1, y: 0 },
+    ArrowUp: { x: 0, y: -1 },
+    ArrowDown: { x: 0, y: 1 },
+  }[event.key]
+  if (!movement) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  let left = section.rect.x
+  let right = section.rect.x + section.rect.width
+  let top = section.rect.y
+  let bottom = section.rect.y + section.rect.height
+
+  if (movement.x !== 0) {
+    if (handle.includes('w')) {
+      left = Math.max(0, Math.min(right - 12, left + movement.x))
+    } else {
+      right = Math.min(props.document.imageWidth, Math.max(left + 12, right + movement.x))
+    }
+  }
+  if (movement.y !== 0) {
+    if (handle.includes('n')) {
+      top = Math.max(0, Math.min(bottom - 12, top + movement.y))
+    } else {
+      bottom = Math.min(props.document.imageHeight, Math.max(top + 12, bottom + movement.y))
+    }
+  }
+
+  emit('updateSectionRect', section.id, {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  })
+}
+
 function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return
   const target = event.target as Element
@@ -426,8 +475,8 @@ function onPointerDown(event: PointerEvent): void {
     return
   }
 
-  const handle = (target.closest('[data-handle]')?.getAttribute('data-handle') ??
-    null) as ResizeHandle | null
+  const handleElement = target.closest<SVGRectElement>('[data-handle]')
+  const handle = (handleElement?.getAttribute('data-handle') ?? null) as ResizeHandle | null
   const sectionId = target.closest('[data-section]')?.getAttribute('data-section')
   const calloutId = target.closest('[data-callout-label]')?.getAttribute('data-callout-label')
   const anchorId = target.closest('[data-anchor]')?.getAttribute('data-anchor')
@@ -508,6 +557,7 @@ function onPointerDown(event: PointerEvent): void {
   if (handle && sectionId) {
     const section = props.sections.find((item) => item.id === sectionId)
     if (!section) return
+    handleElement?.focus()
     emit('selectSection', sectionId, event.shiftKey)
     drag.value = {
       kind: 'section-resize',
@@ -782,6 +832,12 @@ const editingCalloutLayout = computed(() => {
   return props.calloutLayouts.find((item) => item.annotationId === editingId.value) ?? null
 })
 
+const editingActionsOnLeft = computed(() => {
+  const layout = editingCalloutLayout.value
+  if (!layout) return false
+  return layout.labelPosition.x + layout.labelWidth / 2 > documentWidth.value / 2
+})
+
 /** Grows the in-place edit box with typed line breaks, not just the committed layout's line count. */
 const editDraftRows = computed(() => Math.max(1, editDraft.value.split('\n').length))
 
@@ -803,6 +859,16 @@ function layoutFor(annotationId: string): CalloutLayoutItem | undefined {
 
 const visibleSections = computed(() =>
   props.sections.filter((section) => isSectionVisible(section, props.sectionVisibility)),
+)
+
+const focusOverlayHoles = computed(() =>
+  buildFocusOverlayHoles(
+    props.sections,
+    props.annotations,
+    props.highlightMargin,
+    props.highlightCornerRadius,
+    props.dotRadius,
+  ),
 )
 
 const activeFontFamily = computed(() => fontFamilyCss(props.fontFamily))
@@ -925,6 +991,55 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
         preserveAspectRatio="none"
       />
 
+      <template v-if="focusOverlayEnabled">
+        <defs>
+          <mask
+            id="focus-overlay-mask"
+            maskUnits="userSpaceOnUse"
+            :x="document.marginLeft"
+            :y="document.marginTop"
+            :width="document.imageWidth"
+            :height="document.imageHeight"
+          >
+            <rect
+              :x="document.marginLeft"
+              :y="document.marginTop"
+              :width="document.imageWidth"
+              :height="document.imageHeight"
+              fill="white"
+            />
+            <template v-for="(hole, holeIndex) in focusOverlayHoles" :key="holeIndex">
+              <rect
+                v-if="hole.kind === 'rect'"
+                :x="document.marginLeft + hole.x"
+                :y="document.marginTop + hole.y"
+                :width="hole.width"
+                :height="hole.height"
+                :rx="hole.radius"
+                fill="black"
+              />
+              <circle
+                v-else
+                :cx="document.marginLeft + hole.x"
+                :cy="document.marginTop + hole.y"
+                :r="hole.radius"
+                fill="black"
+              />
+            </template>
+          </mask>
+        </defs>
+        <rect
+          class="focus-overlay"
+          :x="document.marginLeft"
+          :y="document.marginTop"
+          :width="document.imageWidth"
+          :height="document.imageHeight"
+          :fill="focusOverlayColor"
+          :fill-opacity="focusOverlayOpacity"
+          mask="url(#focus-overlay-mask)"
+        />
+      </template>
+
       <!-- Section outlines (margin-expanded frame around UI elements, see Section.outlineEnabled).
            Independent of the section show/hide toggle below: this is a user-added decoration,
            not the raw selection-rect visibility. -->
@@ -982,7 +1097,7 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           />
           <template v-if="selectedSectionIds.includes(section.id) && toolMode === 'select'">
             <rect
-              v-for="handle in ['nw', 'ne', 'sw', 'se']"
+              v-for="handle in RESIZE_HANDLES"
               :key="handle"
               class="handle"
               :data-section="section.id"
@@ -1003,6 +1118,11 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
               height="8"
               rx="2"
               ry="2"
+              tabindex="0"
+              role="button"
+              :aria-label="t('canvas.resizeHandleAria')"
+              :title="t('canvas.resizeHandleHint')"
+              @keydown="onSectionHandleKeydown($event, section, handle)"
             />
           </template>
         </g>
@@ -1274,6 +1394,31 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           @keydown.escape="onEditEscapeKeydown"
           @blur="onEditBlur"
         />
+        <div
+          class="callout-inplace-actions"
+          :class="{ 'is-left': editingActionsOnLeft }"
+        >
+          <button
+            class="callout-inplace-action is-confirm"
+            type="button"
+            :title="t('tooltip.editLabelApply')"
+            :aria-label="t('aria.editLabelApply')"
+            @pointerdown.prevent.stop
+            @click.stop="commitEdit"
+          >
+            <CheckIcon :size="16" :stroke-width="2.3" aria-hidden="true" />
+          </button>
+          <button
+            class="callout-inplace-action"
+            type="button"
+            :title="t('tooltip.editLabelCancel')"
+            :aria-label="t('aria.editLabelCancel')"
+            @pointerdown.prevent.stop
+            @click.stop="cancelEdit"
+          >
+            <XIcon :size="16" :stroke-width="2.3" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1343,6 +1488,49 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   line-height: 1.375;
 }
 
+.callout-inplace-actions {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  display: flex;
+  gap: 4px;
+  transform: translateY(-50%);
+}
+
+.callout-inplace-actions.is-left {
+  right: calc(100% + 6px);
+  left: auto;
+}
+
+.callout-inplace-action {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-solid);
+  color: var(--ink-muted);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.callout-inplace-action:hover {
+  background: var(--bg-elevated);
+  color: var(--ink);
+}
+
+.callout-inplace-action.is-confirm {
+  background: var(--accent);
+  color: #fff;
+}
+
+.callout-inplace-action.is-confirm:hover {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
 .scene {
   display: block;
   width: 100%;
@@ -1371,6 +1559,10 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   pointer-events: none;
 }
 
+.focus-overlay {
+  pointer-events: none;
+}
+
 .section-rect {
   fill: rgba(0, 122, 255, 0.06);
   stroke: #007aff;
@@ -1389,6 +1581,13 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   stroke: #007aff;
   stroke-width: 1.5;
   cursor: nwse-resize;
+}
+
+.handle:focus-visible {
+  outline: none;
+  stroke: #fff;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 0.75px #007aff) drop-shadow(0 0 2px #007aff);
 }
 
 .draft-section {

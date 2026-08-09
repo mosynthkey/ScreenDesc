@@ -25,6 +25,9 @@ import {
   normalizeCalloutTextColor,
   normalizeHighlightFillEnabled,
   normalizeHighlightFillOpacity,
+  normalizeFocusOverlayColor,
+  normalizeFocusOverlayEnabled,
+  normalizeFocusOverlayOpacity,
   normalizePageBackgroundColor,
 } from './commonSettings'
 import { normalizeCalloutFontItalic, normalizeCalloutFontWeight } from './googleFonts'
@@ -77,6 +80,9 @@ export interface ProjectFileData {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
   variations: string[]
@@ -237,6 +243,9 @@ export async function contentHashFromSnapshot(snapshot: {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   variations: string[]
   defaultVariationName?: string | null
@@ -322,6 +331,15 @@ function normalizeProjectFileData(raw: ProjectFileData): ProjectFileData {
   )
   project.pageBackgroundColor = normalizePageBackgroundColor(
     (project as { pageBackgroundColor?: unknown }).pageBackgroundColor,
+  )
+  project.focusOverlayEnabled = normalizeFocusOverlayEnabled(
+    (project as { focusOverlayEnabled?: unknown }).focusOverlayEnabled,
+  )
+  project.focusOverlayColor = normalizeFocusOverlayColor(
+    (project as { focusOverlayColor?: unknown }).focusOverlayColor,
+  )
+  project.focusOverlayOpacity = normalizeFocusOverlayOpacity(
+    (project as { focusOverlayOpacity?: unknown }).focusOverlayOpacity,
   )
   // Old files only had one combined `showSections` flag; fall back to it for
   // any category missing from `sectionVisibility` (including all of them,
@@ -484,6 +502,9 @@ export function projectFileFieldsFromSnapshot(
     calloutFillOpacity: number
     calloutCornerRadius: number
     pageBackgroundColor: string
+    focusOverlayEnabled: boolean
+    focusOverlayColor: string
+    focusOverlayOpacity: number
     sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
     variations: string[]
     defaultVariationName?: string | null
@@ -521,6 +542,9 @@ export function projectFileFieldsFromSnapshot(
     calloutFillOpacity: snapshot.calloutFillOpacity,
     calloutCornerRadius: snapshot.calloutCornerRadius,
     pageBackgroundColor: snapshot.pageBackgroundColor,
+    focusOverlayEnabled: snapshot.focusOverlayEnabled,
+    focusOverlayColor: snapshot.focusOverlayColor,
+    focusOverlayOpacity: snapshot.focusOverlayOpacity,
     sectionVisibility: snapshot.sectionVisibility,
     variations: snapshot.variations,
     defaultVariationName: snapshot.defaultVariationName ?? null,

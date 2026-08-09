@@ -94,6 +94,8 @@ export const en = {
   'tooltip.cropApply': 'Apply crop (Enter)',
   'tooltip.cropTransparentPadding': 'Trim transparent padding and shadows',
   'tooltip.cropCancel': 'Cancel crop (Esc)',
+  'tooltip.editLabelApply': 'Apply label edit',
+  'tooltip.editLabelCancel': 'Cancel label edit',
   'tooltip.variationMenu': 'Select or add an annotation variation',
 
   'aria.editToolbar': 'Editing tools',
@@ -105,6 +107,8 @@ export const en = {
   'aria.cropApply': 'Apply crop',
   'aria.cropTransparentPadding': 'Fit crop to the opaque image area',
   'aria.cropCancel': 'Cancel crop',
+  'aria.editLabelApply': 'Apply annotation label edit',
+  'aria.editLabelCancel': 'Cancel annotation label edit',
   'aria.toggleSections': 'Section visibility',
   'sectionVisibility.aiRegion': 'UI elements (AI-recognized)',
   'sectionVisibility.aiText': 'Text (OCR)',
@@ -138,6 +142,10 @@ export const en = {
     'Recognize sections again from the replacement image? Running it removes the current annotations.',
   'replaceDetect.run': 'Run again',
   'replaceDetect.keep': 'Do not run again',
+  'pasteImage.title': 'Image pasted',
+  'pasteImage.body':
+    'Edit the pasted image as a new project? Your current project will be saved automatically.',
+  'pasteImage.confirm': 'Edit image',
 
   'home.newTitle': 'New project',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -188,6 +196,8 @@ export const en = {
   'canvas.emptyHint':
     'Drag to draw the region you want to annotate — it becomes a section.',
   'canvas.detecting': 'Proposing sections…',
+  'canvas.resizeHandleAria': 'Adjust frame corner',
+  'canvas.resizeHandleHint': 'Use the arrow keys to adjust by 1 px',
 
   'export.defaultFilename': 'annotation',
   'export.title': 'Export',
@@ -239,6 +249,10 @@ export const en = {
   'style.calloutTextColor': 'Annotation label text color',
   'style.calloutFill': 'Add annotation label background',
   'style.pageBackground': 'Output background',
+  'style.focusOverlay': 'Highlight annotation targets',
+  'style.focusOverlayHint': 'Covers the image except anchor targets and framed UI elements.',
+  'style.focusOverlayColor': 'Overlay color',
+  'style.focusOverlayOpacity': 'Overlay opacity',
   'style.calloutFillColor': 'Annotation label background color',
   'style.calloutFillOpacity': 'Annotation label background opacity',
   'style.calloutCornerRadius': 'Annotation label corner radius',

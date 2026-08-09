@@ -90,6 +90,9 @@ import {
   DEFAULT_CALLOUT_TEXT_COLOR,
   DEFAULT_HIGHLIGHT_FILL_ENABLED,
   DEFAULT_HIGHLIGHT_FILL_OPACITY,
+  DEFAULT_FOCUS_OVERLAY_COLOR,
+  DEFAULT_FOCUS_OVERLAY_ENABLED,
+  DEFAULT_FOCUS_OVERLAY_OPACITY,
   DEFAULT_PAGE_BACKGROUND_COLOR,
   deleteCommonSettingsPreset,
   listCommonSettingsPresets,
@@ -102,6 +105,9 @@ import {
   normalizeCommonSettings,
   normalizeHighlightFillEnabled,
   normalizeHighlightFillOpacity,
+  normalizeFocusOverlayColor,
+  normalizeFocusOverlayEnabled,
+  normalizeFocusOverlayOpacity,
   normalizePageBackgroundColor,
   resolveCalloutBorderWidth,
   saveCommonSettingsPreset,
@@ -178,6 +184,9 @@ export interface RestorableFields {
   calloutFillOpacity?: number
   calloutCornerRadius?: number
   pageBackgroundColor?: string
+  focusOverlayEnabled?: boolean
+  focusOverlayColor?: string
+  focusOverlayOpacity?: number
   /** @deprecated superseded by `sectionVisibility`, kept for old saves. */
   showSections?: boolean
   sectionVisibility?: unknown
@@ -247,6 +256,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
     calloutFillOpacity: DEFAULT_CALLOUT_FILL_OPACITY,
     calloutCornerRadius: DEFAULT_CALLOUT_CORNER_RADIUS,
     pageBackgroundColor: DEFAULT_PAGE_BACKGROUND_COLOR,
+    focusOverlayEnabled: DEFAULT_FOCUS_OVERLAY_ENABLED,
+    focusOverlayColor: DEFAULT_FOCUS_OVERLAY_COLOR,
+    focusOverlayOpacity: DEFAULT_FOCUS_OVERLAY_OPACITY,
     sectionVisibility: defaultSectionVisibility(),
     calloutLayouts: [],
     document: createDefaultDocumentLayout(0, 0, 0),
@@ -530,6 +542,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
     state.calloutFillOpacity = normalizeCalloutFillOpacity(fields.calloutFillOpacity)
     state.calloutCornerRadius = normalizeCalloutCornerRadius(fields.calloutCornerRadius)
     state.pageBackgroundColor = normalizePageBackgroundColor(fields.pageBackgroundColor)
+    state.focusOverlayEnabled = normalizeFocusOverlayEnabled(fields.focusOverlayEnabled)
+    state.focusOverlayColor = normalizeFocusOverlayColor(fields.focusOverlayColor)
+    state.focusOverlayOpacity = normalizeFocusOverlayOpacity(fields.focusOverlayOpacity)
     state.sectionVisibility = normalizeSectionVisibility(
       fields.sectionVisibility,
       fields.showSections ?? true,
@@ -732,6 +747,18 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   function setPageBackgroundColor(color: string): void {
     state.pageBackgroundColor = normalizePageBackgroundColor(color)
+  }
+
+  function setFocusOverlayEnabled(enabled: boolean): void {
+    state.focusOverlayEnabled = enabled
+  }
+
+  function setFocusOverlayColor(color: string): void {
+    state.focusOverlayColor = normalizeFocusOverlayColor(color)
+  }
+
+  function setFocusOverlayOpacity(opacity: number): void {
+    state.focusOverlayOpacity = normalizeFocusOverlayOpacity(opacity)
   }
 
   function toggleSectionVisibility(category: SectionVisibilityCategory): void {
@@ -966,6 +993,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
       calloutFillOpacity: state.calloutFillOpacity,
       calloutCornerRadius: state.calloutCornerRadius,
       pageBackgroundColor: state.pageBackgroundColor,
+      focusOverlayEnabled: state.focusOverlayEnabled,
+      focusOverlayColor: state.focusOverlayColor,
+      focusOverlayOpacity: state.focusOverlayOpacity,
     }
   }
 
@@ -1006,6 +1036,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
     state.calloutFillOpacity = settings.calloutFillOpacity
     state.calloutCornerRadius = settings.calloutCornerRadius
     state.pageBackgroundColor = settings.pageBackgroundColor
+    state.focusOverlayEnabled = settings.focusOverlayEnabled
+    state.focusOverlayColor = settings.focusOverlayColor
+    state.focusOverlayOpacity = settings.focusOverlayOpacity
 
     await ensureGoogleFontsLoaded([state.defaultFontFamily], {
       italic: state.calloutFontItalic,
@@ -1379,6 +1412,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
       calloutFillOpacity: state.calloutFillOpacity,
       calloutCornerRadius: state.calloutCornerRadius,
       pageBackgroundColor: state.pageBackgroundColor,
+      focusOverlayEnabled: state.focusOverlayEnabled,
+      focusOverlayColor: state.focusOverlayColor,
+      focusOverlayOpacity: state.focusOverlayOpacity,
       fontFamily: state.defaultFontFamily,
     })
   }
@@ -1553,6 +1589,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
     setCalloutFillOpacity,
     setCalloutCornerRadius,
     setPageBackgroundColor,
+    setFocusOverlayEnabled,
+    setFocusOverlayColor,
+    setFocusOverlayOpacity,
     toggleSectionVisibility,
     clearSelection,
     selectSection,

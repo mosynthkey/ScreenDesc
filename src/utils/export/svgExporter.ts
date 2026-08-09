@@ -39,6 +39,9 @@ export const svgExporter: Exporter = {
       calloutFillOpacity: scene.calloutFillOpacity,
       calloutCornerRadius: scene.calloutCornerRadius,
       pageBackgroundColor: scene.pageBackgroundColor,
+      focusOverlayEnabled: scene.focusOverlayEnabled,
+      focusOverlayColor: scene.focusOverlayColor,
+      focusOverlayOpacity: scene.focusOverlayOpacity,
       fontFamily: scene.fontFamily,
       fontCss,
     })

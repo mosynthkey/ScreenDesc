@@ -11,7 +11,7 @@ import {
 import type { Point } from '../types/annotation'
 
 const MIN_VIEW_ZOOM = 0.25
-const MAX_VIEW_ZOOM = 8
+const MAX_VIEW_ZOOM = 32
 const STAGE_INSET = 48
 
 interface PinchSession {

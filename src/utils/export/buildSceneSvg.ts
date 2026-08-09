@@ -6,6 +6,7 @@ import type {
   LineStyleId,
   Section,
 } from '../../types/annotation'
+import { buildFocusOverlayHoles } from '../focusOverlay'
 import {
   buildAnchorArrowGeometry,
   buildAnchorHeadPath,
@@ -235,6 +236,9 @@ export function buildSceneSvg(params: {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   fontFamily: string
   /** Optional embedded @font-face CSS (data URIs) for portable export */
   fontCss?: string
@@ -270,6 +274,9 @@ export function buildSceneSvg(params: {
     calloutFillOpacity,
     calloutCornerRadius,
     pageBackgroundColor,
+    focusOverlayEnabled,
+    focusOverlayColor,
+    focusOverlayOpacity,
     fontFamily,
     fontCss = '',
   } = params
@@ -337,6 +344,23 @@ export function buildSceneSvg(params: {
     })
     .join('')
 
+  const focusOverlayHoles = buildFocusOverlayHoles(
+    sections,
+    annotations,
+    highlightMargin,
+    highlightCornerRadius,
+    dotRadius,
+  )
+    .map((hole) =>
+      hole.kind === 'rect'
+        ? `<rect x="${document.marginLeft + hole.x}" y="${document.marginTop + hole.y}" width="${hole.width}" height="${hole.height}" rx="${hole.radius}" fill="black" />`
+        : `<circle cx="${document.marginLeft + hole.x}" cy="${document.marginTop + hole.y}" r="${hole.radius}" fill="black" />`,
+    )
+    .join('')
+  const focusOverlay = focusOverlayEnabled
+    ? `<defs><mask id="focus-overlay-mask" maskUnits="userSpaceOnUse" x="${document.marginLeft}" y="${document.marginTop}" width="${document.imageWidth}" height="${document.imageHeight}"><rect x="${document.marginLeft}" y="${document.marginTop}" width="${document.imageWidth}" height="${document.imageHeight}" fill="white" />${focusOverlayHoles}</mask></defs><rect x="${document.marginLeft}" y="${document.marginTop}" width="${document.imageWidth}" height="${document.imageHeight}" fill="${escapeXml(focusOverlayColor)}" fill-opacity="${focusOverlayOpacity}" mask="url(#focus-overlay-mask)" />`
+    : ''
+
   const styleBlock = fontCss
     ? `<defs><style type="text/css"><![CDATA[\n${fontCss}\n]]></style></defs>`
     : ''
@@ -346,6 +370,7 @@ export function buildSceneSvg(params: {
   ${styleBlock}
   <rect width="100%" height="100%" fill="${escapeXml(pageBackgroundColor)}" />
   <image xlink:href="${escapeXml(imageHref)}" x="${document.marginLeft}" y="${document.marginTop}" width="${document.imageWidth}" height="${document.imageHeight}" preserveAspectRatio="none" />
+  ${focusOverlay}
   ${sectionOutlines}
   ${sectionGuides}
   ${callouts}

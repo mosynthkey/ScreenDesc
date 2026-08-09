@@ -40,6 +40,9 @@ export interface ProjectSnapshot {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   sectionVisibility: Partial<Record<SectionVisibilityCategory, boolean>>
   /** Additional annotation-text variations beyond the base `description` (free-text names). */
   variations: string[]

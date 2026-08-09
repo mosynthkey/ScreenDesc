@@ -39,6 +39,9 @@ interface StoredSnapshot {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   sectionVisibility: ProjectSnapshot['sectionVisibility']
   variations: string[]
   defaultVariationName?: string | null

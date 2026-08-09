@@ -39,6 +39,9 @@ export interface ExportScene {
   calloutFillOpacity: number
   calloutCornerRadius: number
   pageBackgroundColor: string
+  focusOverlayEnabled: boolean
+  focusOverlayColor: string
+  focusOverlayOpacity: number
   fontFamily: string
 }
 

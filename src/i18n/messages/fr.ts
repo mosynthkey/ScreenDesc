@@ -97,6 +97,8 @@ export const fr: Record<MessageKey, string> = {
   'tooltip.cropApply': 'Appliquer le recadrage (Entrée)',
   'tooltip.cropTransparentPadding': 'Supprimer la marge transparente et les ombres',
   'tooltip.cropCancel': 'Annuler le recadrage (Échap)',
+  'tooltip.editLabelApply': 'Valider la modification de l’étiquette',
+  'tooltip.editLabelCancel': 'Annuler la modification de l’étiquette',
   'tooltip.variationMenu': 'Sélectionner ou ajouter une variante d’annotation',
 
   'aria.editToolbar': 'Outils d’édition',
@@ -108,6 +110,8 @@ export const fr: Record<MessageKey, string> = {
   'aria.cropApply': 'Appliquer le recadrage',
   'aria.cropTransparentPadding': 'Ajuster le recadrage à la zone opaque de l’image',
   'aria.cropCancel': 'Annuler le recadrage',
+  'aria.editLabelApply': 'Valider la modification de l’étiquette d’annotation',
+  'aria.editLabelCancel': 'Annuler la modification de l’étiquette d’annotation',
   'aria.toggleSections': 'Visibilité des sections',
   'sectionVisibility.aiRegion': 'Éléments d’interface (reconnus par IA)',
   'sectionVisibility.aiText': 'Texte (OCR)',
@@ -143,6 +147,10 @@ export const fr: Record<MessageKey, string> = {
     'Reconnaître à nouveau les sections de l’image remplacée ? Les annotations actuelles seront supprimées.',
   'replaceDetect.run': 'Relancer',
   'replaceDetect.keep': 'Ne pas relancer',
+  'pasteImage.title': 'Image collée',
+  'pasteImage.body':
+    'Modifier l’image collée dans un nouveau projet ? Le projet actuel sera enregistré automatiquement.',
+  'pasteImage.confirm': 'Modifier l’image',
 
   'home.newTitle': 'Nouveau projet',
   'home.newHint.formats': 'PNG / JPEG / WebP',
@@ -195,6 +203,8 @@ export const fr: Record<MessageKey, string> = {
   'canvas.emptyHint':
     'Faites glisser pour dessiner la région à annoter — elle deviendra une section.',
   'canvas.detecting': 'Proposition de sections…',
+  'canvas.resizeHandleAria': 'Ajuster le coin du cadre',
+  'canvas.resizeHandleHint': 'Utilisez les flèches pour ajuster par pas de 1 px',
 
   'export.defaultFilename': 'annotation',
   'export.title': 'Exporter',
@@ -248,6 +258,10 @@ export const fr: Record<MessageKey, string> = {
   'style.calloutTextColor': 'Couleur du texte de l’étiquette d’annotation',
   'style.calloutFill': 'Ajouter un fond à l’étiquette d’annotation',
   'style.pageBackground': 'Fond de sortie',
+  'style.focusOverlay': 'Mettre en évidence les cibles d’annotation',
+  'style.focusOverlayHint': 'Recouvre l’image sauf les cibles d’ancrage et les éléments d’interface encadrés.',
+  'style.focusOverlayColor': 'Couleur du calque',
+  'style.focusOverlayOpacity': 'Opacité du calque',
   'style.calloutFillColor': 'Couleur de fond de l’étiquette d’annotation',
   'style.calloutFillOpacity': 'Opacité du fond de l’étiquette d’annotation',
   'style.calloutCornerRadius': 'Rayon des coins de l’étiquette d’annotation',

@@ -11,6 +11,7 @@ import CommonSettingsDialog from './components/CommonSettingsDialog.vue'
 import CropConfirmDialog from './components/CropConfirmDialog.vue'
 import DeleteSavedProjectDialog from './components/DeleteSavedProjectDialog.vue'
 import ReplaceDetectDialog from './components/ReplaceDetectDialog.vue'
+import PasteImageDialog from './components/PasteImageDialog.vue'
 import ImportStatusBanner from './components/ImportStatusBanner.vue'
 import BundleImportDialog from './components/BundleImportDialog.vue'
 import NavigationBar, { type AppPageId } from './components/NavigationBar.vue'
@@ -129,6 +130,7 @@ const commonSettingsBusy = ref(false)
 const cropConfirmOpen = ref(false)
 const pendingCropRect = ref<Rect | null>(null)
 const replaceDetectOpen = ref(false)
+const pendingPastedImage = ref<File | null>(null)
 const pendingDeleteProjectId = ref<string | null>(null)
 const pendingDeleteProjectName = ref('')
 const pendingDeleteProjectIsActive = ref(false)
@@ -251,6 +253,7 @@ function goToPage(page: AppPageId): void {
 }
 
 async function onFile(file: File): Promise<void> {
+  const destinationFolderId = currentFolderId.value
   const importStartedAt = performance.now()
   console.log('[image-import] started', { size: file.size, type: file.type })
   clearProjectLoadError()
@@ -285,10 +288,10 @@ async function onFile(file: File): Promise<void> {
       totalMs: Math.round(performance.now() - importStartedAt),
     })
     await analysis
-    if (currentFolderId.value) {
+    if (destinationFolderId) {
       await flushPersistCurrentProject()
       const projectId = activeNamedProject.value?.id
-      if (projectId) await moveNamedProject(projectId, currentFolderId.value)
+      if (projectId) await moveNamedProject(projectId, destinationFolderId)
     }
     console.log('[image-import] background analysis completed', {
       totalMs: Math.round(performance.now() - importStartedAt),
@@ -306,7 +309,6 @@ async function onFile(file: File): Promise<void> {
 }
 
 async function onWindowPaste(event: ClipboardEvent): Promise<void> {
-  if (appPage.value !== 'files') return
   const items = event.clipboardData?.items
   if (!items) return
   for (const item of items) {
@@ -314,17 +316,67 @@ async function onWindowPaste(event: ClipboardEvent): Promise<void> {
     const file = item.getAsFile()
     if (!file) return
     event.preventDefault()
+    if (appPage.value === 'edit') {
+      pendingPastedImage.value = file
+      return
+    }
     await onFile(file)
     return
   }
 }
 
+function closePasteImageDialog(): void {
+  pendingPastedImage.value = null
+}
+
+async function confirmPastedImage(): Promise<void> {
+  const file = pendingPastedImage.value
+  pendingPastedImage.value = null
+  if (file) await onFile(file)
+}
+
+function isExternalFileDrag(event: DragEvent): boolean {
+  return Array.from(event.dataTransfer?.types ?? []).includes('Files')
+}
+
+function isProjectFile(file: File): boolean {
+  const name = file.name.toLowerCase()
+  return (
+    name.endsWith('.screendesc') ||
+    name.endsWith('.screendesc.json') ||
+    name.endsWith('.screendesc-bundle.json') ||
+    name.endsWith('.json')
+  )
+}
+
+function onWindowDragOver(event: DragEvent): void {
+  if (appPage.value === 'files' || !isExternalFileDrag(event)) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+}
+
+async function onWindowDrop(event: DragEvent): Promise<void> {
+  if (appPage.value === 'files' || !isExternalFileDrag(event)) return
+  event.preventDefault()
+  const file = event.dataTransfer?.files?.[0]
+  if (!file) return
+  if (file.type.startsWith('image/')) {
+    await onFile(file)
+    return
+  }
+  if (isProjectFile(file)) await importProjectFile(file)
+}
+
 onMounted(() => {
   window.addEventListener('paste', onWindowPaste)
+  window.addEventListener('dragover', onWindowDragOver)
+  window.addEventListener('drop', onWindowDrop)
   void refreshProjectBrowser()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('paste', onWindowPaste)
+  window.removeEventListener('dragover', onWindowDragOver)
+  window.removeEventListener('drop', onWindowDrop)
   if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer)
   clearAppNotice()
 })
@@ -480,6 +532,7 @@ async function onProjectFileChange(event: Event): Promise<void> {
 }
 
 async function importProjectFile(file: File): Promise<void> {
+  const destinationFolderId = currentFolderId.value
   clearProjectLoadError()
   projectStorageBusy.value = true
   try {
@@ -491,6 +544,9 @@ async function importProjectFile(file: File): Promise<void> {
       return
     }
     await openProjectFile(file)
+    await flushPersistCurrentProject()
+    const projectId = activeNamedProject.value?.id
+    if (projectId && destinationFolderId) await moveNamedProject(projectId, destinationFolderId)
     appPage.value = 'edit'
   } catch (err) {
     showProjectLoadError(err instanceof Error ? err.message : t('error.projectLoadFailed'))
@@ -1071,6 +1127,9 @@ function onKeydown(event: KeyboardEvent): void {
             :callout-fill-opacity="state.calloutFillOpacity"
             :callout-corner-radius="state.calloutCornerRadius"
             :page-background-color="state.pageBackgroundColor"
+            :focus-overlay-enabled="state.focusOverlayEnabled"
+            :focus-overlay-color="state.focusOverlayColor"
+            :focus-overlay-opacity="state.focusOverlayOpacity"
             :font-family="state.defaultFontFamily"
             :is-detecting="isDetecting"
             :empty-hint="state.sections.length === 0"
@@ -1133,6 +1192,11 @@ function onKeydown(event: KeyboardEvent): void {
         :open="replaceDetectOpen"
         @close="replaceDetectOpen = false"
         @confirm="onConfirmReplaceDetect"
+      />
+      <PasteImageDialog
+        :open="pendingPastedImage !== null"
+        @close="closePasteImageDialog"
+        @confirm="confirmPastedImage"
       />
     </div>
   </div>
