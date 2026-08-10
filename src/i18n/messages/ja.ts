@@ -192,6 +192,8 @@ export const ja: Record<MessageKey, string> = {
   'annotationList.applyNumbers': '適用',
   'annotationList.clearNumbers': '削除',
   'annotationList.emptyDescription': '注釈ラベルなし',
+  'annotationList.hideTitle': '注釈を非表示',
+  'annotationList.showTitle': '注釈を表示',
   'annotationList.removeTitle': '削除',
   'annotationList.multiSelectHint': 'Shift+クリックで複数選択',
   'annotationList.resizePane': 'ドラッグして注釈一覧と編集パネルの高さを調整',

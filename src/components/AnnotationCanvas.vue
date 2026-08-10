@@ -32,6 +32,7 @@ import {
   calloutLabelTextX,
   leaderAttachOnLabel,
   resolveAnnotationDescription,
+  isAnnotationVisibleForVariation,
 } from '../utils/calloutLayout'
 import { measureTextBaselineFromCenter } from '../utils/textMeasure'
 import { resolveCalloutFill, resolveHighlightFill } from '../utils/commonSettings'
@@ -864,7 +865,9 @@ const visibleSections = computed(() =>
 const focusOverlayHoles = computed(() =>
   buildFocusOverlayHoles(
     props.sections,
-    props.annotations,
+    props.annotations.filter((annotation) =>
+      isAnnotationVisibleForVariation(annotation, props.activeVariation),
+    ),
     props.highlightMargin,
     props.highlightCornerRadius,
     props.dotRadius,

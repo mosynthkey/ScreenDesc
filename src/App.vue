@@ -90,6 +90,7 @@ const {
   removeVariation,
   nudgeCalloutPositions,
   removeAnnotations,
+  toggleAnnotationVisibility,
   reorderAnnotations,
   assignNumberPrefixes,
   clearNumberPrefixes,
@@ -1068,6 +1069,7 @@ function onKeydown(event: KeyboardEvent): void {
                 @reorder="reorderAnnotations"
                 @assign-numbers="assignNumberPrefixes"
                 @clear-numbers="clearNumberPrefixes"
+                @toggle-visibility="toggleAnnotationVisibility"
                 @remove="(id) => removeAnnotations([id])"
               />
             </div>

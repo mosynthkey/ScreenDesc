@@ -1,6 +1,7 @@
 import { exportScene } from '../utils/export'
 import { ensureGoogleFontsLoaded } from '../utils/googleFonts'
 import { resolveCalloutBorderWidth } from '../utils/commonSettings'
+import { isAnnotationVisibleForVariation } from '../utils/calloutLayout'
 import type { StoreCore } from '../stores/annotationStore'
 
 const THUMBNAIL_TARGET_WIDTH = 400
@@ -21,7 +22,9 @@ export async function renderThumbnailBlob(core: StoreCore): Promise<Blob | null>
   return exportScene({
     image: imageElement.value,
     sections: state.sections,
-    annotations: state.annotations,
+    annotations: state.annotations.filter((annotation) =>
+      isAnnotationVisibleForVariation(annotation, state.activeVariation),
+    ),
     calloutLayouts: state.calloutLayouts,
     document: state.document,
     options: {

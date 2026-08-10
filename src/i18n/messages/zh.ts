@@ -186,6 +186,8 @@ export const zh: Record<MessageKey, string> = {
   'annotationList.applyNumbers': '应用',
   'annotationList.clearNumbers': '清除',
   'annotationList.emptyDescription': '无注释标签',
+  'annotationList.hideTitle': '隐藏注释',
+  'annotationList.showTitle': '显示注释',
   'annotationList.removeTitle': '删除',
   'annotationList.multiSelectHint': 'Shift + 点击可多选',
   'annotationList.resizePane': '拖动以调整注释列表与编辑器的高度',

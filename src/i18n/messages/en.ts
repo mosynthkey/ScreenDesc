@@ -189,6 +189,8 @@ export const en = {
   'annotationList.applyNumbers': 'Apply',
   'annotationList.clearNumbers': 'Clear',
   'annotationList.emptyDescription': 'No annotation label',
+  'annotationList.hideTitle': 'Hide annotation',
+  'annotationList.showTitle': 'Show annotation',
   'annotationList.removeTitle': 'Remove',
   'annotationList.multiSelectHint': 'Shift-click to select multiple',
   'annotationList.resizePane': 'Drag to adjust the height of the annotation list and editor',

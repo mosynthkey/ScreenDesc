@@ -2,9 +2,9 @@
 import { ref } from 'vue'
 import type { Annotation } from '../types/annotation'
 import type { NumberPrefixDirection, NumberPrefixStyle } from '../utils/numberPrefix'
-import { resolveAnnotationDescription } from '../utils/calloutLayout'
+import { resolveAnnotationDescription, isAnnotationVisibleForVariation } from '../utils/calloutLayout'
 import { useI18n, type MessageKey } from '../i18n'
-import { ListIcon, XIcon } from '@lucide/vue'
+import { EyeIcon, EyeOffIcon, ListIcon, XIcon } from '@lucide/vue'
 
 const props = defineProps<{
   annotations: Annotation[]
@@ -18,6 +18,7 @@ const emit = defineEmits<{
   reorder: [orderedIds: string[]]
   assignNumbers: [direction: NumberPrefixDirection, style: NumberPrefixStyle]
   clearNumbers: []
+  toggleVisibility: [id: string]
   remove: [id: string]
 }>()
 
@@ -53,6 +54,10 @@ function clearNumbering(): void {
   numberMenuOpen.value = false
 }
 
+function isAnnotationVisible(annotation: Annotation): boolean {
+  return isAnnotationVisibleForVariation(annotation, props.activeVariation)
+}
+
 function displayText(annotation: Annotation): string {
   const prefix = annotation.numberPrefix ? `${annotation.numberPrefix} ` : ''
   const text = resolveAnnotationDescription(annotation, props.activeVariation)
@@ -61,7 +66,7 @@ function displayText(annotation: Annotation): string {
 
 function onDragStart(id: string, event: DragEvent): void {
   const target = event.target as HTMLElement | null
-  if (target?.closest('.remove-btn')) {
+  if (target?.closest('.icon-btn')) {
     event.preventDefault()
     return
   }
@@ -201,6 +206,7 @@ function onDrop(event: DragEvent): void {
           :class="{
             selected: selectedIds.includes(annotation.id),
             dragging: draggingId === annotation.id,
+            hidden: !isAnnotationVisible(annotation),
           }"
           draggable="true"
           :title="t('annotationList.dragTitle')"
@@ -210,15 +216,42 @@ function onDrop(event: DragEvent): void {
           @dragover="onItemDragOver(itemIndex, $event)"
         >
           <span class="desc-text">{{ displayText(annotation) }}</span>
-          <button
-            class="icon-btn remove-btn"
-            type="button"
-            :title="t('annotationList.removeTitle')"
-            @click.stop="emit('remove', annotation.id)"
-            @pointerdown.stop
-          >
-            <XIcon :size="14" :stroke-width="2.2" aria-hidden="true" />
-          </button>
+          <div class="item-actions">
+            <button
+              class="icon-btn visibility-btn"
+              type="button"
+              :title="
+                isAnnotationVisible(annotation)
+                  ? t('annotationList.hideTitle')
+                  : t('annotationList.showTitle')
+              "
+              :aria-pressed="isAnnotationVisible(annotation)"
+              @click.stop="emit('toggleVisibility', annotation.id)"
+              @pointerdown.stop
+            >
+              <EyeIcon
+                v-if="isAnnotationVisible(annotation)"
+                :size="14"
+                :stroke-width="2.2"
+                aria-hidden="true"
+              />
+              <EyeOffIcon
+                v-else
+                :size="14"
+                :stroke-width="2.2"
+                aria-hidden="true"
+              />
+            </button>
+            <button
+              class="icon-btn remove-btn"
+              type="button"
+              :title="t('annotationList.removeTitle')"
+              @click.stop="emit('remove', annotation.id)"
+              @pointerdown.stop
+            >
+              <XIcon :size="14" :stroke-width="2.2" aria-hidden="true" />
+            </button>
+          </div>
         </li>
         <li
           v-if="dropIndex === itemIndex + 1"
@@ -396,6 +429,11 @@ function onDrop(event: DragEvent): void {
   opacity: 0.4;
 }
 
+.annotation-item.hidden .desc-text {
+  color: var(--ink-muted);
+  opacity: 0.55;
+}
+
 .desc-text {
   min-width: 0;
   padding: 2px 0;
@@ -408,7 +446,14 @@ function onDrop(event: DragEvent): void {
   white-space: nowrap;
 }
 
-.remove-btn {
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
   opacity: 0.45;
   width: 28px;
   height: 28px;
@@ -418,13 +463,14 @@ function onDrop(event: DragEvent): void {
   touch-action: manipulation;
 }
 
-.annotation-item:hover .remove-btn,
-.annotation-item.selected .remove-btn,
-.remove-btn:focus-visible {
+.annotation-item:hover .icon-btn,
+.annotation-item.selected .icon-btn,
+.annotation-item.hidden .visibility-btn,
+.icon-btn:focus-visible {
   opacity: 1;
 }
 
-.remove-btn:hover {
+.icon-btn:hover {
   color: var(--ink);
   background: rgba(120, 120, 128, 0.16);
 }

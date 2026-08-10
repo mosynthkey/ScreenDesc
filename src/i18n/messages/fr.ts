@@ -195,6 +195,8 @@ export const fr: Record<MessageKey, string> = {
   'annotationList.applyNumbers': 'Appliquer',
   'annotationList.clearNumbers': 'Effacer',
   'annotationList.emptyDescription': 'Aucune étiquette d’annotation',
+  'annotationList.hideTitle': 'Masquer l’annotation',
+  'annotationList.showTitle': 'Afficher l’annotation',
   'annotationList.removeTitle': 'Supprimer',
   'annotationList.multiSelectHint': 'Maj + clic pour sélectionner plusieurs éléments',
   'annotationList.resizePane':
