@@ -31,6 +31,7 @@ import {
   normalizeCalloutSide,
   estimateAnnotationLabelSize,
   resolveAnnotationDescription,
+  isAnnotationVisibleForVariation,
   resolveAutoSides,
 } from '../utils/calloutLayout'
 import {
@@ -310,6 +311,15 @@ export const useAnnotationStore = defineStore('annotation', () => {
     return result
   }
 
+  function sanitizeVariationVisible(raw: unknown): Record<string, boolean> {
+    if (!raw || typeof raw !== 'object') return {}
+    const result: Record<string, boolean> = {}
+    for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof value === 'boolean') result[key] = value
+    }
+    return result
+  }
+
   function sanitizeAnnotation(raw: Annotation): Annotation {
     return {
       id: raw.id,
@@ -334,17 +344,24 @@ export const useAnnotationStore = defineStore('annotation', () => {
       anchorOutsideGap: normalizeAnchorOutsideGap(
         (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
       ),
+      visible: (raw as Annotation & { visible?: unknown }).visible !== false,
+      variationVisible: sanitizeVariationVisible(
+        (raw as Annotation & { variationVisible?: unknown }).variationVisible,
+      ),
     }
   }
 
   function refreshDocumentAndLayouts(): void {
-    if (state.annotations.length === 0) {
+    const visibleAnnotations = state.annotations.filter((annotation) =>
+      isAnnotationVisibleForVariation(annotation, state.activeVariation),
+    )
+    if (visibleAnnotations.length === 0) {
       state.document = createDefaultDocumentLayout(state.imageWidth, state.imageHeight, 0)
       state.calloutLayouts = []
       return
     }
     const { document, layouts } = layoutCalloutsForImage(
-      state.annotations,
+      visibleAnnotations,
       state.sections,
       state.imageWidth,
       state.imageHeight,
@@ -457,6 +474,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
           : null,
         anchorOffset: { ...annotation.anchorOffset },
         anchorOutsideGap: annotation.anchorOutsideGap,
+        visible: annotation.visible !== false,
+        variationVisible: { ...(annotation.variationVisible ?? {}) },
       })),
     () => {
       refreshDocumentAndLayouts()
@@ -1185,6 +1204,10 @@ export const useAnnotationStore = defineStore('annotation', () => {
       for (const annotation of state.annotations) {
         const sourceText = resolveAnnotationDescription(annotation, sourceVariation)
         annotation.variationText = { ...annotation.variationText, [trimmed]: sourceText }
+        annotation.variationVisible = {
+          ...(annotation.variationVisible ?? {}),
+          [trimmed]: isAnnotationVisibleForVariation(annotation, sourceVariation),
+        }
       }
     }
     state.activeVariation = trimmed
@@ -1216,9 +1239,17 @@ export const useAnnotationStore = defineStore('annotation', () => {
       index === currentIndex ? nextName : name,
     )
     for (const annotation of state.annotations) {
-      if (!Object.prototype.hasOwnProperty.call(annotation.variationText, currentName)) continue
-      const { [currentName]: text, ...remaining } = annotation.variationText
-      annotation.variationText = { ...remaining, [nextName]: text ?? '' }
+      if (Object.prototype.hasOwnProperty.call(annotation.variationText, currentName)) {
+        const { [currentName]: text, ...remaining } = annotation.variationText
+        annotation.variationText = { ...remaining, [nextName]: text ?? '' }
+      }
+      if (
+        annotation.variationVisible &&
+        Object.prototype.hasOwnProperty.call(annotation.variationVisible, currentName)
+      ) {
+        const { [currentName]: visibility, ...remainingVisible } = annotation.variationVisible
+        annotation.variationVisible = { ...remainingVisible, [nextName]: visibility !== false }
+      }
     }
     if (state.activeVariation === currentName) state.activeVariation = nextName
   }
@@ -1227,9 +1258,17 @@ export const useAnnotationStore = defineStore('annotation', () => {
     if (!state.variations.includes(name)) return
     state.variations = state.variations.filter((variation) => variation !== name)
     for (const annotation of state.annotations) {
-      if (!Object.prototype.hasOwnProperty.call(annotation.variationText, name)) continue
-      const { [name]: _removed, ...remaining } = annotation.variationText
-      annotation.variationText = remaining
+      if (Object.prototype.hasOwnProperty.call(annotation.variationText, name)) {
+        const { [name]: _removed, ...remaining } = annotation.variationText
+        annotation.variationText = remaining
+      }
+      if (
+        annotation.variationVisible &&
+        Object.prototype.hasOwnProperty.call(annotation.variationVisible, name)
+      ) {
+        const { [name]: _removedVisible, ...remainingVisible } = annotation.variationVisible
+        annotation.variationVisible = remainingVisible
+      }
     }
     if (state.activeVariation === name) state.activeVariation = null
   }
@@ -1318,6 +1357,22 @@ export const useAnnotationStore = defineStore('annotation', () => {
     reindexOrders()
   }
 
+  function toggleAnnotationVisibility(annotationId: string): void {
+    const annotation = state.annotations.find((item) => item.id === annotationId)
+    if (!annotation) return
+    pushEditUndo()
+    const variation = state.activeVariation
+    if (variation === null) {
+      annotation.visible = annotation.visible === false
+      return
+    }
+    const nextVisible = !isAnnotationVisibleForVariation(annotation, variation)
+    annotation.variationVisible = {
+      ...(annotation.variationVisible ?? {}),
+      [variation]: nextVisible,
+    }
+  }
+
   function reorderAnnotations(orderedIds: string[]): void {
     pushEditUndo()
     orderedIds.forEach((annotationId, annotationIndex) => {
@@ -1381,7 +1436,9 @@ export const useAnnotationStore = defineStore('annotation', () => {
     return exportScene({
       image: imageElement.value,
       sections: state.sections,
-      annotations: state.annotations,
+      annotations: state.annotations.filter((annotation) =>
+        isAnnotationVisibleForVariation(annotation, state.activeVariation),
+      ),
       calloutLayouts: state.calloutLayouts,
       document: state.document,
       options,
@@ -1620,6 +1677,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     removeVariation,
     nudgeCalloutPositions,
     removeAnnotations,
+    toggleAnnotationVisibility,
     reorderAnnotations,
     assignNumberPrefixes,
     clearNumberPrefixes,

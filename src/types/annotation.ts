@@ -66,6 +66,10 @@ export interface Annotation {
   anchorOffset: Point
   /** Distance in px from the section border (the anchor always sits outside it). */
   anchorOutsideGap: number
+  /** When false, hidden for the base variation. Missing = visible. */
+  visible?: boolean
+  /** Per named variation visibility. Missing key = visible. */
+  variationVisible?: Record<string, boolean>
 }
 
 export interface CalloutLayoutItem {

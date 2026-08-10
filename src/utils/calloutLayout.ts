@@ -398,6 +398,15 @@ export function resolveAnnotationDescription(
   return annotation.variationText[activeVariation] ?? ''
 }
 
+/** Missing entries default to visible, matching section-visibility defaults. */
+export function isAnnotationVisibleForVariation(
+  annotation: Annotation,
+  activeVariation: string | null,
+): boolean {
+  if (activeVariation === null) return annotation.visible !== false
+  return annotation.variationVisible?.[activeVariation] !== false
+}
+
 function getSectionForAnnotation(
   annotation: Annotation,
   sections: Section[],

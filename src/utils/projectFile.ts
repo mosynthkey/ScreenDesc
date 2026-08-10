@@ -153,6 +153,15 @@ function sanitizeVariationText(raw: unknown): Record<string, string> {
   return result
 }
 
+function sanitizeVariationVisible(raw: unknown): Record<string, boolean> {
+  if (!raw || typeof raw !== 'object') return {}
+  const result: Record<string, boolean> = {}
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'boolean') result[key] = value
+  }
+  return result
+}
+
 function sanitizeAnnotation(
   raw: Annotation,
   imageWidth: number,
@@ -180,6 +189,10 @@ function sanitizeAnnotation(
     ),
     anchorOutsideGap: normalizeAnchorOutsideGap(
       (raw as Annotation & { anchorOutsideGap?: unknown }).anchorOutsideGap,
+    ),
+    visible: (raw as Annotation & { visible?: unknown }).visible !== false,
+    variationVisible: sanitizeVariationVisible(
+      (raw as Annotation & { variationVisible?: unknown }).variationVisible,
     ),
   }
 }
