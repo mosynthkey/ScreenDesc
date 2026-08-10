@@ -4,7 +4,24 @@ import type { ProjectFolder, SavedProjectMeta } from '../utils/projectStorage'
 import { loadNamedProjectImageBlob, loadNamedProjectThumbnail } from '../utils/projectStorage'
 import { isDesktopApp } from '../runtime'
 import { locale, useI18n } from '../i18n'
-import { FolderIcon, FolderPlusIcon, InfoIcon, SearchIcon, XIcon } from '@lucide/vue'
+import { persistentStorage } from '../utils/persistentStorage'
+import {
+  FolderIcon,
+  FolderPlusIcon,
+  LayoutGridIcon,
+  ListIcon,
+  MoreHorizontalIcon,
+  SearchIcon,
+  XIcon,
+} from '@lucide/vue'
+
+type FilesViewMode = 'grid' | 'table'
+
+const FILES_VIEW_STORAGE_KEY = 'screendesc.filesView'
+
+function readFilesViewMode(): FilesViewMode {
+  return persistentStorage.getItem(FILES_VIEW_STORAGE_KEY) === 'table' ? 'table' : 'grid'
+}
 
 const props = defineProps<{
   projects: SavedProjectMeta[]
@@ -40,7 +57,6 @@ const contextMenu = ref<
   | { kind: 'folder'; id: string; x: number; y: number }
   | null
 >(null)
-const DEV_NOTICE_ISSUES_URL = 'https://github.com/mosynthkey/ScreenDesc/issues'
 const PROJECT_DRAG_TYPE = 'application/x-screendesc-project'
 const FOLDER_DRAG_TYPE = 'application/x-screendesc-folder'
 const FOLDER_COLORS = ['#7aa7ff', '#8bd3c7', '#a8d672', '#ffd166', '#f5a3b7', '#c3a6ff', '#ffab76', '#9ab6c9']
@@ -53,6 +69,11 @@ const folderEditor = ref<{
 } | null>(null)
 const folderPendingDelete = ref<string | null>(null)
 const searchQuery = ref('')
+const filesView = ref<FilesViewMode>(readFilesViewMode())
+
+watch(filesView, (mode) => {
+  persistentStorage.setItem(FILES_VIEW_STORAGE_KEY, mode)
+})
 
 function normalizeSearchText(value: string): string {
   return value.normalize('NFKC').toLocaleLowerCase(locale.value)
@@ -111,6 +132,23 @@ function onFolderContextMenu(folderId: string, event: MouseEvent): void {
   contextMenu.value = { kind: 'folder', id: folderId, x: event.clientX, y: event.clientY }
 }
 
+function openMenuAtButton(
+  kind: 'project' | 'folder',
+  id: string,
+  event: MouseEvent,
+): void {
+  event.preventDefault()
+  event.stopPropagation()
+  const button = event.currentTarget as HTMLElement
+  const rect = button.getBoundingClientRect()
+  contextMenu.value = {
+    kind,
+    id,
+    x: Math.min(rect.left, window.innerWidth - 200),
+    y: Math.min(rect.bottom + 4, window.innerHeight - 160),
+  }
+}
+
 function onRevealFromMenu(): void {
   const projectId = contextMenu.value?.kind === 'project' ? contextMenu.value.id : null
   closeContextMenu()
@@ -121,6 +159,12 @@ function onExportFromMenu(): void {
   const projectId = contextMenu.value?.kind === 'project' ? contextMenu.value.id : null
   closeContextMenu()
   if (projectId) emit('exportProject', projectId)
+}
+
+function onRemoveProjectFromMenu(): void {
+  const projectId = contextMenu.value?.kind === 'project' ? contextMenu.value.id : null
+  closeContextMenu()
+  if (projectId) emit('remove', projectId)
 }
 
 function createFolder(): void {
@@ -229,6 +273,11 @@ function formatDate(ts: number): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function folderLocationLabel(folderId: string | null | undefined): string {
+  if (!folderId) return t('folder.root')
+  return props.folders.find((folder) => folder.id === folderId)?.name ?? t('folder.root')
 }
 
 function acceptFile(file: File | undefined): void {
@@ -396,29 +445,57 @@ defineExpose({ openFilePicker })
           <XIcon :size="15" :stroke-width="2" aria-hidden="true" />
         </button>
       </div>
-      <nav v-if="!isSearching" class="folder-breadcrumbs" :aria-label="t('folder.breadcrumbAria')">
-        <button
-          type="button"
-          :class="{ active: currentFolderId === null }"
-          @click="emit('navigateFolder', null)"
-          @dragover.prevent
-          @drop="dropIntoFolder(null, $event)"
-        >
-          {{ t('folder.root') }}
-        </button>
-        <template v-for="folder in breadcrumbs" :key="folder.id">
-          <span aria-hidden="true">/</span>
+      <div class="files-path-row">
+        <nav v-if="!isSearching" class="folder-breadcrumbs" :aria-label="t('folder.breadcrumbAria')">
           <button
             type="button"
-            :class="{ active: folder.id === currentFolderId }"
-            @click="emit('navigateFolder', folder.id)"
+            :class="{ active: currentFolderId === null }"
+            @click="emit('navigateFolder', null)"
             @dragover.prevent
-            @drop="dropIntoFolder(folder.id, $event)"
+            @drop="dropIntoFolder(null, $event)"
           >
-            {{ folder.name }}
+            {{ t('folder.root') }}
           </button>
-        </template>
-      </nav>
+          <template v-for="folder in breadcrumbs" :key="folder.id">
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              :class="{ active: folder.id === currentFolderId }"
+              @click="emit('navigateFolder', folder.id)"
+              @dragover.prevent
+              @drop="dropIntoFolder(folder.id, $event)"
+            >
+              {{ folder.name }}
+            </button>
+          </template>
+        </nav>
+        <div v-else class="files-path-spacer" aria-hidden="true" />
+        <div class="files-view-toggle" role="group" :aria-label="t('home.viewModeAria')">
+          <button
+            class="files-view-btn"
+            type="button"
+            :class="{ active: filesView === 'grid' }"
+            :aria-pressed="filesView === 'grid'"
+            :title="t('home.viewGrid')"
+            :aria-label="t('home.viewGrid')"
+            @click="filesView = 'grid'"
+          >
+            <LayoutGridIcon :size="16" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+          <button
+            class="files-view-btn"
+            type="button"
+            :class="{ active: filesView === 'table' }"
+            :aria-pressed="filesView === 'table'"
+            :title="t('home.viewTable')"
+            :aria-label="t('home.viewTable')"
+            @click="filesView = 'table'"
+          >
+            <ListIcon :size="16" :stroke-width="1.8" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div class="files-scroll">
       <p
         v-if="currentFolders.length === 0 && currentProjects.length === 0"
         class="hint files-empty"
@@ -431,7 +508,7 @@ defineExpose({ openFilePicker })
             ? t('home.filesEmpty')
             : t('folder.empty') }}
       </p>
-      <ul v-else class="files-grid">
+      <ul v-else-if="filesView === 'grid'" class="files-grid">
         <li
           v-for="folder in currentFolders"
           :key="folder.id"
@@ -461,6 +538,16 @@ defineExpose({ openFilePicker })
               <strong>{{ folder.name }}</strong>
               <span>{{ formatDate(folder.updatedAt) }}</span>
             </div>
+          </button>
+          <button
+            class="files-more"
+            type="button"
+            :disabled="isBusy"
+            :aria-label="t('home.moreAria')"
+            :title="t('home.moreAria')"
+            @click="openMenuAtButton('folder', folder.id, $event)"
+          >
+            <MoreHorizontalIcon :size="16" :stroke-width="2" aria-hidden="true" />
           </button>
         </li>
         <li
@@ -497,17 +584,124 @@ defineExpose({ openFilePicker })
             </div>
           </button>
           <button
-            class="files-remove"
+            class="files-more"
             type="button"
             :disabled="isBusy"
-            :aria-label="t('home.removeAria')"
-            :title="t('project.remove')"
-            @click.stop="emit('remove', project.id)"
+            :aria-label="t('home.moreAria')"
+            :title="t('home.moreAria')"
+            @click="openMenuAtButton('project', project.id, $event)"
           >
-            ×
+            <MoreHorizontalIcon :size="16" :stroke-width="2" aria-hidden="true" />
           </button>
         </li>
       </ul>
+      <div v-else class="files-table-wrap">
+        <table class="files-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ t('home.table.name') }}</th>
+              <th scope="col">{{ t('home.table.updated') }}</th>
+              <th v-if="isSearching" scope="col">{{ t('home.table.location') }}</th>
+              <th scope="col" class="files-table-actions-col">
+                <span class="sr-only">{{ t('home.table.actions') }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="folder in currentFolders"
+              :key="folder.id"
+              class="files-table-row folder-row"
+              draggable="true"
+              @dragstart="startFolderDrag(folder.id, $event)"
+              @dragover.prevent
+              @drop="dropIntoFolder(folder.id, $event)"
+              @contextmenu="onFolderContextMenu(folder.id, $event)"
+              @click="!isBusy && emit('navigateFolder', folder.id)"
+            >
+              <td>
+                <div class="files-table-name">
+                  <span class="files-table-thumb folder-table-thumb">
+                    <FolderIcon
+                      :style="{ color: folder.color }"
+                      :size="22"
+                      :stroke-width="1.6"
+                      aria-hidden="true"
+                    />
+                  </span>
+                  <strong>{{ folder.name }}</strong>
+                </div>
+              </td>
+              <td class="files-table-date">{{ formatDate(folder.updatedAt) }}</td>
+              <td v-if="isSearching" class="files-table-location">
+                {{ folderLocationLabel(folder.parentId) }}
+              </td>
+              <td class="files-table-actions-col" @click.stop>
+                <button
+                  class="files-table-more"
+                  type="button"
+                  :disabled="isBusy"
+                  :aria-label="t('home.moreAria')"
+                  :title="t('home.moreAria')"
+                  @click="openMenuAtButton('folder', folder.id, $event)"
+                >
+                  <MoreHorizontalIcon :size="16" :stroke-width="2" aria-hidden="true" />
+                </button>
+              </td>
+            </tr>
+            <tr
+              v-for="project in currentProjects"
+              :key="project.id"
+              class="files-table-row"
+              :class="{ 'is-editing': project.id === activeProjectId }"
+              :data-project-id="project.id"
+              draggable="true"
+              @dragstart="startProjectDrag(project.id, $event)"
+              @contextmenu="onProjectContextMenu(project.id, $event)"
+              @click="!isBusy && emit('open', project.id)"
+            >
+              <td>
+                <div class="files-table-name">
+                  <span class="files-table-thumb">
+                    <img
+                      v-if="thumbUrls[project.id]"
+                      :src="thumbUrls[project.id]"
+                      alt=""
+                    />
+                    <span v-else class="files-thumb-fallback" aria-hidden="true" />
+                  </span>
+                  <div class="files-table-name-text">
+                    <strong>{{ project.name }}</strong>
+                    <span
+                      v-if="project.id === activeProjectId"
+                      class="files-table-editing-badge"
+                    >
+                      {{ t('home.editingBadge') }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="files-table-date">{{ formatDate(project.updatedAt) }}</td>
+              <td v-if="isSearching" class="files-table-location">
+                {{ folderLocationLabel(project.folderId) }}
+              </td>
+              <td class="files-table-actions-col" @click.stop>
+                <button
+                  class="files-table-more"
+                  type="button"
+                  :disabled="isBusy"
+                  :aria-label="t('home.moreAria')"
+                  :title="t('home.moreAria')"
+                  @click="openMenuAtButton('project', project.id, $event)"
+                >
+                  <MoreHorizontalIcon :size="16" :stroke-width="2" aria-hidden="true" />
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      </div>
     </section>
 
     <div
@@ -524,9 +718,10 @@ defineExpose({ openFilePicker })
           :disabled="isBusy"
           @click="onExportFromMenu"
         >
-          {{ t('home.exportProject') }}
+          {{ tr('home.exportProject') }}
         </button>
         <button
+          v-if="isDesktopApp"
           class="files-context-item"
           type="button"
           role="menuitem"
@@ -535,6 +730,15 @@ defineExpose({ openFilePicker })
           @click="onRevealFromMenu"
         >
           {{ t('home.openLocation') }}
+        </button>
+        <button
+          class="files-context-item danger"
+          type="button"
+          role="menuitem"
+          :disabled="isBusy"
+          @click="onRemoveProjectFromMenu"
+        >
+          {{ t('project.remove') }}
         </button>
       </template>
       <template v-else>
@@ -562,16 +766,8 @@ defineExpose({ openFilePicker })
       v-if="!isDesktopApp"
       class="dev-notice"
       role="note"
-      :aria-label="t('home.devNotice.aria')"
     >
-      <InfoIcon class="dev-notice-icon" :size="20" :stroke-width="1.8" aria-hidden="true" />
       <div class="dev-notice-lines">
-        <p class="dev-notice-text">
-          {{ t('home.devNotice.body') }}
-          <a :href="DEV_NOTICE_ISSUES_URL" target="_blank" rel="noopener noreferrer">
-            {{ t('home.devNotice.issueLink') }}
-          </a>
-        </p>
         <p class="dev-notice-text">
           {{ t('storage.notice.before') }}<br
           /><button
@@ -646,7 +842,7 @@ defineExpose({ openFilePicker })
 .home {
   position: relative;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   padding: 28px 40px 28px;
   display: flex;
   flex-direction: column;
@@ -675,6 +871,16 @@ defineExpose({ openFilePicker })
   width: 100%;
   margin: 0 auto;
   flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.files-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 8px;
 }
 
 .files-header {
@@ -689,6 +895,30 @@ defineExpose({ openFilePicker })
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.files-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.files-view-btn:hover {
+  color: var(--ink);
+  background: rgba(120, 120, 128, 0.1);
+}
+
+.files-view-btn.active {
+  color: var(--accent-strong);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
 }
 
 .files-header-actions .btn {
@@ -804,21 +1034,11 @@ defineExpose({ openFilePicker })
   box-shadow: var(--shadow-lg);
 }
 
-.dev-notice-icon {
-  flex: 0 0 auto;
-  color: var(--accent-strong);
-}
-
 .dev-notice-lines {
   display: flex;
   flex-direction: column;
   gap: 6px;
   max-width: 920px;
-}
-
-.dev-notice-lines .dev-notice-text + .dev-notice-text {
-  padding-top: 6px;
-  border-top: 1px solid var(--line);
 }
 
 .dev-notice-text {
@@ -827,17 +1047,6 @@ defineExpose({ openFilePicker })
   line-height: 1.45;
   color: var(--ink);
   text-align: center;
-}
-
-.dev-notice-text a {
-  color: var(--accent-strong);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  white-space: nowrap;
-}
-
-.dev-notice-text a:hover {
-  color: var(--accent);
 }
 
 .files-empty {
@@ -849,14 +1058,38 @@ defineExpose({ openFilePicker })
   background: var(--bg-panel);
 }
 
+.files-path-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  margin: -4px 0 14px;
+}
+
+.files-path-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .folder-breadcrumbs {
   display: flex;
   align-items: center;
   gap: 5px;
-  min-height: 32px;
-  margin: -4px 0 14px;
+  min-width: 0;
+  flex: 1 1 auto;
   overflow-x: auto;
   color: var(--ink-muted);
+}
+
+.files-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-panel);
 }
 
 .folder-breadcrumbs button {
@@ -882,6 +1115,174 @@ defineExpose({ openFilePicker })
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 14px;
+}
+
+.files-table-wrap {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.files-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.files-table th,
+.files-table td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+
+.files-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+  background: var(--bg-panel);
+}
+
+.files-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.files-table-row {
+  cursor: pointer;
+}
+
+.files-table-row:hover {
+  background: rgba(120, 120, 128, 0.06);
+}
+
+.files-table-row.is-editing {
+  background: var(--accent-soft);
+}
+
+.files-table-row.is-editing:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-solid));
+}
+
+.files-table-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.files-table-name-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.files-table-name strong {
+  display: block;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.files-table-editing-badge {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.files-table-thumb {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #e8e8ed;
+}
+
+.files-table-thumb img,
+.files-table-thumb .files-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.folder-table-thumb {
+  display: grid;
+  place-items: center;
+  background: var(--bg-panel);
+}
+
+.files-table-date,
+.files-table-location {
+  width: 180px;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.files-table-actions-col {
+  width: 48px;
+  text-align: right;
+}
+
+.files-table-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-muted);
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.files-table-row:hover .files-table-more,
+.files-table-more:focus-visible {
+  opacity: 1;
+}
+
+.files-table-more:hover:not(:disabled) {
+  color: var(--ink);
+  background: rgba(120, 120, 128, 0.14);
+}
+
+.files-table-more:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .files-item {
@@ -997,32 +1398,34 @@ defineExpose({ openFilePicker })
   color: var(--ink-muted);
 }
 
-.files-remove {
+.files-more {
   position: absolute;
   top: 8px;
   right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   border: none;
   border-radius: 8px;
   background: rgba(28, 28, 30, 0.55);
   color: #fff;
-  font-size: 1rem;
-  line-height: 1;
   opacity: 0;
   transition: opacity var(--spring), background var(--press);
+  cursor: pointer;
 }
 
-.files-item:hover .files-remove,
-.files-remove:focus-visible {
+.files-item:hover .files-more,
+.files-more:focus-visible {
   opacity: 1;
 }
 
-.files-remove:hover:not(:disabled) {
-  background: var(--danger);
+.files-more:hover:not(:disabled) {
+  background: rgba(28, 28, 30, 0.78);
 }
 
-.files-remove:disabled {
+.files-more:disabled {
   opacity: 0;
   cursor: default;
 }
