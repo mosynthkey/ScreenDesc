@@ -76,6 +76,7 @@ const {
   clearSelection,
   selectSection,
   selectAnnotation,
+  selectAnnotationRange,
   selectAllAnnotations,
   updateSectionRect,
   createAnnotationForSection,
@@ -125,6 +126,7 @@ const savedProjects = ref<SavedProjectMeta[]>([])
 const projectFolders = ref<ProjectFolder[]>([])
 const currentFolderId = ref<string | null>(null)
 const projectStorageBusy = ref(false)
+const isDuplicatingProject = ref(false)
 const commonSettingsOpen = ref(false)
 const commonSettingsPresets = ref<CommonSettingsPresetMeta[]>([])
 const commonSettingsBusy = ref(false)
@@ -439,6 +441,14 @@ function onAddSection(rect: Rect): void {
   addSection(rect)
 }
 
+function onSelectAnnotations(ids: string[], additive: boolean): void {
+  if (!additive) {
+    selectAnnotationRange(ids)
+    return
+  }
+  selectAnnotationRange(Array.from(new Set([...state.selectedAnnotationIds, ...ids])))
+}
+
 async function onCropImage(rect: Rect): Promise<void> {
   const hasWork = state.annotations.length > 0 || state.sections.length > 0
   if (hasWork) {
@@ -709,6 +719,7 @@ async function onDuplicateProject(): Promise<void> {
   if (!hasImage.value) return
   clearProjectLoadError()
   projectStorageBusy.value = true
+  isDuplicatingProject.value = true
   try {
     await flushPersistCurrentProject()
     const projects = await fetchSavedProjects()
@@ -728,6 +739,7 @@ async function onDuplicateProject(): Promise<void> {
     showProjectLoadError(err instanceof Error ? err.message : t('error.projectSaveFailed'))
   } finally {
     projectStorageBusy.value = false
+    isDuplicatingProject.value = false
   }
 }
 
@@ -1139,6 +1151,7 @@ function onKeydown(event: KeyboardEvent): void {
             @clear-selection="clearSelection"
             @select-section="selectSection"
             @select-annotation="selectAnnotation"
+            @select-annotations="onSelectAnnotations"
             @annotate-section="onAnnotateSection"
             @add-annotation-at="onAddAnnotationAt"
             @update-section-rect="updateSectionRect"
@@ -1200,6 +1213,10 @@ function onKeydown(event: KeyboardEvent): void {
         @close="closePasteImageDialog"
         @confirm="confirmPastedImage"
       />
+      <div v-if="isDuplicatingProject" class="busy-overlay" role="status" aria-live="polite">
+        <div class="busy-overlay-spinner" aria-hidden="true" />
+        <span class="busy-overlay-label">{{ t('status.duplicatingProject') }}</span>
+      </div>
     </div>
   </div>
 </template>

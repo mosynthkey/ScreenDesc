@@ -57,6 +57,7 @@ export const en = {
   'status.proposing': 'Proposing…',
   'status.recognizingText': 'Recognizing text…',
   'status.detectingUiElements': 'Recognizing UI elements…',
+  'status.duplicatingProject': 'Duplicating project…',
 
   'variation.default': 'Default',
   'variation.buttonLabel': 'Variation: {name}',

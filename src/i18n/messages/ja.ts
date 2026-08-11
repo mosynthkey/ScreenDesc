@@ -59,6 +59,7 @@ export const ja: Record<MessageKey, string> = {
   'status.proposing': '提案中…',
   'status.recognizingText': '文字を認識しています…',
   'status.detectingUiElements': 'UI要素を認識しています…',
+  'status.duplicatingProject': 'プロジェクトを複製しています…',
 
   'variation.default': 'デフォルト',
   'variation.buttonLabel': 'バリエーション: {name}',

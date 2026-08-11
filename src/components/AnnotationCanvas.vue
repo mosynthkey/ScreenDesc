@@ -12,7 +12,7 @@ import type {
   SectionVisibilityCategory,
   ToolMode,
 } from '../types/annotation'
-import { containmentRatio, pointInRect } from '../utils/geometry'
+import { containmentRatio, intersectionRect, normalizeRect, pointInRect } from '../utils/geometry'
 import { isSectionVisible, categoryForSection, SECTION_VISIBILITY_LABEL_KEYS } from '../utils/sectionVisibility'
 import type { OcrLineHit } from '../utils/ocr'
 import { fontFamilyCss } from '../utils/googleFonts'
@@ -95,6 +95,7 @@ const emit = defineEmits<{
   clearSelection: []
   selectSection: [id: string, additive: boolean]
   selectAnnotation: [id: string, additive: boolean]
+  selectAnnotations: [ids: string[], additive: boolean]
   annotateSection: [sectionId: string]
   addAnnotationAt: [point: Point]
   updateSectionRect: [sectionId: string, rect: Rect]
@@ -148,6 +149,13 @@ type DragState =
       kind: 'crop-resize'
       handle: CropHandle
       startRect: Rect
+    }
+  | {
+      kind: 'marquee'
+      /** Document-space (margin-inclusive) points, matching callout layout coords. */
+      origin: Point
+      current: Point
+      additive: boolean
     }
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
@@ -595,6 +603,7 @@ function onPointerDown(event: PointerEvent): void {
   }
 
   if (props.toolMode === 'annotate') {
+    if (!target.closest('svg.scene')) return
     const section = sectionId
       ? props.sections.find((item) => item.id === sectionId)
       : findSectionAt(imagePoint)
@@ -611,7 +620,13 @@ function onPointerDown(event: PointerEvent): void {
     emit('selectSection', sectionId, event.shiftKey)
     return
   }
-  emit('clearSelection')
+
+  drag.value = {
+    kind: 'marquee',
+    origin: docPoint,
+    current: docPoint,
+    additive: event.shiftKey,
+  }
 }
 
 function onPointerMove(event: PointerEvent): void {
@@ -632,6 +647,19 @@ function onPointerMove(event: PointerEvent): void {
     if (Math.hypot(dx, dy) > 3) {
       pointerMoved.value = true
     }
+  }
+
+  if (drag.value.kind === 'marquee') {
+    const dx = docPoint.x - drag.value.origin.x
+    const dy = docPoint.y - drag.value.origin.y
+    if (Math.hypot(dx, dy) > 3) {
+      pointerMoved.value = true
+    }
+    drag.value = {
+      ...drag.value,
+      current: docPoint,
+    }
+    return
   }
 
   if (drag.value.kind === 'anchor') {
@@ -775,6 +803,41 @@ function onPointerUp(): void {
     }
   }
 
+  if (drag.value?.kind === 'marquee') {
+    const additive = drag.value.additive
+    const dragged =
+      Math.hypot(
+        drag.value.current.x - drag.value.origin.x,
+        drag.value.current.y - drag.value.origin.y,
+      ) > 3
+    if (!dragged) {
+      if (!additive) emit('clearSelection')
+    } else {
+      const rect = normalizeRect({
+        x: drag.value.origin.x,
+        y: drag.value.origin.y,
+        width: drag.value.current.x - drag.value.origin.x,
+        height: drag.value.current.y - drag.value.origin.y,
+      })
+      const hitIds = props.calloutLayouts
+        .filter(
+          (layout) =>
+            intersectionRect(rect, {
+              x: layout.labelPosition.x,
+              y: layout.labelPosition.y,
+              width: layout.labelWidth,
+              height: layout.labelHeight,
+            }) || pointInRect(layout.anchorPoint, rect),
+        )
+        .map((layout) => layout.annotationId)
+      if (hitIds.length > 0) {
+        emit('selectAnnotations', hitIds, additive)
+      } else if (!additive) {
+        emit('clearSelection')
+      }
+    }
+  }
+
   stopEdgeAutoScroll()
   lastPointerClient = null
   pointerMoved.value = false
@@ -852,6 +915,16 @@ const draftSection = computed(() => {
     width: Math.abs(drag.value.current.x - drag.value.origin.x),
     height: Math.abs(drag.value.current.y - drag.value.origin.y),
   }
+})
+
+const marqueeRect = computed(() => {
+  if (drag.value?.kind !== 'marquee') return null
+  return normalizeRect({
+    x: drag.value.origin.x,
+    y: drag.value.origin.y,
+    width: drag.value.current.x - drag.value.origin.x,
+    height: drag.value.current.y - drag.value.origin.y,
+  })
 })
 
 function layoutFor(annotationId: string): CalloutLayoutItem | undefined {
@@ -952,7 +1025,14 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 </script>
 
 <template>
-  <div ref="viewportRef" class="canvas-area">
+  <div
+    ref="viewportRef"
+    class="canvas-area"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="onPointerUp"
+  >
     <div v-if="emptyHint && !isDetecting" class="canvas-banner">
       {{ t('canvas.emptyHint') }}
     </div>
@@ -969,10 +1049,6 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
       :width="documentWidth"
       :height="documentHeight"
       preserveAspectRatio="xMidYMid meet"
-      @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
       @dblclick="onDblClick"
       @contextmenu="onSceneContextMenu"
     >
@@ -1371,6 +1447,14 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
           :style="{ cursor: cropHandleCursor(handle) }"
         />
       </g>
+      <rect
+        v-if="marqueeRect"
+        class="marquee-rect"
+        :x="marqueeRect.x"
+        :y="marqueeRect.y"
+        :width="marqueeRect.width"
+        :height="marqueeRect.height"
+      />
     </svg>
 
       <div
@@ -1598,6 +1682,14 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   stroke: #007aff;
   stroke-width: 1.75;
   stroke-dasharray: 4 2;
+}
+
+.marquee-rect {
+  fill: rgba(0, 122, 255, 0.08);
+  stroke: #007aff;
+  stroke-width: 1;
+  stroke-dasharray: 4 2;
+  pointer-events: none;
 }
 
 .crop-dim {

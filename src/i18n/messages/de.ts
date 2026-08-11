@@ -59,6 +59,7 @@ export const de: Record<MessageKey, string> = {
   'status.proposing': 'Vorschläge werden erstellt…',
   'status.recognizingText': 'Text wird erkannt…',
   'status.detectingUiElements': 'UI-Elemente werden erkannt…',
+  'status.duplicatingProject': 'Projekt wird dupliziert…',
 
   'variation.default': 'Standard',
   'variation.buttonLabel': 'Variante: {name}',

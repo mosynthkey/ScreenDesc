@@ -819,6 +819,11 @@ export const useAnnotationStore = defineStore('annotation', () => {
     }
   }
 
+  function selectAnnotationRange(annotationIds: string[]): void {
+    state.selectedSectionIds = []
+    state.selectedAnnotationIds = annotationIds
+  }
+
   function selectAllAnnotations(): void {
     state.selectedSectionIds = []
     state.selectedAnnotationIds = state.annotations.map((annotation) => annotation.id)
@@ -1653,6 +1658,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     clearSelection,
     selectSection,
     selectAnnotation,
+    selectAnnotationRange,
     selectAllAnnotations,
     addSection,
     updateSectionRect,

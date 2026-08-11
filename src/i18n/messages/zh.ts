@@ -59,6 +59,7 @@ export const zh: Record<MessageKey, string> = {
   'status.proposing': '正在生成建议…',
   'status.recognizingText': '正在识别文字…',
   'status.detectingUiElements': '正在识别界面元素…',
+  'status.duplicatingProject': '正在复制项目…',
 
   'variation.default': '默认',
   'variation.buttonLabel': '变体：{name}',
