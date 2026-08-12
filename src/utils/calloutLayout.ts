@@ -263,7 +263,7 @@ function leaderStartForAnnotation(
     highlightMargin,
   )
   if (!isArrowAnchorStyle(anchorStyle)) return dotLeaderAttachPoint(anchor)
-  const targetCenter = referencePointForAnnotation(annotation, sections)
+  const targetCenter = arrowTargetForAnnotation(annotation, sections, side)
   return leaderAttachPoint(anchorStyle, buildAnchorArrowGeometry(anchor, targetCenter, dotRadius))
 }
 
@@ -476,11 +476,34 @@ function targetCenterForAnnotation(
   annotation: Annotation,
   sections: Section[],
   document: DocumentLayout,
+  side: ResolvedCalloutSide,
 ): Point {
-  const local = referencePointForAnnotation(annotation, sections)
+  const local = arrowTargetForAnnotation(annotation, sections, side)
   return {
     x: document.marginLeft + local.x,
     y: document.marginTop + local.y,
+  }
+}
+
+function arrowTargetForAnnotation(
+  annotation: Annotation,
+  sections: Section[],
+  side: ResolvedCalloutSide,
+): Point {
+  const section = getSectionForAnnotation(annotation, sections)
+  if (section) return rectCenter(section.rect)
+
+  const direction =
+    side === 'left'
+      ? { x: 1, y: 0 }
+      : side === 'right'
+        ? { x: -1, y: 0 }
+        : side === 'top'
+          ? { x: 0, y: 1 }
+          : { x: 0, y: -1 }
+  return {
+    x: annotation.markerPosition.x + direction.x,
+    y: annotation.markerPosition.y + direction.y,
   }
 }
 
@@ -748,7 +771,7 @@ function packSide(
         x: document.marginLeft + anchor.x,
         y: document.marginTop + anchor.y,
       },
-      targetCenter: targetCenterForAnnotation(annotation, sections, document),
+      targetCenter: targetCenterForAnnotation(annotation, sections, document, side),
       elbowPoint: {
         x: elbowX,
         y: labelCenterY,
@@ -858,7 +881,7 @@ function packBand(
         x: document.marginLeft + anchor.x,
         y: document.marginTop + anchor.y,
       },
-      targetCenter: targetCenterForAnnotation(annotation, sections, document),
+      targetCenter: targetCenterForAnnotation(annotation, sections, document, side),
       elbowPoint: {
         x: labelCenterX,
         y: elbowY,

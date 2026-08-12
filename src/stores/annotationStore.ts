@@ -1180,6 +1180,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
             : null
     pushEditUndo(coalesceKey)
     applyAnnotationPatch(annotation, patch)
+    if (patch.calloutSide !== undefined) refreshDocumentAndLayouts()
   }
 
   function updateAnnotationVariationText(
@@ -1300,6 +1301,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       if (!annotation) continue
       applyAnnotationPatch(annotation, patch)
     }
+    if (patch.calloutSide !== undefined) refreshDocumentAndLayouts()
   }
 
   function updateCalloutPosition(annotationId: string, point: Point): void {
