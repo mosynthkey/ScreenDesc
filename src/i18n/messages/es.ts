@@ -210,6 +210,8 @@ export const es: Record<MessageKey, string> = {
   'canvas.emptyHint':
     'Arrastra para dibujar la región que quieres anotar; se convertirá en una sección.',
   'canvas.detecting': 'Proponiendo secciones…',
+  'canvas.sectionPickerTitle': 'Elige el destino de la anotación',
+  'canvas.sectionPickerAria': 'Destinos de anotación superpuestos',
   'canvas.resizeHandleAria': 'Ajustar esquina del marco',
   'canvas.resizeHandleHint': 'Usa las flechas para ajustar 1 px cada vez',
 

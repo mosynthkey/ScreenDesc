@@ -211,6 +211,8 @@ export const de: Record<MessageKey, string> = {
   'canvas.emptyHint':
     'Ziehen, um den Bereich zu zeichnen, den Sie kommentieren möchten — er wird zu einem Abschnitt.',
   'canvas.detecting': 'Abschnitte werden vorgeschlagen…',
+  'canvas.sectionPickerTitle': 'Anmerkungsziel auswählen',
+  'canvas.sectionPickerAria': 'Überlappende Anmerkungsziele',
   'canvas.resizeHandleAria': 'Rahmenecke anpassen',
   'canvas.resizeHandleHint': 'Mit den Pfeiltasten pixelweise anpassen',
 

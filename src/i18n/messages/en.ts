@@ -205,6 +205,8 @@ export const en = {
   'canvas.emptyHint':
     'Drag to draw the region you want to annotate — it becomes a section.',
   'canvas.detecting': 'Proposing sections…',
+  'canvas.sectionPickerTitle': 'Choose an annotation target',
+  'canvas.sectionPickerAria': 'Overlapping annotation targets',
   'canvas.resizeHandleAria': 'Adjust frame corner',
   'canvas.resizeHandleHint': 'Use the arrow keys to adjust by 1 px',
 

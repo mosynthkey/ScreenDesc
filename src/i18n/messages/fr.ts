@@ -211,6 +211,8 @@ export const fr: Record<MessageKey, string> = {
   'canvas.emptyHint':
     'Faites glisser pour dessiner la région à annoter — elle deviendra une section.',
   'canvas.detecting': 'Proposition de sections…',
+  'canvas.sectionPickerTitle': 'Choisir la cible de l’annotation',
+  'canvas.sectionPickerAria': 'Cibles d’annotation superposées',
   'canvas.resizeHandleAria': 'Ajuster le coin du cadre',
   'canvas.resizeHandleHint': 'Utilisez les flèches pour ajuster par pas de 1 px',
 

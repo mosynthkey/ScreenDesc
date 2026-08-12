@@ -315,12 +315,34 @@ interface SectionContextMenuState {
   x: number
   y: number
   sections: Section[]
+  action: 'annotate' | 'select'
 }
 
 const sectionContextMenu = ref<SectionContextMenuState | null>(null)
+const sectionContextMenuRef = ref<HTMLElement | null>(null)
 
 function closeSectionContextMenu(): void {
   sectionContextMenu.value = null
+}
+
+async function showSectionContextMenu(
+  x: number,
+  y: number,
+  sections: Section[],
+  action: SectionContextMenuState['action'],
+): Promise<void> {
+  sectionContextMenu.value = { x, y, sections, action }
+  await nextTick()
+  const menu = sectionContextMenuRef.value
+  if (!menu || !sectionContextMenu.value) return
+  const margin = 8
+  sectionContextMenu.value = {
+    ...sectionContextMenu.value,
+    x: Math.max(margin, Math.min(x, window.innerWidth - menu.offsetWidth - margin)),
+    y: Math.max(margin, Math.min(y, window.innerHeight - menu.offsetHeight - margin)),
+  }
+  await nextTick()
+  sectionContextMenuRef.value?.querySelector<HTMLButtonElement>('button')?.focus()
 }
 
 function ocrTextForSection(section: Section): string {
@@ -354,8 +376,13 @@ function actOnSection(sectionId: string): void {
 }
 
 function onSelectFromSectionContextMenu(sectionId: string): void {
-  actOnSection(sectionId)
+  const action = sectionContextMenu.value?.action
   closeSectionContextMenu()
+  if (action === 'annotate') {
+    emit('annotateSection', sectionId)
+  } else if (action === 'select') {
+    emit('selectSection', sectionId, false)
+  }
 }
 
 function onSceneContextMenu(event: MouseEvent): void {
@@ -366,11 +393,13 @@ function onSceneContextMenu(event: MouseEvent): void {
   const hits = findSectionsAt(imagePoint)
   if (hits.length === 0) {
     closeSectionContextMenu()
+  } else if (props.toolMode === 'annotate') {
+    void showSectionContextMenu(event.clientX, event.clientY, hits, 'annotate')
   } else if (hits.length === 1) {
     closeSectionContextMenu()
     actOnSection(hits[0]!.id)
   } else {
-    sectionContextMenu.value = { x: event.clientX, y: event.clientY, sections: hits }
+    void showSectionContextMenu(event.clientX, event.clientY, hits, 'select')
   }
 }
 
@@ -1511,17 +1540,22 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
 
     <div
       v-if="sectionContextMenu"
+      ref="sectionContextMenuRef"
       class="section-context-menu"
       role="menu"
+      :aria-label="t('canvas.sectionPickerAria')"
       :style="{ left: `${sectionContextMenu.x}px`, top: `${sectionContextMenu.y}px` }"
+      @pointerdown.stop
+      @contextmenu.prevent.stop
     >
+      <div class="section-context-menu-title">{{ t('canvas.sectionPickerTitle') }}</div>
       <button
         v-for="section in sectionContextMenu.sections"
         :key="section.id"
         class="section-context-item"
         type="button"
         role="menuitem"
-        @click="onSelectFromSectionContextMenu(section.id)"
+        @click.stop="onSelectFromSectionContextMenu(section.id)"
       >
         <span class="section-context-item-title">{{ sectionContextMenuLabel(section) }}</span>
         <span
@@ -1776,6 +1810,13 @@ function anchorHeadPathFor(layout: CalloutLayoutItem): string {
   background: var(--bg-elevated);
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow);
+}
+
+.section-context-menu-title {
+  padding: 6px 10px 5px;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
 }
 
 .section-context-item {

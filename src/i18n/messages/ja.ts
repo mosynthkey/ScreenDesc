@@ -207,6 +207,8 @@ export const ja: Record<MessageKey, string> = {
   'canvas.emptyHint':
     '注釈したい範囲をドラッグしてセクションを追加してください。',
   'canvas.detecting': 'セクションを提案中…',
+  'canvas.sectionPickerTitle': '注釈を追加する対象を選択',
+  'canvas.sectionPickerAria': '重なっている注釈対象の一覧',
   'canvas.resizeHandleAria': '枠の角を調整',
   'canvas.resizeHandleHint': '矢印キーで1pxずつ調整できます',
 

@@ -201,6 +201,8 @@ export const zh: Record<MessageKey, string> = {
 
   'canvas.emptyHint': '拖动绘制想要添加注释的区域——它会成为一个区块。',
   'canvas.detecting': '正在生成区块建议…',
+  'canvas.sectionPickerTitle': '选择要添加注释的对象',
+  'canvas.sectionPickerAria': '重叠的注释对象列表',
   'canvas.resizeHandleAria': '调整边框角点',
   'canvas.resizeHandleHint': '使用方向键每次调整 1 像素',
 
