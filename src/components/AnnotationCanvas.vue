@@ -1026,7 +1026,11 @@ const highlightFill = computed(() =>
 )
 
 function leaderEnd(layout: CalloutLayoutItem): Point {
-  return leaderAttachOnLabel(layout)
+  const gap = Math.max(
+    3,
+    (activeLineStyle.value.strokeWidth + props.lineHaloWidth + props.calloutBorderWidth) / 2 + 1,
+  )
+  return leaderAttachOnLabel(layout, gap)
 }
 
 function leaderStartFor(layout: CalloutLayoutItem): Point {

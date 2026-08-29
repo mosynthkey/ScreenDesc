@@ -60,7 +60,6 @@ function renderCallout(
   fontFamily: string,
 ): string {
   const { labelPosition, labelWidth, labelHeight, lines, anchorPoint, targetCenter } = layout
-  const leaderEnd = leaderAttachOnLabel(layout)
   const fontCss = fontFamilyCss(fontFamily)
   const textX = calloutLabelTextX(
     labelPosition.x,
@@ -105,6 +104,12 @@ function renderCallout(
     fillPaint.fill === 'none'
       ? 'fill="none"'
       : `fill="${fillPaint.fill}" fill-opacity="${fillPaint.fillOpacity}"`
+
+  const leaderGap = Math.max(
+    3,
+    (spec.strokeWidth + lineHaloWidth + calloutBorderWidth) / 2 + 1,
+  )
+  const leaderEnd = leaderAttachOnLabel(layout, leaderGap)
 
   const leave = leaderLeaveUnit(anchorPoint, targetCenter)
 

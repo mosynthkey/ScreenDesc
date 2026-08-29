@@ -102,13 +102,17 @@ function labelAttachPoint(
   return { x, y: centerY }
 }
 
-export function leaderAttachOnLabel(layout: CalloutLayoutItem): Point {
-  return labelAttachPoint(
+export function leaderAttachOnLabel(layout: CalloutLayoutItem, gap = 0): Point {
+  const edge = labelAttachPoint(
     layout.labelPosition,
     layout.labelWidth,
     layout.labelHeight,
     layout.side,
   )
+  if (layout.side === 'left') return { x: edge.x + gap, y: edge.y }
+  if (layout.side === 'right') return { x: edge.x - gap, y: edge.y }
+  if (layout.side === 'top') return { x: edge.x, y: edge.y + gap }
+  return { x: edge.x, y: edge.y - gap }
 }
 
 function documentSize(document: DocumentLayout): { width: number; height: number } {
