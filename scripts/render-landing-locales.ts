@@ -37,6 +37,28 @@ function translationsFrom(html: string): Record<string, Record<string, string>> 
   return vm.runInNewContext(`(${match[1]})`)
 }
 
+/** `/landing/` itself is canonical English, so `/landing/en/` only bounces visitors back up. */
+function writeEnglishRedirect(outputDirectory: string, title: string): void {
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>${title}</title>
+<meta name="robots" content="noindex" />
+<link rel="canonical" href="${SITE_ROOT}" />
+<meta http-equiv="refresh" content="0; url=../" />
+</head>
+<body>
+<p>Redirecting to <a href="../">ScreenDesc</a>…</p>
+<script>window.location.replace('../');</script>
+</body>
+</html>
+`
+  const directory = join(outputDirectory, 'en')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'index.html'), html)
+}
+
 export function renderLandingLocales(outputDirectory: string): void {
   const indexPath = join(outputDirectory, 'index.html')
   const source = readFileSync(indexPath, 'utf8')
@@ -65,6 +87,8 @@ export function renderLandingLocales(outputDirectory: string): void {
     html = replaceMetaContent(html, 'name="description"', dictionary.description)
     html = replaceMetaContent(html, 'property="og:title"', dictionary.title)
     html = replaceMetaContent(html, 'property="og:description"', dictionary.description)
+    html = replaceMetaContent(html, 'name="twitter:title"', dictionary.title)
+    html = replaceMetaContent(html, 'name="twitter:description"', dictionary.description)
     html = html.replace(
       '"url": "https://mosynthkey.github.io/ScreenDesc/landing/"',
       `"url": "${pageUrl}"`,
@@ -84,4 +108,6 @@ export function renderLandingLocales(outputDirectory: string): void {
     mkdirSync(localeDirectory, { recursive: true })
     writeFileSync(join(localeDirectory, 'index.html'), html)
   }
+
+  writeEnglishRedirect(outputDirectory, translations.en.title)
 }
