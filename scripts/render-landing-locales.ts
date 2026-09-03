@@ -65,6 +65,8 @@ export function renderLandingLocales(outputDirectory: string): void {
     html = replaceMetaContent(html, 'name="description"', dictionary.description)
     html = replaceMetaContent(html, 'property="og:title"', dictionary.title)
     html = replaceMetaContent(html, 'property="og:description"', dictionary.description)
+    html = replaceMetaContent(html, 'name="twitter:title"', dictionary.title)
+    html = replaceMetaContent(html, 'name="twitter:description"', dictionary.description)
     html = html.replace(
       '"url": "https://mosynthkey.github.io/ScreenDesc/landing/"',
       `"url": "${pageUrl}"`,
